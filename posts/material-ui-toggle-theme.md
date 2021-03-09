@@ -10,7 +10,7 @@ recommended: blog-with-next-js-react-material-ui-and-typescript
 This is the second post in the series about how this blog functions, and it is an example of a use case for when to apply 
  React context and how this can be achieved. 
  
-> *You can find the complete code shown in this post at https://github.com/FelixMohr/nextjs-material-ui-blog*
+> *You can find the complete code shown in this post at https://github.com/saiemgilani/saiemblog*
  
 Material-UI comes with great support for applying a theme to all components of your app. However, if you want to allow your 
 users to toggle between different modes, like dark and light mode, there is no built-in solution for this use case. 

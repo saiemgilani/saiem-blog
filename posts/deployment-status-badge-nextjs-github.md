@@ -14,7 +14,7 @@ It is, however, quite straight forward to implement your own solution for this u
 
 
 
-I have published an [NPM package](https://www.npmjs.com/package/deployment-badge) *deployment-badge* to use with your Next.js app, so you can get started as fast as possible. This blog [(Github)](https://github.com/FelixMohr/nextjs-material-ui-blog) is an example of an app using *deployment-badge*. 
+I have published an [NPM package](https://www.npmjs.com/package/deployment-badge) *deployment-badge* to use with your Next.js app, so you can get started as fast as possible. This blog [(Github)](https://github.com/saiemgilani/saiemblog) is an example of an app using *deployment-badge*. 
  
 ![Github Badges](/images/badges.png)
  
@@ -44,7 +44,7 @@ If you aren't using typescript, simply omit the types above.
 
 The third parameter of ``deploymentBadgeHandler`` accepts these values as options:
 
-* *deploymentsUrl*: The Github API deployments URL of your project, e.g. https://api.github.com/repos/FelixMohr/nextjs-material-ui-blog/deployments 
+* *deploymentsUrl*: The Github API deployments URL of your project, e.g. https://api.github.com/repos/saiemgilani/saiemgilani/deployments 
 * *namedLogo*: A logo to include in the generated badge. Any name from [Simple Icons](https://simpleicons.org/) can be chosen. Can be omitted.
 * *env*: The environment for which to generate the badge. Can be omitted, default is *Production*
 
@@ -58,4 +58,4 @@ Replace the URL above with the URL of your deployed handler.
 
 ## Check out the source code of *deployment-badge*
 
-The source code of this project is quite concise itself. If you are interested, you can find the whole code at [Github](https://github.com/FelixMohr/deployment-badge).
+The source code of this project is quite concise itself. If you are interested, you can find the whole code at [Github](https://github.com/saiemgilani/deployment-badge).

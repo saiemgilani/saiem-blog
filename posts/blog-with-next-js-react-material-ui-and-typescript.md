@@ -31,7 +31,7 @@ takes care of all the necessary steps.
 
 ## Setting up the Next.js blog project
 
-*You can find the complete code shown in this post at [https://github.com/FelixMohr/nextjs-material-ui-blog](https://github.com/FelixMohr/nextjs-material-ui-blog)*
+*You can find the complete code shown in this post at [https://github.com/saiemgilani/saiemblog](https://github.com/saiemgilani/saiemblog)*
 
 ### Next.js with Typescript
 

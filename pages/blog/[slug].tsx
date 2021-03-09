@@ -56,7 +56,7 @@ const Slug: FC<Props> = ({ postData, nextPath }): ReactElement => {
           <Typography variant="body1">
             {postData.date} — written by{' '}
             <a
-              href="http://www.github.com/FelixMohr"
+              href="http://www.github.com/saiemgilani"
               target="_blank"
               rel="noreferrer"
               style={{
@@ -64,7 +64,7 @@ const Slug: FC<Props> = ({ postData, nextPath }): ReactElement => {
                 alignItems: 'center',
               }}
             >
-              Felix <GitHubIcon fontSize="small" style={{ marginLeft: 10 }} />
+              Saiem Gilani <GitHubIcon fontSize="small" style={{ marginLeft: 10 }} />
             </a>
           </Typography>
           <TopicsDisplay topics={postData.topics} n={10} noMargin />
