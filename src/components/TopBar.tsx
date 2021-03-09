@@ -46,7 +46,7 @@ export const TopBar = (): ReactElement => {
         <Link href="/">
           <a>
             <img
-              src="/logo/Logo2.png"
+              src="/logo/logo2.png"
               height="25px"
               alt="saiemgilani.me"
               style={{ paddingRight: 10, verticalAlign: 'bottom' }}
