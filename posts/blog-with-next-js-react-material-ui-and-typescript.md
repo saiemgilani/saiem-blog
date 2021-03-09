@@ -78,10 +78,10 @@ export default class MyDocument extends Document {
       <Html lang="en">
         <Head>
           <meta name="theme-color" content={theme.palette.primary.main} />
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400,500,700&display=swap" />
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Chivo:300,400,500,700&display=swap" />
           <link
             rel="stylesheet"
-            href="https://fonts.googleapis.com/css?family=Roboto+Slab:300,400,500,700&display=swap"
+            href="https://fonts.googleapis.com/css?family=Fira+Mono:300,400,500,700&display=swap"
           />
         </Head>
         <body>

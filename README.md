@@ -2,7 +2,7 @@
 <p align="center">
 <img
     width=160px
-    src="public/logo/blue.png"
+    src="public/logo/Logo.png"
     alt="saiemgilani.me"
 />
 </p>

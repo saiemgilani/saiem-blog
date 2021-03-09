@@ -14,7 +14,7 @@ It is, however, quite straight forward to implement your own solution for this u
 
 
 
-I have published an [NPM package](https://www.npmjs.com/package/deployment-badge) *deployment-badge* to use with your Next.js app, so you can get started as fast as possible. This blog [(Github)](https://github.com/saiemgilani/saiemblog) is an example of an app using *deployment-badge*. 
+I have published an [NPM package](https://www.npmjs.com/package/deployment-badge) *deployment-badge* to use with your Next.js app, so you can get started as fast as possible. This blog [(Github)](https://github.com/saiemgilani/saiem-blog) is an example of an app using *deployment-badge*. 
  
 ![Github Badges](/images/badges.png)
  
@@ -44,14 +44,14 @@ If you aren't using typescript, simply omit the types above.
 
 The third parameter of ``deploymentBadgeHandler`` accepts these values as options:
 
-* *deploymentsUrl*: The Github API deployments URL of your project, e.g. https://api.github.com/repos/saiemgilani/saiemgilani/deployments 
+* *deploymentsUrl*: The Github API deployments URL of your project, e.g. https://api.github.com/repos/saiemgilani/saiem-blog/deployments 
 * *namedLogo*: A logo to include in the generated badge. Any name from [Simple Icons](https://simpleicons.org/) can be chosen. Can be omitted.
 * *env*: The environment for which to generate the badge. Can be omitted, default is *Production*
 
 This handler will generate JSON responses that can be used by [Shields.io](https://shields.io), from where they will be added to the README.md:
 
 ```markdown
-[![Deployment Status](https://img.shields.io/endpoint?url=https://devx.sh/api/deployment)](https://devx.sh)
+[![Deployment Status](https://img.shields.io/endpoint?url=https://saiemgilani.me/api/deployment)](https://saiemgilani.me)
 ```
 
 Replace the URL above with the URL of your deployed handler.
