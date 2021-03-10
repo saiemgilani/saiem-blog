@@ -48,12 +48,10 @@ const useStyles = makeStyles({
     zIndex: "unset"
   },
   absolute: {
-    position: "absolute",
-    zIndex: "1100"
+    position: "absolute"
   },
   fixed: {
-    position: "fixed",
-    zIndex: "1100"
+    position: "fixed"
   },
   show: {
     transform: 'translateY(0)',
