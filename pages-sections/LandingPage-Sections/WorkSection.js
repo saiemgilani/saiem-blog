@@ -22,10 +22,13 @@ export default function WorkSection() {
         <GridItem cs={12} sm={12} md={8}>
           <h2 className={classes.title}>Work with us</h2>
           <h4 className={classes.description}>
-            Divide details about your product or agency work into parts. Write a
-            few lines about each one and contact us about any further
-            collaboration. We will responde get back to you in a couple of
-            hours.
+            Are you interested in working with sports data, developing open-source packages
+            and helping teach others to do the same? Our group is dedicated to the cause of
+            trying to include people from more diverse backgrounds and underrepresented
+            groups in sports. Additionally, we are making the publicly available sports
+            data much more accessible to the common person. The desired goal is to create
+            a supportive community that will provide guidance and mentor those who want to
+            be a part of the solution. Drop me a brief message below so that I can reach out to you!
           </h4>
           <form>
             <GridContainer>
