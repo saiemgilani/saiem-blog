@@ -22,12 +22,9 @@ import ProductSection from "../pages-sections/LandingPage-Sections/ProductSectio
 import TeamSection from "../pages-sections/LandingPage-Sections/TeamSection.js";
 import WorkSection from "../pages-sections/LandingPage-Sections/WorkSection.js";
 
-const dashboardRoutes = [];
 
-const useStyles = makeStyles(styles);
 
 export default function LandingPage(props) {
-  const classes = useStyles();
   const large = useMediaQuery('(min-width:700px)')
   const { ...rest } = props;
   return (
@@ -50,7 +47,7 @@ export default function LandingPage(props) {
             </Box>
           </Grid>
           </Grid>
-      <div className={classNames(classes.main, classes.mainRaised)}>
+      <div className={classNames(styles.main, styles.mainRaised)}>
         <div className={styles.headings}>
           {/* <TeamSection /> */}
           <ProductSection />
