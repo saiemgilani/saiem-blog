@@ -15,11 +15,8 @@ It is, however, quite straight forward to implement your own solution for this u
 
 
 I have published an [NPM package](https://www.npmjs.com/package/deployment-badge) *deployment-badge* to use with your Next.js app, so you can get started as fast as possible. This blog [(Github)](https://github.com/saiemgilani/saiem-blog) is an example of an app using *deployment-badge*. 
- 
-![Github Badges](/images/badges.png)
- 
-Let's see how to use this package. 
 
+Let's see how to use this package.
 
 ## How to use the NPM package to display a status badge on your Readme
 

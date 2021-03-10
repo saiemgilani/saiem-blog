@@ -5,7 +5,7 @@ export const paletteColorsDark = {
   secondary: '#500F1B',
   error: '#E44C65',
   background: '#500F1B',
-  text: '#FFFFFF',
+  text: '#FEF4E8',
 }
 
 export const paletteColorsLight = {

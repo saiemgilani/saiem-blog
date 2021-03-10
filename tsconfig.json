@@ -22,7 +22,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "assets/jss/nextjs-material-kit/pages/landingPageSections/workStyle.js", "assets/jss/nextjs-material-kit/pages/landingPageSections/productStyle.js", "assets/jss/nextjs-material-kit/pages/landingPageSections/teamStyle.js", "src/components/Header/Header.js", "assets/jss/nextjs-material-kit/pages/landingPage.js", "assets/jss/nextjs-material-kit.js"  ],
   "exclude": [
     "node_modules"
   ]
