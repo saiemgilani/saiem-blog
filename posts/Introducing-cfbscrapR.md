@@ -6,12 +6,12 @@ featured: true
 topics: R,Sports,College Football,cfbscrapR,SportsDataverse
 recommended: Introducing-cbb-npm, blog-with-next-js-react-material-ui-and-typescript
 ---
+# cfbscrapR <a href='http://saiemgilani.github.io/cfbscrapR'><img src='https://saiemgilani.github.io/cfbscrapR/reference/figures/logo.png' align="right" height="139" /></a>
+
 
 
 <p align="left"> <a href="https://twitter.com/cfbscrapR" target="blank"><img src="https://img.shields.io/twitter/follow/cfbscrapR?logo=twitter&style=for-the-badge" alt="cfbscrapR" /></a> <a href="https://twitter.com/saiemgilani" target="blank"><img src="https://img.shields.io/twitter/follow/saiemgilani?logo=twitter&style=for-the-badge" alt="saiemgilani" /></a> </p>
 <a href="https://www.linkedin.com/in/saiem-gilani/"><img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" /><a> <a href="https://github.com/saiemgilani"><img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" /><a> <a href="https://www.patreon.com/join/sportsdataverse?"><img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white" /><a>
-
-# cfbscrapR <a href='http://saiemgilani.github.io/cfbscrapR'><img src='https://saiemgilani.github.io/cfbscrapR/reference/figures/logo.png' align="right" height="139" /></a>
 
 A scraping and aggregating package using the CollegeFootballData API
 
