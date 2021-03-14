@@ -37,3 +37,5 @@ yarn-error.log*
 .idea
 
 public/sitemap.xml
+
+drafts/*
