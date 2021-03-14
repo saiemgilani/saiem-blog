@@ -34,7 +34,7 @@ export default function PackageSection() {
           <GridItem xs={24} sm={24} md={12}>
             <Card plain>
               <GridItem xs={24} sm={24} md={12} className={classes.itemGrid}>
-                <img src={`small/sportsdataverse-node-js-module.png`} alt="sportsdataverse-node-js" />
+                <img src={`images/sportsdataverse-node.png`} alt="sportsdataverse-node-js" />
               </GridItem>
               <h4 className={classes.cardTitle}>
                 sportsdataverse
