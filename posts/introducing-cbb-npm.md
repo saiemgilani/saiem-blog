@@ -4,7 +4,7 @@ date: '2021-03-12'
 description: 'NPM module for retrieving college basketball data from a popular sports website'
 featured: true
 topics: Node.JS,Sports,College Basketball,SportsDataverse
-recommended: Introducing-cfbscrapR
+recommended: introducing-cfbscrapR
 ---
 
 # cbb-npm
