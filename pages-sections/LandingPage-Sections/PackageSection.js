@@ -135,7 +135,7 @@ export default function PackageSection() {
         <GridContainer>
           <GridItem xs={12} sm={12} md={4}>
             <Card plain>
-              <GridItem xs={12} sm={12} md={6} className={classes.itemGrid}>
+              <GridItem xs={12} sm={12} md={7} className={classes.itemGrid}>
                 <img src={`images/cfbrecruitR-logo.png`} alt="cfbrecruitR"  />
               </GridItem>
               <h4 className={classes.cardTitle}>
@@ -152,7 +152,7 @@ export default function PackageSection() {
           </GridItem>
           <GridItem xs={12} sm={12} md={4}>
             <Card plain>
-              <GridItem xs={12} sm={12} md={6} className={classes.itemGrid}>
+              <GridItem xs={12} sm={12} md={7} className={classes.itemGrid}>
                 <img src={`images/cfbscrapR-data-repo.png`} alt="cfbscrapR-data" />
               </GridItem>
               <h4 className={classes.cardTitle}>
@@ -169,7 +169,7 @@ export default function PackageSection() {
           </GridItem>
           <GridItem xs={12} sm={12} md={4}>
             <Card plain>
-              <GridItem xs={12} sm={12} md={6} className={classes.itemGrid}>
+              <GridItem xs={12} sm={12} md={7} className={classes.itemGrid}>
                 <img src={`images/kenpomR-data-repo.png`} alt="kenpomR-data" />
               </GridItem>
               <h4 className={classes.cardTitle}>

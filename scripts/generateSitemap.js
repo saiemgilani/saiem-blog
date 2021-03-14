@@ -30,8 +30,8 @@ async function generateSiteMap() {
           .replace('.tsx', '')
           .replace('.md', '')
           .replace('posts/', '/blog/')
-          .replace('/index', '')
-        const route = path === '/index' ? '' : path
+          .replace('/landing', '')
+        const route = path === '/landing' ? '' : path
         return `
                       <url><loc>${`https://saiemgilani.me${route}`}</loc></url>\n`.trimStart()
       })

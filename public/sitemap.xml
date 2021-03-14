@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://saiemgilani.me/index</loc></url>
 <url><loc>https://saiemgilani.me</loc></url>
-<url><loc>https://saiemgilani.me/landing</loc></url>
-<url><loc>https://saiemgilani.me/blog</loc></url>
-<url><loc>https://saiemgilani.me/topics</loc></url>
+<url><loc>https://saiemgilani.me/blog/index</loc></url>
+<url><loc>https://saiemgilani.me/topics/index</loc></url>
 <url><loc>https://saiemgilani.me/blog/blog-with-next-js-react-material-ui-and-typescript</loc></url>
 <url><loc>https://saiemgilani.me/blog/deployment-status-badge-nextjs-github</loc></url>
 <url><loc>https://saiemgilani.me/blog/introducing-cbb-npm</loc></url>
 <url><loc>https://saiemgilani.me/blog/introducing-cfbscrapR</loc></url>
+<url><loc>https://saiemgilani.me/blog/kenpomr-for-mens-college-basketball</loc></url>
 <url><loc>https://saiemgilani.me/blog/material-ui-toggle-theme</loc></url>
 <url><loc>https://saiemgilani.me/blog/sportsdataverse-node-js-module</loc></url>
 <url><loc>https://saiemgilani.me/topics/Next.js</loc></url>

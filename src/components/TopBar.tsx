@@ -115,8 +115,6 @@ export const TopBar = (): ReactElement => {
               &nbsp;Blog
             </Button>
           </Link>
-        </div>
-        <div className={classes.toolbarContent}>
           <Link href="/topics">
             <Button variant="text" color="inherit">
               <CodeIcon />
