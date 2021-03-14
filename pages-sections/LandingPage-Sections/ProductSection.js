@@ -24,8 +24,14 @@ export default function ProductSection() {
           <h2 className={classes.title}>Talk Data to Me</h2>
           <h4 className={classes.description}>
             I am always looking to add more developers to the SportsDataverse developer group who share common cause
-            with the aim to make the sports data industry more diverse and inclusive. The SportsDataverse is a
-            concept I have been working on with a handful of other people to create and develop packages in Python, R and Node.js.
+            with the aim to make the sports data industry more diverse and inclusive. 
+          </h4>
+        </GridItem>
+      </GridContainer>
+      <GridContainer justify="center">
+        <GridItem xs={12} sm={12} md={8}>
+          <h4 className={classes.description}>
+            The SportsDataverse is a concept I have been working on with a handful of other people to create and develop packages in Python, R and Node.js.
             Among the goals of the SportsDataverse is to flatten the learning curve the average user has to go through to get access to the highest quality open-source data and analytics
           </h4>
         </GridItem>

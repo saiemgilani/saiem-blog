@@ -19,7 +19,7 @@ import { NAME, NAME_AND_DOMAIN } from '../src/types/constants'
 
 // Sections for this page
 import ProductSection from "../pages-sections/LandingPage-Sections/ProductSection.js";
-import TeamSection from "../pages-sections/LandingPage-Sections/TeamSection.js";
+import PackageSection from "../pages-sections/LandingPage-Sections/PackageSection.js";
 import WorkSection from "../pages-sections/LandingPage-Sections/WorkSection.js";
 
 
@@ -33,8 +33,7 @@ export default function LandingPage(props) {
           <title>{NAME}: Building the SportsDataverse</title>
           <meta
             name="description"
-            content={`${NAME} is a blog on various topics in full stack development
-              with a focus on current technologies like React, NextJS and R programming.`}
+            content={`${NAME} is the personal page of Saiem Gilani, giving updates on the SportsDataverse.`}
           />
         </Head>
         <Grid container>
@@ -49,7 +48,7 @@ export default function LandingPage(props) {
           </Grid>
       <div className={classNames(styles.main, styles.mainRaised)}>
         <div className={styles.headings}>
-          {/* <TeamSection /> */}
+          <PackageSection />
           <ProductSection />
           <WorkSection />
         </div>

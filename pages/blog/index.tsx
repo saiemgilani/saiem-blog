@@ -20,8 +20,7 @@ const Home = ({ postsData, sortedTopics }: { postsData: PostData[]; sortedTopics
         <title>{NAME}: Building the SportsDataverse</title>
         <meta
           name="description"
-          content={`${NAME} is a blog on various topics in full stack development
-            with a focus on current technologies like React, NextJS and R programming.`}
+          content={`${NAME} is the personal page of Saiem Gilani, giving updates on the SportsDataverse.`}
         />
       </Head>
       <Grid container>

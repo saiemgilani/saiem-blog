@@ -20,8 +20,9 @@ const workStyle = {
     textAlign: "center"
   },
   textArea: {
-    marginRight: "15px",
-    marginLeft: "15px"
+    marginRight: "30px",
+    marginLeft: "30px",
+    textAlign: "center"
   }
 };
 

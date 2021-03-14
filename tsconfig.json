@@ -21,8 +21,13 @@
   "include": [
     "next-env.d.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "assets/jss/nextjs-material-kit/pages/landingPageSections/workStyle.js", "assets/jss/nextjs-material-kit/pages/landingPageSections/productStyle.js", "assets/jss/nextjs-material-kit/pages/landingPageSections/teamStyle.js", "src/components/Header/Header.js", "assets/jss/nextjs-material-kit/pages/landingPage.js", "assets/jss/nextjs-material-kit.js"  ],
+    "**/*.tsx",
+    "assets/jss/nextjs-material-kit/pages/landingPageSections/workStyle.js",
+    "assets/jss/nextjs-material-kit/pages/landingPageSections/productStyle.js",
+    "assets/jss/nextjs-material-kit/pages/landingPageSections/packageStyle.js",
+    "src/components/Header/Header.js", "assets/jss/nextjs-material-kit/pages/landingPage.js",
+    "assets/jss/nextjs-material-kit.js",
+    "pages-sections/LandingPage-Sections/ProductSection.js"  ],
   "exclude": [
     "node_modules"
   ]
