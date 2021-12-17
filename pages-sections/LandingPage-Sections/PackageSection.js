@@ -28,38 +28,6 @@ export default function PackageSection() {
   );
   return (
     <div className={classes.section}>
-      <h2 className={classes.title}>Node.js modules I have authored:</h2>
-      <div>
-        <GridContainer>
-          <GridItem xs={24} sm={24} md={12}>
-            <Card plain>
-              <GridItem xs={24} sm={24} md={12} className={classes.itemGrid}>
-                <img src={`images/sportsdataverse-node.png`} alt="sportsdataverse-node-js" />
-              </GridItem>
-              <h4 className={classes.cardTitle}>
-                sportsdataverse
-                <br />
-                <small className={classes.smallTitle}>All collegiate and 6 Professional sports</small>
-              </h4>
-              <CardBody>
-                <p className={classes.description}>
-                Support for the following types of data from ESPN's endpoints: play-by-play (including shot location data when available), scores, schedule, standings, rankings (not available for professional sports)
-                </p>
-                <p>
-                Recruiting data from 247Sports available for: men's college basketball, college football.
-                </p>
-                <p>
-                The following sports are available from ESPN: College Basketball, Women's College Basketball, College Football, WNBA, NBA, NFL, and NHL.
-                </p>
-                <p>
-                All team sports on the NCAA website: 'football', 'basketball-men', 'basketball-women', 'soccer-men', 'soccer-women', 'fieldhockey', 'volleyball-women', 
-                'icehockey-men', 'icehockey-women', 'baseball','beach-volleyball', 'lacrosse-men', 'lacrosse-women', 'volleyball-men'
-                </p>
-              </CardBody>
-            </Card>
-          </GridItem>
-        </GridContainer>
-      </div>
       <h2 className={classes.title}>R packages I have authored:</h2>
       <div>
         <GridContainer>
