@@ -83,29 +83,6 @@ const rPackages = [
     ]
   },
   {
-    sourceHref: 'https://github.com/jaseziv/worldfootballR/',
-    sourceLabel: 'worldfootballR',
-    logo: worldfootballR,
-    docsHref: 'https://jaseziv.github.io/worldfootballR/',
-    sports: "World Football",
-    repositoryType: 'R',
-    description: [
-      {content:"  Functions to Extract World Football (Soccer) Data from Fbref.com, transfermarkt.com, and understat.com."},
-
-    ]
-  },
-  {
-    sourceHref: 'https://github.com/danmorse314/hockeyR/',
-    sourceLabel: 'hockeyR',
-    logo: hockeyR,
-    docsHref: 'https://hockeyr.netlify.app/',
-    sports: "NHL",
-    repositoryType: 'R',
-    description: [
-      {content:"  Functions for Acquiring and Analyzing NHL Play-by-Play Data."},
-    ]
-  },
-  {
     sourceHref: 'https://github.com/benhowell71/fastRhockey/',
     sourceLabel: 'fastRhockey',
     logo: fastRhockey,
@@ -114,39 +91,6 @@ const rPackages = [
     repositoryType: 'R',
     description: [
       {content:"  Functions to Access Premier Hockey Federation Play by Play Data."},
-    ]
-  },
-  {
-    sourceHref: 'https://github.com/kazink36/cfbplotR/',
-    sourceLabel: 'cfbplotR',
-    logo: cfbplotR,
-    docsHref: 'https://kazink36.github.io/cfbplotR/',
-    sports: "College Sports Visualization",
-    repositoryType: 'R',
-    description: [
-      {content:" CFB Logo Plots in 'ggplot2'."},
-    ]
-  },
-  {
-    sourceHref: 'https://github.com/kazink36/cfb4th/',
-    sourceLabel: 'cfb4th',
-    logo: cfb4th,
-    docsHref: 'https://kazink36.github.io/cfb4th/',
-    sports: "College Football Modeling",
-    repositoryType: 'R',
-    description: [
-      {content:" Functions to Calculate Optimal Fourth Down Decisions for NCAA Football."},
-    ]
-  },
-  {
-    sourceHref: 'https://github.com/JackLich10/gamezoneR',
-    sourceLabel: 'gamezoneR',
-    logo: gamezoneR,
-    docsHref: 'https://jacklich10.github.io/gamezoneR/',
-    sports: "College Basketball",
-    repositoryType: 'R',
-    description: [
-      {content:"  Functions to access NCAA Men’s Basketball data from STATS LLC’s GameZone."},
     ]
   },
   {
@@ -159,18 +103,7 @@ const rPackages = [
     description: [
       {content:" Functions to access college sports recruiting data."},
     ]
-  },
-  {
-    sourceHref: 'https://github.com/Puntalytics/puntr/',
-    sourceLabel: 'puntr',
-    logo: emptyLogo,
-    docsHref: 'https://puntalytics.github.io/puntr/',
-    sports: "American Football - Special Teams",
-    repositoryType: 'R',
-    description: [
-      {content:" Analysis of Punting."},
-    ]
-  },
+  }
 ]
 
 

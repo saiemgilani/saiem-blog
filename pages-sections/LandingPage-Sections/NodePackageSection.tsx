@@ -40,17 +40,6 @@ const nodePackages = [
       // {content:"Recruiting data from 247Sports available for: men's college basketball and college football."},
       // {content:"All team sports on the NCAA website: 'football', 'basketball-men', 'basketball-women', 'soccer-men', 'soccer-women', 'fieldhockey', 'volleyball-women', 'icehockey-men', 'icehockey-women', 'baseball','beach-volleyball', 'lacrosse-men', 'lacrosse-women', 'volleyball-men'"}
     ]
-  },
-  {
-    sourceHref: 'https://github.com/nntrn/nfl-nerd/',
-    sourceLabel: 'nfl-nerd',
-    logo: emptyLogo,
-    docsHref: 'https://github.com/nntrn/nfl-nerd/',
-    sports: 'NFL',
-    repositoryType: 'Node.js',
-    description: [
-      {content:"An api for fetching historical or real time games. Created for NFL player props betting."},
-    ]
   }
 ]
 export default function NodePackageSection() {

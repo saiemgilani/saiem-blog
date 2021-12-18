@@ -21,6 +21,7 @@ import wehoopData from '../../public/images/wehoop_social_card_data_repo_full.pn
 import hoopRData from '../../public/images/hoopR_social_card_data_repo_full.png'
 import cfbfastRData from '../../public/images/social_card_final_quote_data_repo.png'
 import worldfootballRData from '../../public/images/worldfootballR-data-card.png'
+import emptyLogo from '../../public/images/empty.png'
 
 
 const dataPackages = [
@@ -58,14 +59,14 @@ const dataPackages = [
     ]
   },
   {
-    sourceHref: 'https://github.com/JaseZiv/worldfootballR_data',
-    sourceLabel: 'worldfootballR-data',
-    logo: worldfootballRData,
+    sourceHref: 'https://github.com/saiemgilani/fastRhockey-data/',
+    sourceLabel: 'fastRhockey-data',
+    logo: emptyLogo,
     docsHref: '',
-    sports: "World Football (Soccer)",
+    sports: "Hockey (NHL and PHF)",
     repositoryType: 'Data',
     description: [
-      {content:' Repository containing data for Fbref Comps and Leagues, Transfermarkt Leagues, Mapping between FBref and Transfermarkt Players'}
+      {content:' Repository containing data for most teams and games from 2010-present for NHL, 2016-present for PHF. All data provided in csv, rds, and parquet format.'}
     ]
   },
 ]
@@ -76,7 +77,7 @@ export default function DataPackageSection() {
   return (
     <div>
       <Box p={5}>
-        <Typography variant={'h3'}>Data Repositories supporting SportsDataverse packages:</Typography>
+        <Typography variant={'h3'}>Data Repositories supporting my packages:</Typography>
       </Box>
       
       <Grid container
