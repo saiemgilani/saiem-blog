@@ -52,7 +52,7 @@ export default function LandingPage(props) {
         </Grid>
         </Grid>
         <Box p={2}>
-        <article className={"markdown-body entry-content container-lg f5"} itemprop="text">
+        <article className={"markdown-body entry-content container-lg f5"} itemProp={"text"}>
           <Typography variant={'h2'}>Hi, I'm Saiem! ML Engineer</Typography>
           <p dir="auto">I gave a presentation on the projects below at the <a href="https://www.stat.cmu.edu/cmsac/conference/2021/" rel="nofollow">Carnegie Mellon Sports Analytics Conference</a>. The paper I wrote for the conference was selected as the winner for the Data and Software contribution, Open Track for their reproducible research competition.</p>
           <p dir="auto">The conference materials can be found here:</p>
