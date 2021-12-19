@@ -12,8 +12,11 @@ import Container from '@material-ui/core/Container';
 import useMediaQuery from '@material-ui/core/useMediaQuery'
 import Typography from '@material-ui/core/Typography';
 
+import GridContainer from '../../src/components/Grid/GridContainer.js';
 import Image from 'next/image'
 import GitHubIcon from '@material-ui/icons/GitHub'
+import DescriptionIcon from '@material-ui/icons/Description';
+
 import AccountTreeIcon from '@material-ui/icons/AccountTree'
 
 import Link from 'next/link'
@@ -29,19 +32,45 @@ type PackageCardProps = {
   }
 
 
-// const useStyles = makeStyles((theme) => ({
-//   container: {
-//     minWidth: '95%',
-//     width: '100%',
-//     height: 400,
-//     spacing: '2%',
-//     position: 'relative',
-//     backgroundColor: theme.palette.primary.main,
-//     color: theme.palette.text.secondary,
-//   },
-// }))
+const useStyles = makeStyles((theme) => ({
+    a: {
+        hover: {
+          textDecoration: 'none',
+          fontWeight: 900,
+          cursor: "pointer",
+        },
+        textDecoration: 'none',
+        fontWeight: 900,
+        cursor: "pointer",
+      },
+    Link: {
+        textDecoration: 'none',
+        fontWeight: 900,
+        cursor: "pointer",
+    },
+    svg: {
+      hover: {
+        textDecoration: 'none',
+        fontWeight: 900,
+        cursor: "pointer",
+      },
+      textDecoration: 'none',
+      fontWeight: 900,
+      cursor: "pointer",
+    },
+    Image: {
+      hover: {
+        textDecoration: 'none',
+        fontWeight: 900,
+        cursor: "pointer",
+      },
+      textDecoration: 'none',
+      fontWeight: 900,
+      cursor: "pointer",
+    },
+}))
 
-export const PackageCard: FC<PackageCardProps> = ({ 
+export const PackageCard: FC<PackageCardProps> = ({
     sourceHref,
     sourceLabel,
     logo,
@@ -49,22 +78,25 @@ export const PackageCard: FC<PackageCardProps> = ({
     sports,
     repositoryType,
     description }): ReactElement => {
-//   const classes = useStyles()
+  const classes = useStyles()
   const large = useMediaQuery('(min-width:500px)')
   return (
-      
     <Container maxWidth="sm"  >
         <Box p={1}>
-            <Link href={sourceHref}>
+            <Link href={docsHref}>
                 <Image
                     src={logo}
                     alt={sourceLabel} />
             </Link>
-            
-            <Typography variant={'h4'}><Link href={sourceHref}>{`${sourceLabel}`}</Link>  <Link href={sourceHref}><GitHubIcon/></Link></Typography>
+            <Typography variant={'h4'}>
+                <Link href={sourceHref} passHref>{`${sourceLabel}`}</Link>
+            </Typography>
+            <div>
+                <Link href={sourceHref}><GitHubIcon/></Link>
+                <Link href={docsHref}><DescriptionIcon/></Link>
+            </div>
             <Typography variant={'caption'}>{`${sports}`+' - '+`${repositoryType}`}</Typography>
             {description.map((d,idx)=>
-            
                 <Box p={1} key={idx}>
                     <Typography variant={'body1'} style={{
                         textAlign: 'left'

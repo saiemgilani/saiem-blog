@@ -11,6 +11,7 @@ import { PostData } from '../types/posts'
 import { Box } from '@material-ui/core'
 import Link from 'next/link'
 import ChevronRight from '@material-ui/icons/ChevronRight'
+import FALLBACK_IMAGE from '../../public/small/sdv-blue-small.png'
 
 type PreviewCardProps = {
   post: PostData
@@ -57,10 +58,11 @@ export const PreviewCard: FC<PreviewCardProps> = ({ post, noMargin }): ReactElem
   const classes = useStyles()
 
   return (
-    <Link href={`/blog/${post.id}`}>
+    <Link href={`/blog/${post.id}`} passHref>
       <Card className={classes.card} elevation={3} style={noMargin ? { margin: 0 } : {}}>
         <CardActionArea>
-          <CardMedia className={classes.media} image={`/small/${post.id}.png`} title={post.title} />
+          <CardMedia className={classes.media} component={"img"} image={`/small/${post.id}.png`} title={post.title} onError={e => {
+            e.target.src = FALLBACK_IMAGE}}/>
         </CardActionArea>
         <CardContent>
           <Typography gutterBottom variant="h5" component="h2">

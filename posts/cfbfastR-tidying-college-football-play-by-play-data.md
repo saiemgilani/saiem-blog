@@ -11,7 +11,7 @@ recommended: sportsdataverse-node-js-module
 <!-- badges: start -->
 
 [![CRAN
-status](https://www.r-pkg.org/badges/version-last-release/cfbfastR?style=for-the-badge)](https://CRAN.R-project.org/package=cfbfastR)
+status](https://www.r-pkg.org/badges/version-last-release/cfbfastR?style-for-the-badge)](https://CRAN.R-project.org/package=cfbfastR)
 [![CRAN
 downloads](http://cranlogs.r-pkg.org/badges/grand-total/cfbfastR)](https://CRAN.R-project.org/package=cfbfastR)
 [![Version-Number](https://img.shields.io/github/r-package/v/saiemgilani/cfbfastR?label=cfbfastR&logo=R&style=for-the-badge)](https://github.com/saiemgilani/cfbfastR/)
