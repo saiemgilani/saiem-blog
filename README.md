@@ -1,13 +1,16 @@
+# [The PR Review](https://saiemgilani.com)
+
+The personal blog of [Saiem Gilani](https://github.com/saiemgilani) ([Twitter](https://twitter.com/saiemgilani))
+
 <div align="center">
 
 
-  ![Github stars](https://img.shields.io/github/stars/saiemgilani/saiemgilani.com?style=flat-square)
-  ![Github Forks](https://img.shields.io/github/forks/saiemgilani/saiemgilani.com?style=flat-square)
-  ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/saiemgilani/saiemgilani.com?style=flat-square)
-  ![GitHub repo size](https://img.shields.io/github/repo-size/saiemgilani/saiemgilani.com?style=flat-square)
+  ![Github stars](https://img.shields.io/github/stars/saiemgilani/saiem-blog?style=flat-square)
+  ![Github Forks](https://img.shields.io/github/forks/saiemgilani/saiem-blog?style=flat-square)
+  ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/saiemgilani/saiem-blog?style=flat-square)
+  ![GitHub repo size](https://img.shields.io/github/repo-size/saiemgilani/saiem-blog?style=flat-square)
 
 </div>
-
 
 ## Tools Used
 
@@ -41,13 +44,13 @@
 Clone the project:
 
 ```bash
-git clone https://github.com/saiemgilani/saiemgilani.com.git
+git clone https://github.com/saiemgilani/saiem-blog.git
 ```
 
 Go to the project directory:
 
 ```bash
-cd saiemgilani.com
+cd saiem-blog
 ```
 
 Install dependencies
@@ -61,16 +64,162 @@ npm install
 Start the server:
 
 ```bash
-yarn dev
+yarn build && yarn dev
 # or
-npm run dev
+npm run build && npm run dev
 ```
 
 After that server should be running on [localhost:3000](http://localhost:3000)
 
-> I am using [yarn](https://yarnpkg.com/) you can use [pnpm](https://pnpm.io/) or [npm](https://www.npmjs.com/)
+> I am using [yarn](https://yarnpkg.com/) but you can use [pnpm](https://pnpm.io/) or [npm](https://www.npmjs.com/)
 
 > Warning: You could run into errors if you don't populate the `.env.local` with the correct values
+
+## Directory Structure
+
+```
+├── components
+|  ├── Contact
+|  |  ├── Contact.tsx
+|  |  ├── ContactForm.tsx
+|  |  └── index.tsx
+|  ├── FramerMotion
+|  |  ├── AnimatedDiv.tsx
+|  |  ├── AnimatedHeading.tsx
+|  |  └── AnimatedText.tsx
+|  ├── Home
+|  |  ├── BlogsSection.tsx
+|  |  └── SkillSection.tsx
+|  ├── MDXComponents
+|  |  ├── Code.tsx
+|  |  ├── Codepen.tsx
+|  |  ├── CodeSandbox.tsx
+|  |  ├── CodeTitle.tsx
+|  |  ├── Danger.tsx
+|  |  ├── EmbedBlog.tsx
+|  |  ├── Figcaption.tsx
+|  |  ├── index.tsx
+|  |  ├── NextAndPreviousButton.tsx
+|  |  ├── Pre.tsx
+|  |  ├── Step.tsx
+|  |  ├── Tip.tsx
+|  |  ├── Warning.tsx
+|  |  └── YouTube.tsx
+|  ├── Stats
+|  |  ├── Artist.tsx
+|  |  ├── StatsCard.tsx
+|  |  └── Track.tsx
+|  ├── SVG
+|  |  ├── Ditto.tsx
+|  |  ├── Flameshot.tsx
+|  |  ├── Flux.tsx
+|  |  ├── index.tsx
+|  |  ├── Logo.tsx
+|  |  ├── MicrosoftToDo.tsx
+|  |  ├── MyLogo.tsx
+|  |  ├── RainDrop.tsx
+|  |  ├── ShareX.tsx
+|  |  ├── UPI.tsx
+|  |  └── Zip7.tsx
+|  ├── Blog.tsx
+|  ├── CreateAnIssue.tsx
+|  ├── Footer.tsx
+|  ├── MetaData.tsx
+|  ├── MovieCard.tsx
+|  ├── Newsletter.tsx
+|  ├── OgImage.tsx
+|  ├── PageTop.tsx
+|  ├── Project.tsx
+|  ├── QRCodeContainer.tsx
+|  ├── ScrollProgressBar.tsx
+|  ├── ScrollToTopButton.tsx
+|  ├── ShareOnSocialMedia.tsx
+|  ├── SnippetCard.tsx
+|  ├── StaticPage.tsx
+|  ├── TableOfContents.tsx
+|  └── TopNavbar.tsx
+├── content
+|  ├── FramerMotionVariants.ts
+|  ├── meta.ts
+|  ├── skillsData.ts
+|  ├── socialMedia.ts
+|  ├── support.ts
+|  └── utilitiesData.ts
+├── context
+|  └── darkModeContext.tsx
+├── hooks
+|  ├── useBookmarkBlogs.ts
+|  ├── useFetchWithSWR.ts
+|  ├── useScrollPercentage.ts
+|  ├── useShare.ts
+|  ├── useWindowLocation.ts
+|  └── useWindowSize.ts
+├── layout
+|  ├── BlogLayout.tsx
+|  ├── Layout.tsx
+|  └── SnippetLayout.tsx
+├── lib
+|  ├── devto.ts
+|  ├── fetcher.ts
+|  ├── generateRSS.ts
+|  ├── github.ts
+|  ├── MDXContent.ts
+|  ├── sitemap.ts
+|  ├── spotify.ts
+|  ├── supabase.ts
+|  ├── toc.ts
+|  ├── types.ts
+|  └── windowsAnimation.ts
+├── pages
+|  ├── api
+|  |  ├── stats
+|  |  ├── views
+|  |  ├── ga.ts
+|  |  ├── now-playing.ts
+|  |  └── revalidate.ts
+|  ├── blog
+|  |  ├── bookmark.tsx
+|  |  ├── index.tsx
+|  |  └── [slug].tsx
+|  ├── snippets
+|  |  ├── index.tsx
+|  |  └── [slug].tsx
+|  ├── 404.tsx
+|  ├── about.tsx
+|  ├── index.tsx
+|  ├── privacy.tsx
+|  ├── projects.tsx
+|  ├── stats.tsx
+|  ├── utilities.tsx
+|  ├── _app.tsx
+|  └── _document.tsx
+├── posts
+|  ├── intro-to-hoopR.mdx
+|  └── js-cheatsheet.mdx
+├── snippets
+|  ├── react-custom-hooks.mdx
+|  ├── supabase-policy.mdx
+|  └── supabase-webook.mdx
+├── static_pages
+|  ├── about.mdx
+|  └── privacy-policy.mdx
+├── styles
+|  └── globals.css
+├── utils
+|  ├── date.ts
+|  ├── functions.ts
+|  └── utils.ts
+├── LICENSE
+├── next-env.d.ts
+├── next.config.js
+├── package.json
+├── postcss.config.js
+├── README.md
+├── tailwind.config.js
+├── tsconfig.json
+├── vercel.json
+└── yarn.lock
+```
 
 
 ## Setting up the Environment
