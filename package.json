@@ -1,110 +1,61 @@
 {
-  "name": "nextjs-blog",
+  "name": "portfolio-next",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
+    "tsc": "tsc",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "tsc-watch": "tsc --watch",
+    "lint": "next lint",
+    "find:unused": "next-unused"
   },
   "dependencies": {
-    "@material-ui/core": "^4.11.0",
-    "@material-ui/icons": "^4.9.1",
-    "@material-ui/styles": "^4.10.0",
-    "@zeit/next-sass": "1.0.1",
-    "classnames": "^2.2.6",
-    "cors": "^2.8.5",
-    "deployment-badge": "^1.0.0",
-    "gray-matter": "^4.0.2",
-    "marked": "^1.2.5",
-    "moment": "2.25.3",
-    "next": "11.1.1",
-    "next-compose-plugins": "2.2.0",
-    "next-images": "1.3.1",
-    "nextjs-redirect": "2.0.2",
-    "node-sass": "4.14.1",
-    "nouislider": "14.4.0",
-    "path": "0.12.7",
-    "prop-types": "15.7.2",
-    "react": "17.0.1",
-    "react-datetime": "2.16.3",
-    "react-dom": "17.0.1",
-    "react-slick": "0.25.2",
-    "react-swipeable-views": "0.13.9",
-    "styled-components": "^5.2.1",
-    "webpack": "4.41.1"
+    "@emailjs/browser": "^3.6.2",
+    "@google-analytics/data": "^3.1.2",
+    "@tailwindcss/line-clamp": "^0.4.0",
+    "framer-motion": "^6.3.3",
+    "globby": "^13.1.1",
+    "gray-matter": "^4.0.3",
+    "next": "^13.1.6",
+    "next-mdx-remote": "^4.2.0",
+    "next-pwa": "^5.6.0",
+    "nextjs-google-analytics": "^1.2.0",
+    "nprogress": "^0.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.3.1",
+    "react-qr-code": "^2.0.7",
+    "react-ripples": "^2.2.1",
+    "react-share": "^4.4.0",
+    "react-toastify": "^9.0.1",
+    "react-toggle-dark-mode": "^1.1.1",
+    "reading-time": "^1.5.0",
+    "rehype-autolink-headings": "^6.1.1",
+    "rehype-pretty-code": "^0.3.1",
+    "rehype-slug": "^5.0.1",
+    "rss": "^1.2.2",
+    "shiki": "^0.10.1",
+    "swr": "^1.3.0"
   },
   "devDependencies": {
-    "@types/material-ui": "^0.21.8",
-    "@types/node": "^14.14.9",
-    "@types/react": "^17.0.0",
-    "@typescript-eslint/eslint-plugin": "^4.8.1",
-    "@typescript-eslint/parser": "^4.8.1",
-    "eslint": "^7.12.0",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-prettier": "^3.1.4",
-    "eslint-plugin-react": "^7.20.6",
-    "eslint-plugin-react-hooks": "^4.1.2",
-    "globby": "^11.0.1",
-    "highlight.js": "^10.4.0",
-    "prettier": "^2.1.1",
-    "react-is": "^17.0.0",
-    "typescript": "^4.1.2"
+    "@supabase/supabase-js": "^2.2.3",
+    "@tailwindcss/typography": "^0.5.8",
+    "@types/next-pwa": "^5.6.0",
+    "@types/nprogress": "^0.2.0",
+    "@types/rss": "^0.0.29",
+    "autoprefixer": "^10.4.13",
+    "eslint": "8.14.0",
+    "eslint-config-next": "^13.1.6",
+    "next-unused": "^0.0.6",
+    "postcss": "^8.4.20",
+    "tailwindcss": "^3.2.4",
+    "typescript": "^4.9.4"
   },
-  "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
-    "extends": [
-      "plugin:@typescript-eslint/recommended",
-      "prettier/@typescript-eslint",
-      "plugin:prettier/recommended",
-      "plugin:react/recommended",
-      "plugin:react-hooks/recommended"
-    ],
-    "parserOptions": {
-      "ecmaVersion": 2018,
-      "sourceType": "module"
-    },
-    "rules": {
-      "react/prop-types": "off",
-      "@typescript-eslint/camelcase": [
-        "off"
-      ],
-      "@typescript-eslint/missin": "off",
-      "@typescript-eslint/explicit-function-return-type": [
-        "warn",
-        {
-          "allowExpressions": true
-        }
-      ],
-      "@typescript-eslint/no-empty-interface": "off",
-      "@typescript-eslint/no-var-requires": "off",
-      "@typescript-eslint/variable-name": "off",
-      "@typescript-eslint/ban-ts-ignore": "off",
-      "@typescript-eslint/ban-ts-comment": "off",
-      "@typescript-eslint/no-namespace": [
-        "off",
-        {
-          "allowDeclarations": true
-        }
-      ]
-    }
-  },
-  "prettier": {
-    "semi": false,
-    "trailingComma": "all",
-    "singleQuote": true,
-    "printWidth": 120,
-    "tabWidth": 2,
-    "excludeFiles": "/src/build/**/*",
-    "camelcase": [
-      2,
-      {
-        "properties": "never"
-      }
-    ],
-    "indent": [
-      "error",
-      "tab"
-    ]
+  "resolutions": {
+    "@mdx-js/mdx": "2.1.5",
+    "@mdx-js/react": "2.1.5"
   }
 }
