@@ -149,7 +149,7 @@ export type PageMeta = {
   home: PageData;
   stats: PageData;
   utilities: PageData;
-  blogs: PageData;
+  blog: PageData;
   bookmark: PageData;
   projects: PageData;
   about: PageData;

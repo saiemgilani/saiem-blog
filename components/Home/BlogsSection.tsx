@@ -14,7 +14,7 @@ export default function BlogsSection({ blogs }: { blogs: FrontMatter[] }) {
         })}
 
         <Link
-          href="/blogs"
+          href="/blog"
           className="flex items-center justify-center gap-1 font-medium transition border-transparent font-inter active:scale-95 active:border-black w-fit group md:ml-7"
         >
           Read all posts

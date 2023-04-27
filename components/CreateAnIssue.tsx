@@ -5,8 +5,7 @@ export default function CreateAnIssue() {
   return (
     <div className="grid w-full h-screen px-10 sm:px-20 place-items-center dark:text-gray-200">
       <p>
-        Something went wrong. I know you don't know what's the problem. So Let
-        me know by{" "}
+        Something went wrong. Let me know by{" "}
         <Link
           href="https://github.com/saiemgilani/saiemgilani.com/issues/new"
           target="_blank"

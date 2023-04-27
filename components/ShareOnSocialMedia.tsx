@@ -55,18 +55,18 @@ export default function ShareOnSocialMedia({
   function copyTextToClipboard(text: string) {
     if (!navigator.clipboard) {
       toast.error(
-        "Sorry, Your device doesn't supports This feature. Please Change your device ✌️ "
+        "Sorry, your device doesn't support this feature. Please change your device ✌️ "
       );
       return;
     }
     navigator.clipboard.writeText(text).then(
       function () {
-        toast.success("Link Copied Successfully 🙌");
+        toast.success("Link copied successfully 🙌");
       },
       function (err) {
         console.error(err);
         toast.success(
-          "Something Went wrong I don't know what 🤔 use other methods"
+          "Something went wrong 🤔. Please use another method"
         );
       }
     );

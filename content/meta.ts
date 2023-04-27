@@ -4,7 +4,7 @@ const pageMeta: PageMeta = {
   home: {
     title: "",
     description:
-      "Hey, I am Saiem Gilani. An ML engineer and web developer from Florida who loves to design and code. I use React.js or Next.js to build the web application interfaces and the functionalities.",
+      "Hey, I am Saiem Gilani. An ML engineer and web developer from Florida who loves to design and code sports analytics applications.",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "portfolio Saiem, portfolio saiemgilani, Saiem blogs",
   },
@@ -23,8 +23,8 @@ const pageMeta: PageMeta = {
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "Utilities, what i use?, utils, setup, uses,",
   },
-  blogs: {
-    title: "Blogs",
+  blog: {
+    title: "Blog",
     description:
       "I've been writing online since 2021, mostly about sports analytics, data science and tech careers.",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
@@ -32,8 +32,8 @@ const pageMeta: PageMeta = {
   },
 
   bookmark: {
-    title: "Bookmarked Blogs",
-    description: "Bookmarked Blogs of Saiem Gilani's blogs by you",
+    title: "Bookmarked Blog Posts",
+    description: "Your bookmarked  blog posts from Saiem Gilani's blogs",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "bookmark, blogs, ",
   },
@@ -47,14 +47,14 @@ const pageMeta: PageMeta = {
   about: {
     title: "About",
     description:
-      "Hey, I am Saiem Gilani. An ML engineer and web developer from Florida who loves to design and code. I use React.js or Next.js to build the web application interfaces and the functionalities.",
+      "Hey, I am Saiem Gilani. An ML engineer and web developer from Florida who loves to design and code sports analytics applications.",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "about, about me, ",
   },
   privacy: {
     title: "Privacy Policy",
     description:
-      "Privacy is an important factor for everyone. Following is the privacy policies of saiemgilani.com",
+      "Privacy is an important factor for everyone. The following is the privacy policy of saiemgilani.com",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "Privacy, Privacy Policies, ",
   },

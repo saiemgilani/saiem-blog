@@ -45,7 +45,7 @@ export default function Home({ blogs }: { blogs: FrontMatter[] }) {
             >
               <Image
                 src={homeProfileImage}
-                className="rounded-full shadow filter saturate-0"
+                className="rounded-full shadow filter saturate-0.5"
                 width={933}
                 height={933}
                 alt="cover Profile Image"

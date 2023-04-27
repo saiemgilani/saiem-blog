@@ -18,7 +18,7 @@ export default async function generate() {
           .map((page) => {
             const path = page
               .replace("pages", "")
-              .replace("posts", "/blogs")
+              .replace("posts", "/blog")
               .replace("snippets", "/snippets")
               .replace(".tsx", "")
               .replace(".mdx", "");

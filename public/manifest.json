@@ -89,8 +89,8 @@
   ],
   "shortcuts": [
     {
-      "name": "Blogs",
-      "url": "/blogs",
+      "name": "Blog",
+      "url": "/blog",
       "icons": [
         {
           "src": "shortcuts/blog.png",

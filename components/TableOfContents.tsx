@@ -63,7 +63,7 @@ export default function TableOfContents({
                 type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search Content..."
+                placeholder="Search content..."
               />
             </div>
             <AnimatedHeading
@@ -100,7 +100,7 @@ export default function TableOfContents({
             </AnimatedDiv>
             {/* When you search but found nothing */}
             {toc.length === 0 && (
-              <div className="text-center">No Result found</div>
+              <div className="text-center">No Results found</div>
             )}
           </div>
 

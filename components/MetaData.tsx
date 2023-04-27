@@ -68,7 +68,7 @@ export default function MetaData({
       <meta name="twitter:title" content={`${title || "The personal blog of Saiem Gilani"}`} />
       <meta name="twitter:description" content={description || "From the personal blog of Saiem Gilani: The PR Review"} />
       <meta name="twitter:image" content={previewImage || ""} />
-      <meta name="twitter:image:alt" content={title || "Saiem Gilani"}></meta>
+      <meta name="twitter:image:alt" content={title || "The personal blog of Saiem Gilani"}></meta>
       <meta name="twitter:domain" content={currentURL} />
     </Head>
   );

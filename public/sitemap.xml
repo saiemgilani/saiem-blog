@@ -1,28 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://saiemgilani.me/index</loc></url>
-<url><loc>https://saiemgilani.me/blog/index</loc></url>
-<url><loc>https://saiemgilani.me/topics/index</loc></url>
-<url><loc>https://saiemgilani.me/blog/cfbfastR-tidying-college-football-play-by-play-data</loc></url>
-<url><loc>https://saiemgilani.me/blog/fastrhockey-for-hockey-data</loc></url>
-<url><loc>https://saiemgilani.me/blog/intro-to-hoopR</loc></url>
-<url><loc>https://saiemgilani.me/blog/sportsdataverse-node-js-module</loc></url>
-<url><loc>https://saiemgilani.me/blog/wehoop-for-womens-basketball-data</loc></url>
-<url><loc>https://saiemgilani.me/topics/R</loc></url>
-<url><loc>https://saiemgilani.me/topics/College-Football</loc></url>
-<url><loc>https://saiemgilani.me/topics/cfbfastR</loc></url>
-<url><loc>https://saiemgilani.me/topics/NHL</loc></url>
-<url><loc>https://saiemgilani.me/topics/PHF</loc></url>
-<url><loc>https://saiemgilani.me/topics/hoopR</loc></url>
-<url><loc>https://saiemgilani.me/topics/Node.JS</loc></url>
-<url><loc>https://saiemgilani.me/topics/Sports</loc></url>
-<url><loc>https://saiemgilani.me/topics/College-Basketball</loc></url>
-<url><loc>https://saiemgilani.me/topics/SportsDataverse</loc></url>
-<url><loc>https://saiemgilani.me/topics/NFL</loc></url>
-<url><loc>https://saiemgilani.me/topics/Women's-Soccer</loc></url>
-<url><loc>https://saiemgilani.me/topics/Women's-Ice Hockey</loc></url>
-<url><loc>https://saiemgilani.me/topics/Volleyball</loc></url>
-<url><loc>https://saiemgilani.me/topics/Women's-College Basketball</loc></url>
-<url><loc>https://saiemgilani.me/topics/WNBA</loc></url>
-<url><loc>https://saiemgilani.me/topics/wehoop</loc></url>
-</urlset>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        
+              <url>
+                  <loc>https://saiemgilani.com/about</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/privacy</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/projects</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/stats</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/utilities</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/blog/intro-to-hoopR</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/blog/js-cheatsheet</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/snippets/react-custom-hooks</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/snippets/supabase-policy</loc>
+              </url>
+            
+              <url>
+                  <loc>https://saiemgilani.com/snippets/supabase-webook</loc>
+              </url>
+            
+    </urlset>
+    
