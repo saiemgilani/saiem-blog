@@ -1,6 +1,6 @@
 import {
   SiVisualstudiocode,
-  SiSublimetext,
+  SiRstudio,
   SiMicrosoftedge,
   SiGooglechrome,
   SiVercel,
@@ -32,7 +32,7 @@ const utilities: Utilities = {
   title: "Utilities",
   description:
     "In case you are wondering What tech I use, Here's the list of what tech I'm currently using for coding on the daily basis. This list is always changing.",
-  lastUpdate: "Jan 16, 2022",
+  lastUpdate: "April 27, 2023",
   data: [
     {
       title: "System",
@@ -44,16 +44,10 @@ const utilities: Utilities = {
           link: "https://code.visualstudio.com/download",
         },
         {
-          name: "Sublime Text",
+          name: "RStudio",
           description: "Text editor",
-          Icon: SiSublimetext,
-          link: "https://www.techspot.com/downloads/5546-sublime-text.html",
-        },
-        {
-          name: "Andromeda",
-          description: "VS Code theme",
-          Icon: BsFillPaletteFill,
-          link: "https://marketplace.visualstudio.com/items?itemName=EliverLara.andromeda",
+          Icon: SiRstudio,
+          link: "https://posit.co/download/rstudio-desktop/",
         },
         {
           name: "Oh-my-zsh",
@@ -73,24 +67,12 @@ const utilities: Utilities = {
           Icon: SiGooglechrome,
           link: "https://www.google.com/chrome",
         },
-        {
-          name: "Microsoft Edge",
-          description: "Secondary Browser",
-          Icon: SiMicrosoftedge,
-          link: "https://www.microsoft.com/en-us/edge",
-        },
       ],
     },
 
     {
       title: "Software & Applications",
       data: [
-        {
-          name: "Bitwarden",
-          description: "Password Manager to manage all the login",
-          Icon: SiBitwarden,
-          link: "https://bitwarden.com/",
-        },
         {
           name: "Vercel",
           description: "Hosting for Projects",
@@ -116,34 +98,10 @@ const utilities: Utilities = {
           link: "https://desktop.github.com/",
         },
         {
-          name: "Figma",
-          description: "Primary Design tool",
-          Icon: SiFigma,
-          link: "https://www.figma.com/downloads/",
-        },
-        {
-          name: "pnpm",
-          description: "Primary Package Manager",
-          Icon: SiPnpm,
-          link: "https://pnpm.io/installation",
-        },
-        {
           name: "yarn",
           description: "Alternative Package Manager",
           Icon: SiYarn,
           link: "https://classic.yarnpkg.com/lang/en/docs/install/",
-        },
-        {
-          name: "Canva",
-          description: "Secondary Design tool",
-          Icon: SiCanva,
-          link: "https://www.canva.com/",
-        },
-        {
-          name: "Insomnia",
-          description: "For testing APIs",
-          Icon: SiInsomnia,
-          link: "https://insomnia.rest/download",
         },
         {
           name: "OBS Studio",
@@ -152,49 +110,17 @@ const utilities: Utilities = {
           link: "https://obsproject.com/",
         },
         {
-          name: "Spotify",
-          description: "To Listen Music",
-          Icon: SiSpotify,
-          link: "https://www.spotify.com/us/download/windows/",
-        },
-        {
           name: "Grammarly",
           description: "Typing assistant that reviews spelling, grammar, etc.",
           Icon: SiGrammarly,
           link: "https://www.grammarly.com/",
         },
         {
-          name: "Everything Search",
-          description: "For Quick searching in Windows",
-          Icon: FaSearch,
-          link: "https://www.voidtools.com/downloads/",
-        },
-
-        {
           name: "ShareX",
           description:
             "To capture or record and share it with a single press of a ke",
           Icon: SVG.ShareX,
           link: "https://getsharex.com/downloads/",
-        },
-        {
-          name: "Ditto",
-          description: "Clipboard Manager",
-          Icon: SVG.Ditto,
-          link: "https://ditto-cp.sourceforge.io/",
-        },
-        {
-          name: "f.lux",
-          description: "To adjusts a display's color according to the time",
-          Icon: SVG.Flux,
-          link: "https://justgetflux.com/",
-        },
-
-        {
-          name: "Microsoft Todo",
-          description: "To manage all my todos",
-          Icon: SVG.MicrosoftToDo,
-          link: "https://todo.microsoft.com/tasks/",
         },
         {
           name: "Raindrop.io",
@@ -209,12 +135,6 @@ const utilities: Utilities = {
           link: "https://keep.google.com/",
         },
         {
-          name: "Notepad++",
-          description: "Quick Code Editing",
-          Icon: SiNotepadplusplus,
-          link: "https://keep.google.com/",
-        },
-        {
           name: "7-Zip",
           description: "File Archiver",
           Icon: SVG.Zip7,
@@ -225,12 +145,6 @@ const utilities: Utilities = {
           description: "Screenshot Software",
           Icon: SVG.Flameshot,
           link: "https://flameshot.org/",
-        },
-        {
-          name: "Postman",
-          description: "API Testing",
-          Icon: SiPostman,
-          link: "https://postman.com",
         },
       ],
     },
