@@ -77,6 +77,8 @@ After that server should be running on [localhost:3000](http://localhost:3000)
 
 Rename [`.env.example`](/.env.example) to `.env.local` and then you need to populate that with the respective values.
 
+<details><summary>  More on environment setup </summary>
+
 * `NEXT_PUBLIC_YOUR_SERVICE_ID`: Go to the [Admin Panel](https://dashboard.emailjs.com/admin) of [emailjs.com](https://emailjs.com). If you haven't already added a service then Click on the **Add Service** Button as shown in the image
 
     ![](https://i.imgur.com/bK5wzkD.png)
@@ -186,7 +188,7 @@ Rename [`.env.example`](/.env.example) to `.env.local` and then you need to popu
 
   * Now Choose POST method and enter the revalidate URL (request will be sent to this URL)
 
-    ![](https://i.imgur.com/lpicIsR.png)
+    ![](https://i.imgur.com/9gVJ0pO.png)
 
   *  Then add two HTTP Params `secret` and `revalidateUrl`
 
@@ -194,3 +196,5 @@ Rename [`.env.example`](/.env.example) to `.env.local` and then you need to popu
 
   * Now add this secret to your `env.local` and it will update the page when you made some changes to your supabase database.
   * `pages/api/revalidate.ts` is using `revalidateUrl` to update the page with new data.
+
+</details>
