@@ -78,7 +78,7 @@ export default function Home({ blogs }: { blogs: FrontMatter[] }) {
                 variants={opacityVariant}
                 className=" text-[#474747] dark:text-gray-300 font-medium text-sm md:text-base text-center"
               >
-                I am currently working on Sports Analytics
+                I am currently working in the sports analytics space.
                 I can code in Python, R, JS/TS, etc.
               </motion.p>
             </div>

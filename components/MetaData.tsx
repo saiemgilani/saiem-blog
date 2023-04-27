@@ -41,7 +41,7 @@ export default function MetaData({
         content="width=device-width,initial-scale=1,minimum-scale=1"
       />
       <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-      <meta name="description" content={description || "Saiem Gilani"} />
+      <meta name="description" content={description || "| Saiem Gilani"} />
       <title>{title + (suffix ? ` - ${suffix}` : "")}</title>
       <meta name="theme-color" content="#000" />
       <link rel="shortcut icon" href={faviconHref} sizes="any" />
@@ -56,17 +56,17 @@ export default function MetaData({
       />
 
       {/* Og */}
-      <meta property="og:title" content={`${title || ""} Saiem Gilani`} />
-      <meta property="og:description" content={description || "Saiem Gilani"} />
-      <meta property="og:site_name" content="Saiem Gilani" />
+      <meta property="og:title" content={`${title || "The personal blog of Saiem Gilani"}`} />
+      <meta property="og:description" content={description || "From the personal blog of Saiem Gilani: The PR Review"} />
+      <meta property="og:site_name" content="The PR Review" />
       <meta property="og:url" content={currentURL} key="ogurl" />
       <meta property="og:image" content={previewImage || ""} />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:creator" content="@saiemgilani" />
-      <meta name="twitter:title" content={`${title || ""} Saiem Gilani`} />
-      <meta name="twitter:description" content={description} />
+      <meta name="twitter:title" content={`${title || "The personal blog of Saiem Gilani"}`} />
+      <meta name="twitter:description" content={description || "From the personal blog of Saiem Gilani: The PR Review"} />
       <meta name="twitter:image" content={previewImage || ""} />
       <meta name="twitter:image:alt" content={title || "Saiem Gilani"}></meta>
       <meta name="twitter:domain" content={currentURL} />
