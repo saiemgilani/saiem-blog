@@ -175,6 +175,7 @@ After that server should be running on [localhost:3000](http://localhost:3000)
 |  |  ├── stats
 |  |  ├── views
 |  |  ├── ga.ts
+|  |  ├── mailchimp.ts            ## Mailchimp API Post route
 |  |  ├── now-playing.ts
 |  |  └── revalidate.ts
 |  ├── blog
