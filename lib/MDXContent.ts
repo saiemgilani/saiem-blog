@@ -54,7 +54,7 @@ export default class MDXContent {
 
     const prettyCodeOptions = {
       // https://github.com/shikijs/shiki/blob/main/docs/themes.md
-      theme: "monokai",
+      theme: 'one-dark-pro',
       onVisitLine(node: any) {
         // Prevent lines from collapsing in `display: grid` mode, and
         // allow empty lines to be copy/pasted
