@@ -26,21 +26,21 @@ const pageMeta: PageMeta = {
   blog: {
     title: "Blog",
     description:
-      "I've been writing online since 2021, mostly about sports analytics, data science and tech careers.",
+      "I've been working on packages and content since 2020, mostly about sports analytics, data science, and tech.",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "saiemgilani blog, blog, webdev, react",
   },
 
   bookmark: {
     title: "Bookmarked Blog Posts",
-    description: "Your bookmarked  blog posts from Saiem Gilani's blogs",
+    description: "Your bookmarked blog posts from The PR Review",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "bookmark, blogs, ",
   },
   projects: {
     title: "Projects",
     description:
-      "I've been making various types of projects some of them were basics and some of them were complicated.",
+      "I've been making various types of projects and packages from basic to complex.",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "projects, work, side project,",
   },
@@ -54,7 +54,7 @@ const pageMeta: PageMeta = {
   privacy: {
     title: "Privacy Policy",
     description:
-      "Privacy is an important factor for everyone. The following is the privacy policy of saiemgilani.com",
+      "The following is the privacy policy of saiemgilani.com",
     image: "https://raw.githubusercontent.com/saiemgilani/saiem-blog/main/public/logo/cover.png",
     keywords: "Privacy, Privacy Policies, ",
   },

@@ -2,7 +2,7 @@ import { homeProfileImage } from "../utils/utils";
 import Image from "next/image";
 import ShareOnSocialMedia from "../components/ShareOnSocialMedia";
 import { FiPrinter } from "react-icons/fi";
-import Newsletter from "../components/Newsletter";
+import Newsletter from "@components/Newsletter";
 import Link from "next/link";
 import useWindowLocation from "@hooks/useWindowLocation";
 import ScrollProgressBar from "@components/ScrollProgressBar";

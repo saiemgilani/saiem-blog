@@ -138,37 +138,37 @@ After that server should be running on [localhost:3000](http://localhost:3000)
 |  ├── StaticPage.tsx
 |  ├── TableOfContents.tsx
 |  └── TopNavbar.tsx
-├── content
-|  ├── FramerMotionVariants.ts
+├── content                      ## General site data and utils
+|  ├── FramerMotionVariants.ts   ## Custom framer-motion actions/animations
 |  ├── meta.ts
 |  ├── skillsData.ts
 |  ├── socialMedia.ts
 |  ├── support.ts
 |  └── utilitiesData.ts
 ├── context
-|  └── darkModeContext.tsx
+|  └── darkModeContext.tsx        ## Enable Dark Mode Configurations
 ├── hooks
-|  ├── useBookmarkBlogs.ts
-|  ├── useFetchWithSWR.ts
-|  ├── useScrollPercentage.ts
-|  ├── useShare.ts
-|  ├── useWindowLocation.ts
-|  └── useWindowSize.ts
-├── layout
+|  ├── useBookmarkBlogs.ts        ## hook to store personal bookmarks in localStorage
+|  ├── useFetchWithSWR.ts         ## SWR hook
+|  ├── useScrollPercentage.ts     ## Percentage of article read highlight
+|  ├── useShare.ts                ## Checks whether user system can share content
+|  ├── useWindowLocation.ts       ## Media Query
+|  └── useWindowSize.ts           ## Media Query
+├── layout                        ## Site Layouts
 |  ├── BlogLayout.tsx
 |  ├── Layout.tsx
 |  └── SnippetLayout.tsx
 ├── lib
-|  ├── devto.ts
-|  ├── fetcher.ts
-|  ├── generateRSS.ts
-|  ├── github.ts
-|  ├── MDXContent.ts
-|  ├── sitemap.ts
-|  ├── spotify.ts
-|  ├── supabase.ts
+|  ├── devto.ts                   ## dev.to user stats
+|  ├── fetcher.ts                 ## Generic fetcher
+|  ├── generateRSS.ts             ## Generate RSS feed
+|  ├── github.ts                  ## GitHub user stats for pages/api/*
+|  ├── MDXContent.ts              ## Get ./posts tools and MDX/rehype/remark configuration
+|  ├── sitemap.ts                 ## Build sitemap
+|  ├── spotify.ts                 ## Tools for spotify
+|  ├── supabase.ts                ## Accessing supabase db
 |  ├── toc.ts
-|  ├── types.ts
+|  ├── types.ts                   ## where all the types are
 |  └── windowsAnimation.ts
 ├── pages
 |  ├── api
@@ -193,7 +193,7 @@ After that server should be running on [localhost:3000](http://localhost:3000)
 |  ├── utilities.tsx
 |  ├── _app.tsx
 |  └── _document.tsx
-├── posts
+├── posts                        ## where all the MDX posts are
 |  ├── intro-to-hoopR.mdx
 |  └── js-cheatsheet.mdx
 ├── snippets
