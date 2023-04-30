@@ -1,6 +1,6 @@
-import { homeProfileImage } from "../utils/utils";
+import { homeProfileImage } from "@utils/utils";
 import Image from "next/image";
-import ShareOnSocialMedia from "../components/ShareOnSocialMedia";
+import ShareOnSocialMedia from "@components/ShareOnSocialMedia";
 import { FiPrinter } from "react-icons/fi";
 import Newsletter from "@components/Newsletter";
 import Link from "next/link";
