@@ -3,7 +3,7 @@ import {
   fetchGithub,
   getOldStats,
   getGithubStarsAndForks,
-} from "../../../lib/github";
+} from "@lib/github";
 
 export default async function handler(
   _req: NextApiRequest,

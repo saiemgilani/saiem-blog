@@ -174,3 +174,7 @@ export type MovieType = {
   watched: boolean;
   rating: number;
 };
+
+export type subscriptionURL = {
+  url: string;
+};

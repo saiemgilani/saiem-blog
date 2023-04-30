@@ -13,7 +13,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) {
-  const { email, status } = req.body;
+  const { url, email } = req.body;
 
   // Set the mailchimp config with your API key and server prefix
   mailchimp.setConfig({
@@ -29,7 +29,7 @@ export default async function handler(
       process.env.MAILCHIMP_AUDIENCE_ID || '',
       {
         email_address: email,
-        status: status,
+        status: "subscribed",
       }
     );
     console.log(response)
