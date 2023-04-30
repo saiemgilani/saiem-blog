@@ -27,7 +27,7 @@ export default function Newsletter() {
   return (
     <>
 
-      <iframe className="flex flex-col w-full gap-4 p-4 my-10 bg-white rounded-lg font-barlow ring-2 ring-gray-400 dark:bg-black dark:border-neutral-600 print:hidden" src="https://saiemgilani.substack.com/embed" width="480" height="320" frameborder="0" scrolling="no"></iframe>
+      <iframe className="flex flex-col w-full gap-4 p-4 my-10 bg-white rounded-lg font-barlow ring-2 ring-gray-400 dark:bg-black dark:border-neutral-600 print:hidden" src="https://saiemgilani.substack.com/embed" width="480" height="320"></iframe>
 
       <ToastContainer
         theme={isDarkMode ? "dark" : "light"}
