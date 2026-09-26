@@ -7,13 +7,18 @@ const TIMEOUT_MS = 5000;
 const REVALIDATE_S = 3600;
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
-const strOrNull = (v: unknown): string | null => (typeof v === "string" && v ? v : null);
+// Every href this module hands to a page renders as a plain <a href> or <img src> --
+// a relative or http: value would resolve on-site or over plaintext. Same rule for
+// sourceHref (required) and docsHref/logoHref (optional, so a bad value drops to null
+// rather than failing the whole package).
+const isHttpsUrl = (v: unknown): v is string => typeof v === "string" && v.startsWith("https://");
+const strOrNull = (v: unknown): string | null => (isHttpsUrl(v) ? v : null);
 
 function toPackage(v: unknown): SdvPackage | null {
   if (!v || typeof v !== "object") return null;
   const o = v as Record<string, unknown>;
-  if (!str(o.title) || !str(o.sourceHref).startsWith("https://")) return null;
-  return { title: str(o.title), repoType: str(o.repoType), sports: str(o.sports), content: str(o.content), sourceHref: str(o.sourceHref), docsHref: strOrNull(o.docsHref), logoHref: strOrNull(o.logoHref) };
+  if (!str(o.title) || !isHttpsUrl(o.sourceHref)) return null;
+  return { title: str(o.title), repoType: str(o.repoType), sports: str(o.sports), content: str(o.content), sourceHref: o.sourceHref, docsHref: strOrNull(o.docsHref), logoHref: strOrNull(o.logoHref) };
 }
 
 async function getJson(fetcher: Fetcher, path: string): Promise<unknown> {

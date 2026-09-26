@@ -41,6 +41,24 @@ test("fallback runs through the same contract as live data: '' hrefs normalize t
   assert.equal(r.packages[0].logoHref, null);
 });
 
+test("docsHref/logoHref must be https:// too -- a relative or http: value drops to null, not an on-site or plaintext link", async () => {
+  const r = await getSdvPackages(
+    ok({
+      success: true,
+      message: [
+        pkg("wehoop", { docsHref: "/evil", logoHref: "http://plaintext.example/logo.png" }),
+        pkg("hoopR", { docsHref: "javascript:alert(1)" }),
+      ],
+    }),
+    fallback,
+  );
+  assert.equal(r.live, true);
+  for (const p of r.packages) {
+    assert.equal(p.docsHref, null);
+    assert.equal(p.logoHref, null);
+  }
+});
+
 test("stats: numbers pass through; anything odd → null", async () => {
   assert.deepEqual(await getEcosystemStats(ok({ repos: 40, gists: 1, followers: 900, githubStars: 5000, forks: 700 })), { repos: 40, followers: 900, githubStars: 5000, forks: 700 });
   assert.equal(await getEcosystemStats(ok({ repos: "40" })), null);
