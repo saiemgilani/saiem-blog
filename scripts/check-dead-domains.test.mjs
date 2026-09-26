@@ -8,8 +8,8 @@ import { findViolations, FORBIDDEN, EXEMPT_PATHS } from "./check-dead-domains.mj
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "check-dead-domains.mjs");
 const ROOT = join(dirname(SCRIPT), "..");
 
-test("CLI reports the same clean coverage from the root, scripts/, and lib/", () => {
-  const cwds = [ROOT, join(ROOT, "scripts"), join(ROOT, "lib")];
+test("CLI reports the same clean coverage from the root, scripts/, and frontend/lib/", () => {
+  const cwds = [ROOT, join(ROOT, "scripts"), join(ROOT, "frontend", "lib")];
   const counts = cwds.map((cwd) => {
     const result = spawnSync(process.execPath, [SCRIPT], { cwd, encoding: "utf8" });
     assert.equal(result.status, 0, `expected exit 0 from cwd ${cwd}, got ${result.status}: ${result.stdout}${result.stderr}`);
@@ -19,7 +19,8 @@ test("CLI reports the same clean coverage from the root, scripts/, and lib/", ()
   });
   assert.equal(counts[0], counts[1]);
   assert.equal(counts[1], counts[2]);
-  assert.ok(counts[0] > 100, `expected > 100 files scanned, got ${counts[0]}`);
+  // ponytail: sanity floor against a false "clean" from scanning nothing; the P1 tree is ~90 files.
+  assert.ok(counts[0] > 50, `expected > 50 files scanned, got ${counts[0]}`);
 });
 
 test("flags the unowned .me domain in any case, but not lookalikes", () => {
