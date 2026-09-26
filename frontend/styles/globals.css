@@ -46,6 +46,15 @@ html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 body { background: var(--page); color: var(--ink); font-family: var(--font-sans); }
 
+/* Tailwind preflight sets img{display:block}, which stacks a Markdown badge row
+   (several <img> siblings inside one <p>, e.g. the hoopR note) one per line. Scope
+   the fix to images inside a paragraph — a standalone image alone in its own <p>
+   is unaffected either way, since the <p> itself still block-lays-out on its own line. */
+.prose p img {
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .grid-paper {
   background-color: var(--page);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px),

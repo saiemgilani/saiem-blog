@@ -10,13 +10,14 @@ export function Nav({ commandItems }: { commandItems: CommandItemData[] }) {
       <nav className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5">
         <Link href="/" className="flex items-center gap-2 text-brand">
           <Seal size={28} id="nav-seal" />
-          <span className="font-display text-base font-semibold text-ink">{site.name}</span>
+          <span className="whitespace-nowrap font-display text-base font-semibold text-ink">{site.name}</span>
         </Link>
         <ul className="ml-auto flex items-center gap-3 font-mono text-xs text-muted">
           {site.nav.map((n) => (
             <li key={n.href}><Link href={n.href} className="hover:text-ink">{n.label}</Link></li>
           ))}
-          <li><CommandMenu items={commandItems} /></li>
+          {/* keyboard-only feature; the shortcut still works below sm, it just has no chip */}
+          <li className="hidden sm:block"><CommandMenu items={commandItems} /></li>
           <li><ThemeToggle /></li>
         </ul>
       </nav>

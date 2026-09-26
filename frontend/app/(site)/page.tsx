@@ -19,7 +19,11 @@ export default function Home() {
           <p className="mt-5 max-w-[46ch] text-lg text-muted">{site.description}</p>
           <p className="mt-4 font-mono text-xs text-brand">NOW → {site.now}</p>
         </div>
-        <StampedSeal size={200} id="hero-seal" />
+        {/* Grid item keeps the seal's intrinsic (200px) width; centered on mobile,
+            back to its natural start-of-column placement once the seal sits beside the text. */}
+        <div className="mx-auto sm:mx-0">
+          <StampedSeal size={200} id="hero-seal" />
+        </div>
       </section>
       <section className="border-t border-rule py-10">
         <div className="flex items-baseline justify-between">
