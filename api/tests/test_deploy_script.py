@@ -28,6 +28,21 @@ def test_dry_run_checks_docker_tcp_before_touching_anything():
 
 
 @pytest.mark.skipif(BASH is None, reason="needs bash")
+@pytest.mark.parametrize(("tag", "ref"), [("latest", "origin/main"), ("abc1234", "abc1234")])
+def test_deploy_config_comes_from_the_same_revision_as_the_images(tag, ref):
+    out = subprocess.run(
+        [BASH, SCRIPT.as_posix(), "--dry-run"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ, "TAG": tag},
+    ).stdout
+    lines = [ln for ln in out.splitlines() if ln.startswith("DRY:")]
+    assert f"git checkout -q {ref} -- deploy" in lines[1]
+    assert f"TAG={tag} docker compose pull" in lines[2]
+
+
+@pytest.mark.skipif(BASH is None, reason="needs bash")
 @pytest.mark.parametrize(
     "override",
     [{"TAG": "x; rm -rf /"}, {"DEPLOY_DIR": "/opt/a b"}, {"DEPLOY_HOST": "-oProxyCommand=x"}],
