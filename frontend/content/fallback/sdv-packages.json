@@ -1,0 +1,236 @@
+[
+  {
+    "title": "baseballr",
+    "repoType": "R",
+    "sports": "Baseball",
+    "content": "Provides numerous utilities for acquiring and analyzing baseball data from online sources such as Baseball Reference, FanGraphs, the NCAA, and the MLB Stats API.",
+    "sourceHref": "https://github.com/BillPetti/baseballr/",
+    "docsHref": "https://billpetti.github.io/baseballr/",
+    "logoHref": "https://raw.githubusercontent.com/BillPetti/baseballr/master/man/figures/logo.png"
+  },
+  {
+    "title": "cfb4th",
+    "repoType": "R",
+    "sports": "College Football",
+    "content": "A set of functions to estimate outcomes of fourth down plays in NCAA football and obtain fourth down plays from ESPN",
+    "sourceHref": "https://github.com/sportsdataverse/cfb4th/",
+    "docsHref": "https://cfb4th.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/cfb4th/main/man/figures/logo.png"
+  },
+  {
+    "title": "cfbfastR",
+    "repoType": "R",
+    "sports": "College Football",
+    "content": "A utility to quickly obtain clean and tidy college football data. Serves as a wrapper around the CollegeFootballData.com API and provides functions to access live play by play and box score data from ESPN when available. It provides users the capability to access a plethora of endpoints, and supplement that data with additional information (Expected Points Added/Win Probability added).",
+    "sourceHref": "https://github.com/sportsdataverse/cfbfastR/",
+    "docsHref": "https://cfbfastR.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/cfbfastR/main/man/figures/logo.png"
+  },
+  {
+    "title": "cfbplotR",
+    "repoType": "R",
+    "sports": "Sports Visualization",
+    "content": "A set of functions to visualize College Football analysis in 'ggplot2'",
+    "sourceHref": "https://github.com/sportsdataverse/cfbplotR/",
+    "docsHref": "https://cfbplotr.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/cfbplotR/main/man/figures/logo.png"
+  },
+  {
+    "title": "cfbseedR",
+    "repoType": "R",
+    "sports": "College Football",
+    "content": "A set of functions to efficiently simulate college football seasons and compute standings, conference ranks, conference champions, and College Football Playoff seeds. Adapts the approach of nflseedR (Sebastian Carl, Lee Sharpe) to college football semantics: conferences instead of divisions, independents, conference championship games, and 12-team playoff straight seeding.",
+    "sourceHref": "https://github.com/sportsdataverse/cfbseedR/",
+    "docsHref": "https://cfbseedR.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/cfbseedR/main/man/figures/logo.png"
+  },
+  {
+    "title": "chessR",
+    "repoType": "R",
+    "sports": "Chess",
+    "content": "A set of functions to enable users to extract chess game data from popular chess sites, including Lichess and Chess.com and then perform analysis on that game data.",
+    "sourceHref": "https://github.com/JaseZiv/chessR/",
+    "docsHref": "https://jaseziv.github.io/chessR/",
+    "logoHref": "https://raw.githubusercontent.com/JaseZiv/chessR/master/man/figures/logo.png"
+  },
+  {
+    "title": "collegebaseball",
+    "repoType": "Python",
+    "sports": "NCAA Baseball",
+    "content": "Access College Baseball Data.",
+    "sourceHref": "https://github.com/nathanblumenfeld/collegebaseball",
+    "docsHref": "https://collegebaseball.readthedocs.io/en/latest/index.html",
+    "logoHref": "https://raw.githubusercontent.com/nathanblumenfeld/collegebaseball/main/collegebaseball.png"
+  },
+  {
+    "title": "fastRhockey",
+    "repoType": "R",
+    "sports": "Men's and Women's Ice Hockey",
+    "content": "A utility to scrape and load play-by-play data and statistics from the Premier Hockey Federation (PHF), formerly known as the National Women's Hockey League (NWHL). Additionally, allows access to the National Hockey League's stats API.",
+    "sourceHref": "https://github.com/sportsdataverse/fastRhockey/",
+    "docsHref": "https://fastrhockey.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/fastRhockey/main/man/figures/logo.png"
+  },
+  {
+    "title": "ggshakeR",
+    "repoType": "R",
+    "sports": "Sports Visualization",
+    "content": "ggshakeR is an analysis and visualization R package that works with publically available soccer data. The datasets (for now) include FBref, StatsBomb, and understat.",
+    "sourceHref": "https://github.com/abhiamishra/ggshakeR/",
+    "docsHref": "https://abhiamishra.github.io/ggshakeR/",
+    "logoHref": "https://raw.githubusercontent.com/abhiamishra/ggshakeR/main/man/figures/logo.png"
+  },
+  {
+    "title": "hoopR",
+    "repoType": "R",
+    "sports": "Men's Basketball",
+    "content": "A utility to quickly obtain clean and tidy men's basketball play by play data. Provides functions to access live play by play and box score data from ESPN with shot locations when available. It is also a full NBA Stats API wrapper. It is also a scraping and aggregating interface for Ken Pomeroy's men's college basketball statistics website. It provides users with an active subscription the capability to scrape the website tables and analyze the data for themselves.",
+    "sourceHref": "https://github.com/sportsdataverse/hoopR/",
+    "docsHref": "https://hoopR.sportsdataverse.org",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/hoopR/main/man/figures/logo.png"
+  },
+  {
+    "title": "mlbplotR",
+    "repoType": "R",
+    "sports": "Sports Visualization",
+    "content": "Tools to help visualize Major League Baseball analysis in 'ggplot2' and 'gt'. You provide team/player information and 'mlbplotR' will transform that information into team colors, logos, or player headshots for graphics.",
+    "sourceHref": "https://github.com/camdenk/mlbplotR",
+    "docsHref": "https://camdenk.github.io/mlbplotR/",
+    "logoHref": "https://raw.githubusercontent.com/camdenk/mlbplotR/main/man/figures/logo.png"
+  },
+  {
+    "title": "nfl-nerd",
+    "repoType": "Node.js",
+    "sports": "NFL",
+    "content": "An api for fetching historical or real time games. Created for NFL player props betting.",
+    "sourceHref": "https://github.com/nntrn/nfl-nerd/",
+    "docsHref": "",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/sportsdataverse-web/main/frontend/public/images/emptyLogo.png"
+  },
+  {
+    "title": "nwslpy",
+    "repoType": "Python",
+    "sports": "Women's Soccer",
+    "content": "nwslpy is a Python wrapper around the data generated by the nwslR package",
+    "sourceHref": "https://github.com/nwslR/nwslpy",
+    "docsHref": "",
+    "logoHref": "https://raw.githubusercontent.com/nwslR/nwslpy/main/nwslR.png"
+  },
+  {
+    "title": "nwslR",
+    "repoType": "R",
+    "sports": "Women's Soccer",
+    "content": "nwslR is an R package that allows users to access datasets for the National Women’s Soccer League (NWSL). Founded in 2013, the NWSL is the United States’ top professional women’s soccer league, featuring players from all over the world.",
+    "sourceHref": "https://github.com/nwslR/nwslR",
+    "docsHref": "",
+    "logoHref": "https://raw.githubusercontent.com/nwslR/nwslR/main/man/figures/nwslR.png"
+  },
+  {
+    "title": "oddsapiR",
+    "repoType": "R",
+    "sports": "Sports Betting",
+    "content": "A utility to quickly obtain clean and tidy sports odds from The Odds API",
+    "sourceHref": "https://github.com/sportsdataverse/oddsapiR/",
+    "docsHref": "https://oddsapir.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/oddsapiR/main/man/figures/logo.png"
+  },
+  {
+    "title": "puntr",
+    "repoType": "R",
+    "sports": "American Football",
+    "content": "A package for importing, manipulating, analyzing, and visualizing data related to football punting. Uses play-by-play dataframes in the format used by nflscrapR and nflfastR.",
+    "sourceHref": "https://github.com/puntalytics/puntr",
+    "docsHref": "https://puntalytics.github.io/puntr/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/sportsdataverse-web/main/frontend/public/images/emptyLogo.png"
+  },
+  {
+    "title": "recruitR",
+    "repoType": "R",
+    "sports": "College Sports Recruiting",
+    "content": "As a college sports recruiting package, recruitR provides users with the access to 247 Composite rankings and recruit information from the CollegeFootballData API.",
+    "sourceHref": "https://github.com/sportsdataverse/recruitR",
+    "docsHref": "https://recruitr.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/recruitR/main/man/figures/logo.png"
+  },
+  {
+    "title": "soccerAnimate",
+    "repoType": "R",
+    "sports": "Sports Visualization",
+    "content": "This packages allows you to create 2D animations of soccer tracking data in addition to do some player calculations.",
+    "sourceHref": "https://github.com/Dato-Futbol/soccerAnimate",
+    "docsHref": "https://github.com/Dato-Futbol/soccerAnimate",
+    "logoHref": "https://raw.githubusercontent.com/Dato-Futbol/soccerAnimate/master/man/soccerAnimate.png"
+  },
+  {
+    "title": "softballR",
+    "repoType": "R",
+    "sports": "Softball",
+    "content": "A tool for accessing the data hidden on ESPN, NCAA, and a few others. Scrapes player boxes, team boxes, play-by-play, rankings, team stats, individual stats, and whatever else I can find online. ",
+    "sourceHref": "https://github.com/sportsdataverse/softballR",
+    "docsHref": "",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/softballR/main/logo.png"
+  },
+  {
+    "title": "sportsdataverse",
+    "repoType": "R",
+    "sports": "All Sports",
+    "content": "The 'sportsdataverse' is a set of sports data packages that work in harmony because they share common data representations and API design. This package is designed to make it easy to install and load multiple 'sportsdataverse' packages in a single step. ",
+    "sourceHref": "https://github.com/sportsdataverse/sportsdataverse-R/",
+    "docsHref": "https://r.sportsdataverse.org",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/sportsdataverse-R/main/man/figures/logo.png"
+  },
+  {
+    "title": "sportsdataverse",
+    "repoType": "Node.js",
+    "sports": "All Sports",
+    "content": "Node.js module with access to ESPN, 247Sports, and the NCAA website",
+    "sourceHref": "https://github.com/sportsdataverse/sportsdataverse-js/",
+    "docsHref": "https://js.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/sportsdataverse-js/main/docs/static/img/sdv-js-logo.png"
+  },
+  {
+    "title": "sportsdataverse",
+    "repoType": "Python",
+    "sports": "All Sports",
+    "content": "Python package for working with Sports data.",
+    "sourceHref": "https://github.com/sportsdataverse/sportsdataverse-py",
+    "docsHref": "https://py.sportsdataverse.org",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/sportsdataverse-py/main/sdv-py-logo.png"
+  },
+  {
+    "title": "sportypy",
+    "repoType": "Python",
+    "sports": "Sports Visualization",
+    "content": "Plot Scaled 'matplotlib' Representations of Sports Playing Surfaces.",
+    "sourceHref": "https://github.com/sportsdataverse/sportypy",
+    "docsHref": "https://sportypy.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/sportypy/main/logos/sportypy-logo-400.png"
+  },
+  {
+    "title": "sportyR",
+    "repoType": "R",
+    "sports": "Sports Visualizations",
+    "content": "Create scaled 'ggplot' representations of playing surfaces. Playing surfaces are drawn pursuant to rule-book specifications. This package should be used as a baseline plot for displaying any type of tracking data.",
+    "sourceHref": "https://github.com/sportsdataverse/sportyR/",
+    "docsHref": "https://sportyr.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/sportyR/main/man/figures/logo.png"
+  },
+  {
+    "title": "usfootballR",
+    "repoType": "R",
+    "sports": "Soccer",
+    "content": "A utility for working with American soccer data. A scraping and aggregating interface for ESPN's MLS and NWSL statistics.",
+    "sourceHref": "https://github.com/sportsdataverse/usfootballR/",
+    "docsHref": "https://usfootballr.sportsdataverse.org/",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/usfootballR/main/man/figures/logo.png"
+  },
+  {
+    "title": "wehoop",
+    "repoType": "R",
+    "sports": "Women's Basketball",
+    "content": "A utility for working with women's basketball data. A scraping and aggregating interface for the WNBA Stats API and ESPN's women's college basketball and WNBA statistics. It provides users with the capability to access the game play-by-plays, box scores, standings and results to analyze the data for themselves.",
+    "sourceHref": "https://github.com/sportsdataverse/wehoop/",
+    "docsHref": "https://wehoop.sportsdataverse.org",
+    "logoHref": "https://raw.githubusercontent.com/sportsdataverse/wehoop/main/man/figures/logo.png"
+  }
+]
