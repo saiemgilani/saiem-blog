@@ -12,10 +12,14 @@ test("sitemap: static routes + notes, all on the canonical host", () => {
   assert.ok(urls.every((u) => u.startsWith("https://www.saiemgilani.com/")));
 });
 
-test("sitemap lists /lab and every lab entry", () => {
+test("sitemap lists /lab and every non-archived lab entry", () => {
   const urls = buildSitemap([], LAB).map((e) => e.url);
   assert.ok(urls.includes("https://www.saiemgilani.com/lab"));
-  for (const e of LAB) assert.ok(urls.includes(`https://www.saiemgilani.com/lab/${e.slug}`), e.slug);
+  // matches buildSitemap's own filter -- an archived entry is intentionally left out of
+  // the sitemap, so asserting its URL is present would be wrong, not thorough.
+  for (const e of LAB.filter((e) => e.status !== "archived")) {
+    assert.ok(urls.includes(`https://www.saiemgilani.com/lab/${e.slug}`), e.slug);
+  }
 });
 
 test("robots points at the canonical sitemap", () => {

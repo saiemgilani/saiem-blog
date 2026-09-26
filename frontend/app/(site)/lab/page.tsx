@@ -21,9 +21,9 @@ export default async function LabIndex({ searchParams }: { searchParams: Promise
     <section className="py-12">
       <h1 className="font-display text-4xl">The lab</h1>
       <p className="mt-3 max-w-[60ch] text-muted">{DESCRIPTION}</p>
-      <nav className="mt-6 flex gap-3 font-mono text-xs">
-        <Link href="/lab" className={!active ? "text-brand" : "text-muted hover:text-ink"}>all</Link>
-        {RUNTIMES.map((r) => <Link key={r} href={`/lab?runtime=${r}`} className={active === r ? "text-brand" : "text-muted hover:text-ink"}>{r}</Link>)}
+      <nav aria-label="Filter by runtime" className="mt-6 flex gap-3 font-mono text-xs">
+        <Link href="/lab" aria-current={!active ? "page" : undefined} className={!active ? "text-brand" : "text-muted hover:text-ink"}>all</Link>
+        {RUNTIMES.map((r) => <Link key={r} href={`/lab?runtime=${r}`} aria-current={active === r ? "page" : undefined} className={active === r ? "text-brand" : "text-muted hover:text-ink"}>{r}</Link>)}
       </nav>
       <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {entries.map((e) => <li key={e.slug}><EntryCard entry={e} /></li>)}

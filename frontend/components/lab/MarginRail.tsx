@@ -16,7 +16,7 @@ function sourceLabel(s: LabSource): { label: string; href: string } {
 export function MarginRail({ entry }: { entry: LabEntry }) {
   const row = "mt-3 text-muted";
   return (
-    <aside className="break-words font-mono text-[11px] leading-relaxed lg:border-r lg:border-rule lg:pr-4">
+    <aside className="[overflow-wrap:anywhere] font-mono text-[11px] leading-relaxed lg:border-r lg:border-rule lg:pr-4">
       <p className="text-ink">LAB / {formatEntryNumber(entry.n)}</p>
       <p className={row}>STARTED<br /><span className="text-ink">{entry.started}</span></p>
       {entry.updated && <p className={row}>UPDATED<br /><span className="text-ink">{entry.updated}</span></p>}
