@@ -1,4 +1,4 @@
-# [The PR Review](https://saiemgilani.com)
+# [The PR Review](https://www.saiemgilani.com)
 
 The personal blog of [Saiem Gilani](https://github.com/saiemgilani) ([Twitter](https://twitter.com/saiemgilani))
 
