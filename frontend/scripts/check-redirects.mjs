@@ -9,7 +9,7 @@ for (const [from, want] of CASES) {
   let url = new URL(from, BASE);
   let hops = 0;
   let res;
-  while ((res = await fetch(url, { redirect: "manual" })).status >= 300 && res.status < 400 && hops < 5) {
+  while ((res = await fetch(url, { redirect: "manual", headers: { connection: "close" } })).status >= 300 && res.status < 400 && hops < 5) {
     url = new URL(res.headers.get("location"), url);
     hops++;
   }
@@ -17,4 +17,4 @@ for (const [from, want] of CASES) {
   if (!ok) failed++;
   console.log(`${ok ? "ok  " : "FAIL"} ${from} → ${url.pathname} (${res.status}, ${hops} hop${hops === 1 ? "" : "s"})`);
 }
-process.exit(failed ? 1 : 0);
+process.exitCode = failed ? 1 : 0;
