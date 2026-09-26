@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { site } from "@content/site";
 import { listNotes } from "@lib/notes";
+import { LAB } from "@content/lab/registry";
 import { StampedSeal } from "@components/brand/Seal";
+import { EntryCard } from "@components/lab/EntryCard";
 import { pageMetadata } from "@lib/metadata";
 
 export const metadata: Metadata = pageMetadata("/");
@@ -24,6 +26,15 @@ export default function Home() {
         <div className="mx-auto sm:mx-0">
           <StampedSeal size={200} id="hero-seal" />
         </div>
+      </section>
+      <section className="border-t border-rule py-10">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-display text-2xl">The lab</h2>
+          <Link href="/lab" className="font-mono text-xs text-muted hover:text-ink">index →</Link>
+        </div>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+          {[...LAB].filter((e) => e.status !== "archived").sort((a, b) => b.n - a.n).slice(0, 3).map((e) => <li key={e.slug}><EntryCard entry={e} /></li>)}
+        </ul>
       </section>
       <section className="border-t border-rule py-10">
         <div className="flex items-baseline justify-between">
