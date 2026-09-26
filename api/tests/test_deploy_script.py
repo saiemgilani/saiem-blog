@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -24,3 +25,19 @@ def test_dry_run_checks_docker_tcp_before_touching_anything():
     assert "docker compose pull" in lines[2] and "up -d" in lines[2]
     assert "/health" in lines[3]
     assert "tcp://" not in out and "-H " not in out, "never talk to a TCP Docker daemon"
+
+
+@pytest.mark.skipif(BASH is None, reason="needs bash")
+@pytest.mark.parametrize(
+    "override",
+    [{"TAG": "x; rm -rf /"}, {"DEPLOY_DIR": "/opt/a b"}, {"DEPLOY_HOST": "-oProxyCommand=x"}],
+)
+def test_unsafe_values_are_refused_before_any_remote_command(override):
+    r = subprocess.run(
+        [BASH, SCRIPT.as_posix(), "--dry-run"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, **override},
+    )
+    assert r.returncode == 2
+    assert "DRY:" not in r.stdout

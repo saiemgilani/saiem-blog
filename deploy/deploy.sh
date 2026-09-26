@@ -9,6 +9,12 @@ TAG="${TAG:-latest}"
 DRY_RUN=0
 [[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
 
+# These are interpolated into ssh args / remote shell strings: allow plain tokens only
+# (a leading "-" in HOST would be read by ssh as an option).
+[[ "$HOST" =~ ^[A-Za-z0-9][A-Za-z0-9._@-]*$ ]] || { echo "deploy.sh: refusing DEPLOY_HOST '$HOST'" >&2; exit 2; }
+[[ "$DIR" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo "deploy.sh: refusing DEPLOY_DIR '$DIR'" >&2; exit 2; }
+[[ "$TAG" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "deploy.sh: refusing TAG '$TAG'" >&2; exit 2; }
+
 run() {
   if (( DRY_RUN )); then printf 'DRY: ssh %s %s\n' "$HOST" "$1"; else ssh "$HOST" "$1"; fi
 }
