@@ -4,7 +4,7 @@ import { FaviconPlug, SealCompact, SealFull } from "./marks";
 type Props = { size: number; id: string; className?: string; label?: string };
 
 export function Seal({ size, id, className, label = "Saiem Gilani" }: Props) {
-  const common = { width: size, height: size, className, role: "img" as const, "aria-label": label };
+  const common = { width: size, height: size, className, role: "img" as const, "aria-label": label, "aria-hidden": undefined };
   switch (selectSealVariant(size)) {
     case "full":
       return <SealFull id={id} {...common} />;
