@@ -24,13 +24,27 @@ async function initDb(): Promise<duckdb.AsyncDuckDB> {
   );
   const worker = new Worker(workerUrl);
   const db = new duckdb.AsyncDuckDB(new duckdb.VoidLogger(), worker);
-  await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-  URL.revokeObjectURL(workerUrl);
+  // Diverges from the sdv-web original on purpose: a failed instantiate must not leak the
+  // worker + blob URL, and (below) must not poison every later getDb() — the widget's
+  // timeout error tells visitors to retry, so a retry has to get a fresh engine.
+  try {
+    await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+  } catch (error) {
+    worker.terminate();
+    throw error;
+  } finally {
+    URL.revokeObjectURL(workerUrl);
+  }
   return db;
 }
 
 export function getDb(): Promise<duckdb.AsyncDuckDB> {
-  if (!dbPromise) dbPromise = initDb();
+  if (!dbPromise) {
+    dbPromise = initDb().catch((error: unknown) => {
+      dbPromise = null;
+      throw error;
+    });
+  }
   return dbPromise;
 }
 

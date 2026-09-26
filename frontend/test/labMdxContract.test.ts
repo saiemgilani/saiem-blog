@@ -19,6 +19,6 @@ test("lab writeups pass defaultSql as a quoted string attribute, never a JS expr
     const src = readFileSync(path.join(LAB_DIR, file), "utf8");
     if (!src.includes("defaultSql")) continue;
     assert.match(src, /defaultSql="[^"]+"/, `${file}: defaultSql must be a quoted string literal`);
-    assert.doesNotMatch(src, /defaultSql=\{/, `${file}: defaultSql must not be a JSX expression -- blockJS strips it silently`);
+    assert.doesNotMatch(src, /defaultSql\s*=\s*\{/, `${file}: defaultSql must not be a JSX expression -- blockJS strips it silently`);
   }
 });

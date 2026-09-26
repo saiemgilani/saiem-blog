@@ -7,13 +7,15 @@ const OK_Q = "repo=sportsdataverse/sportsdataverse-data&tag=espn_nba_rosters&ass
 const req = (q: string, headers: Record<string, string> = {}) => new Request(`https://www.saiemgilani.com/api/lab/data?${q}`, { headers: { "x-forwarded-for": "1.2.3.4", ...headers } });
 const allow = { take: () => true };
 
-function fakeGitHub(opts: { location?: string | null; status?: number } = {}) {
+function fakeGitHub(opts: { location?: string | null; status?: number; headStatus?: number } = {}) {
   const calls: { url: string; method: string; range?: string | null }[] = [];
   const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? "GET";
     calls.push({ url, method, range: new Headers(init?.headers).get("range") });
     if (url.startsWith("https://github.com/")) {
+      // headStatus simulates GitHub failing the redirect LOOKUP itself (no Location header).
+      if (opts.headStatus !== undefined) return new Response(null, { status: opts.headStatus });
       const loc = opts.location === undefined ? "https://release-assets.githubusercontent.com/signed?x=1" : opts.location;
       return new Response(null, { status: 302, headers: loc ? { location: loc } : {} });
     }
@@ -80,6 +82,17 @@ test("rate-limited callers get 429 before any lookup", async () => {
   const h = createLabDataHandler({ entries: LAB, fetcher: gh.fetcher, limiter: { take: () => false } });
   assert.equal((await h(req(OK_Q), "GET")).status, 429);
   assert.equal(gh.calls.length, 0);
+});
+
+test("a failed redirect lookup (5xx/429 on the HEAD) is 502, not 404; only a real 404 is not-found", async () => {
+  for (const headStatus of [500, 503, 429]) {
+    const gh = fakeGitHub({ headStatus });
+    const h = createLabDataHandler({ entries: LAB, fetcher: gh.fetcher, limiter: allow });
+    assert.equal((await h(req(OK_Q), "GET")).status, 502, `HEAD ${headStatus}`);
+    assert.equal(gh.calls.length, 1, "the signed-URL fetch never happens after a failed lookup");
+  }
+  const gone = fakeGitHub({ headStatus: 404 });
+  assert.equal((await createLabDataHandler({ entries: LAB, fetcher: gone.fetcher, limiter: allow })(req(OK_Q), "GET")).status, 404);
 });
 
 test("a redirect to a non-githubusercontent host is refused (SSRF guard): 404, zero calls to that host", async () => {

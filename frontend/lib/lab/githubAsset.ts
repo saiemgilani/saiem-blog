@@ -25,6 +25,10 @@ export function createLabDataHandler(deps: Deps) {
     if (hit && now() - hit.at < SIGNED_TTL_MS) return hit.url;
     const upstream = `https://github.com/${repo}/releases/download/${encodeURIComponent(tag)}/${encodeURIComponent(asset)}`;
     const res = await deps.fetcher(upstream, { method: "HEAD", redirect: "manual" });
+    // Only a real 404 (or a redirect off GitHub's asset hosts) means "not found"; a 5xx or
+    // 429 on the lookup is an upstream failure and must surface as 502, not as 404.
+    if (res.status === 404) return null;
+    if (res.status >= 400) throw new Error(`GitHub redirect lookup failed: ${res.status}`);
     const location = res.headers.get("location");
     if (!location || !ASSET_HOST_RE.test(location)) return null;
     cache.set(key, { url: location, at: now() });
