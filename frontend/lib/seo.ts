@@ -1,11 +1,13 @@
 import { SITE_URL, absoluteUrl } from "./site.ts";
 import type { NoteMeta } from "./notes.ts";
+import type { LabEntry } from "./lab/registry-schema.ts";
 
-export const STATIC_ROUTES = ["/", "/work", "/notes", "/about", "/privacy"];
+export const STATIC_ROUTES = ["/", "/lab", "/work", "/notes", "/about", "/privacy"];
 
-export function buildSitemap(notes: NoteMeta[]): { url: string; lastModified?: string }[] {
+export function buildSitemap(notes: NoteMeta[], lab: LabEntry[] = []): { url: string; lastModified?: string }[] {
   return [
     ...STATIC_ROUTES.map((r) => ({ url: absoluteUrl(r) })),
+    ...lab.filter((e) => e.status !== "archived").map((e) => ({ url: absoluteUrl(`/lab/${e.slug}`), lastModified: e.updated ?? e.started })),
     ...notes.map((n) => ({ url: absoluteUrl(`/notes/${n.slug}`), ...(n.date ? { lastModified: n.date } : {}) })),
   ];
 }

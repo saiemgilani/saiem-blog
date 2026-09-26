@@ -61,6 +61,17 @@ test("/notes/intro-to-hoopR: og:image/twitter:image are the note's OWN hashed im
   assert.match(html, RSS_ALTERNATE_RE);
 });
 
+test("/lab/peek-inside-a-release: og:image/twitter:image are the entry's OWN hashed image, not the root one", () => {
+  const html = readBuiltHtml("lab/peek-inside-a-release");
+  assert.equal(attr(html, CANONICAL_RE), `${SITE}/lab/peek-inside-a-release`);
+  assert.equal(attr(html, OG_URL_RE), `${SITE}/lab/peek-inside-a-release`);
+  const ogImage = attr(html, OG_IMAGE_RE);
+  const twitterImage = attr(html, TWITTER_IMAGE_RE);
+  assert.ok(ogImage?.includes("/lab/peek-inside-a-release/opengraph-image"), `og:image was ${ogImage}`);
+  assert.ok(twitterImage?.includes("/lab/peek-inside-a-release/opengraph-image"), `twitter:image was ${twitterImage}`);
+  assert.match(html, RSS_ALTERNATE_RE);
+});
+
 test("_not-found: no canonical", () => {
   const html = readBuiltHtml("_not-found");
   assert.equal(attr(html, CANONICAL_RE), null);

@@ -5,6 +5,7 @@ export const site = {
   now: "rebuilding this site",
   joinUrl: "https://sportsdataverse.org/join",
   nav: [
+    { href: "/lab", label: "lab" },
     { href: "/work", label: "work" },
     { href: "/notes", label: "notes" },
     { href: "/about", label: "about" },
