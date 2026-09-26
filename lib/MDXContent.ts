@@ -74,7 +74,7 @@ export default class MDXContent {
       mdxOptions: {
         rehypePlugins: [
           rehypeSlug,
-          [rehypeAutolinkHeadings, { behaviour: "wrap" }],
+          [rehypeAutolinkHeadings, { behavior: "wrap" }],
           [rehypePrettyCode, prettyCodeOptions],
         ],
       },
