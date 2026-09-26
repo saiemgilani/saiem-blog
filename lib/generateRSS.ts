@@ -3,7 +3,7 @@ import MDXContent from "./MDXContent";
 import RSS from "rss";
 
 export default async function getRSS() {
-  const siteURL = "https://saiemgilani.com";
+  const siteURL = "https://www.saiemgilani.com";
   const allBlogs = new MDXContent("posts").getAllPosts();
 
   // Create a new RSS object

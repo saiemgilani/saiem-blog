@@ -7,7 +7,7 @@ export default function CreateAnIssue() {
       <p>
         Something went wrong. Let me know by{" "}
         <Link
-          href="https://github.com/saiemgilani/saiemgilani.com/issues/new"
+          href="https://github.com/saiemgilani/saiem-blog/issues/new"
           target="_blank"
           rel="noopener noreferrer"
           className="font-bold underline hover:text-blue-500 "

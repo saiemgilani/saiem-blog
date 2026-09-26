@@ -1,2 +1,2 @@
 User-agent: *
-Sitemap: https://saiem-blog.vercel.app/sitemap.xml
+Sitemap: https://www.saiemgilani.com/sitemap.xml
