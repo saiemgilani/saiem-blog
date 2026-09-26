@@ -37,7 +37,7 @@ test("undeclared assets are refused with 403 and GitHub is never contacted", asy
 test("malformed requests are 400 before any lookup", async () => {
   const gh = fakeGitHub();
   const h = createLabDataHandler({ entries: LAB, fetcher: gh.fetcher, limiter: allow });
-  for (const q of ["", "repo=a/b&tag=t", "repo=a/b&tag=t&asset=../x", "repo=a/b&tag=t&asset=d/x.parquet"]) {
+  for (const q of ["", "repo=a/b&tag=t", "repo=a/b&tag=t&asset=../x", "repo=a/b&tag=t&asset=d/x.parquet", "repo=a/b&tag=t&asset=..%2Fx"]) {
     assert.equal((await h(req(q), "GET")).status, 400, q);
   }
   assert.equal(gh.calls.length, 0);
@@ -80,4 +80,40 @@ test("rate-limited callers get 429 before any lookup", async () => {
   const h = createLabDataHandler({ entries: LAB, fetcher: gh.fetcher, limiter: { take: () => false } });
   assert.equal((await h(req(OK_Q), "GET")).status, 429);
   assert.equal(gh.calls.length, 0);
+});
+
+test("a redirect to a non-githubusercontent host is refused (SSRF guard): 404, zero calls to that host", async () => {
+  for (const loc of ["http://169.254.169.254/latest/meta-data", "https://evil.example/steal"]) {
+    const gh = fakeGitHub({ location: loc });
+    const h = createLabDataHandler({ entries: LAB, fetcher: gh.fetcher, limiter: allow });
+    const res = await h(req(OK_Q), "GET");
+    assert.equal(res.status, 404, loc);
+    assert.equal(gh.calls.filter((c) => c.url === loc).length, 0, loc);
+  }
+});
+
+test("416 (Range Not Satisfiable) passes through as-is, not 502", async () => {
+  const gh = fakeGitHub({ status: 416 });
+  const h = createLabDataHandler({ entries: LAB, fetcher: gh.fetcher, limiter: allow });
+  const res = await h(req(OK_Q, { range: "bytes=999999-" }), "GET");
+  assert.equal(res.status, 416);
+  assert.equal(res.headers.get("content-range"), "bytes 0-3/72365");
+});
+
+test("HEAD request: 206, null body, content-range forwarded", async () => {
+  const gh = fakeGitHub();
+  const h = createLabDataHandler({ entries: LAB, fetcher: gh.fetcher, limiter: allow });
+  const res = await h(req(OK_Q, { range: "bytes=0-3" }), "HEAD");
+  assert.equal(res.status, 206);
+  assert.equal(res.body, null);
+  assert.equal(res.headers.get("content-range"), "bytes 0-3/72365");
+});
+
+test("a thrown fetch (network error) returns 502, not a 500", async () => {
+  const throwing = (async () => {
+    throw new Error("network down");
+  }) as typeof fetch;
+  const h = createLabDataHandler({ entries: LAB, fetcher: throwing, limiter: allow });
+  const res = await h(req(OK_Q), "GET");
+  assert.equal(res.status, 502);
 });

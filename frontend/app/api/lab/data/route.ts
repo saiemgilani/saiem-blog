@@ -2,7 +2,8 @@ import { LAB } from "@content/lab/registry";
 import { createLabDataHandler } from "@lib/lab/githubAsset";
 import { createRateLimiter } from "@lib/lab/rateLimit";
 
-const perMinute = Number(process.env.LAB_DATA_RATE_PER_MIN ?? 120);
+const n = Number(process.env.LAB_DATA_RATE_PER_MIN);
+const perMinute = Number.isFinite(n) && n > 0 ? n : 120;
 const handle = createLabDataHandler({
   entries: LAB,
   fetcher: fetch,
