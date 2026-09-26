@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "node:path";
+import { REDIRECTS } from "./lib/redirects";
 
 const nextConfig: NextConfig = {
   // Mode B (droplet) runs the self-contained server; Vercel ignores this.
@@ -15,6 +16,9 @@ const nextConfig: NextConfig = {
     ],
   },
   typescript: { ignoreBuildErrors: false },
+  async redirects() {
+    return REDIRECTS;
+  },
 };
 
 export default nextConfig;
