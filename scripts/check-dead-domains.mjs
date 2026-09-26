@@ -1,0 +1,49 @@
+// Fails CI when a dead or non-canonical host appears in any tracked text file.
+// saiemgilani.me is no longer owned (detached 2026-09-26); the canonical host is
+// https://www.saiemgilani.com (the apex 301s to it). Change the apex rule here if
+// the canonical host ever flips.
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+export const FORBIDDEN = [
+  { name: "unowned-domain", re: /saiemgilani\.me\b/i },
+  { name: "stale-vercel-alias", re: /saiem-?blog\.vercel\.app/i },
+  { name: "non-canonical-apex", re: /https?:\/\/saiemgilani\.com/i },
+];
+
+export const EXEMPT_PATHS = ["scripts/check-dead-domains.mjs", "scripts/check-dead-domains.test.mjs"];
+
+const BINARY = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|otf|pdf|zip|gz|parquet|mp4|webm)$/i;
+
+export function findViolations(files) {
+  const hits = [];
+  for (const { path, text } of files) {
+    if (EXEMPT_PATHS.includes(path)) continue;
+    const lines = text.split(/\r?\n/);
+    lines.forEach((line, i) => {
+      for (const { name, re } of FORBIDDEN) {
+        if (re.test(line)) hits.push({ path, line: i + 1, name, excerpt: line.trim().slice(0, 140) });
+      }
+    });
+  }
+  return hits;
+}
+
+function trackedTextFiles() {
+  const out = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" });
+  return out
+    .split("\0")
+    .filter((p) => p && !BINARY.test(p))
+    .map((path) => ({ path, text: readFileSync(path, "utf8") }));
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const hits = findViolations(trackedTextFiles());
+  for (const h of hits) console.log(`${h.path}:${h.line}  [${h.name}]  ${h.excerpt}`);
+  if (hits.length) {
+    console.error(`\n${hits.length} dead/non-canonical host reference(s). Canonical host: https://www.saiemgilani.com`);
+    process.exit(1);
+  }
+  console.log("dead-domain guard: clean");
+}
