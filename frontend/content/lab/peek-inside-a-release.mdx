@@ -1,0 +1,16 @@
+Every SportsDataverse dataset is published as files on a GitHub release. They're built for
+R and Python loaders, but nothing stops a browser from reading them — except that GitHub
+doesn't send the headers a browser needs, so this site relays just the byte ranges DuckDB asks for.
+
+The box below runs **in your browser**. Edit the SQL and press Run. `{{src}}` stands for the
+2026 NBA rosters file (about 70 KB).
+
+<ParquetPeek
+  repo="sportsdataverse/sportsdataverse-data"
+  tag="espn_nba_rosters"
+  asset="rosters_2026.parquet"
+  defaultSql={"SELECT * FROM {{src}} LIMIT 25"}
+/>
+
+Try `DESCRIBE SELECT * FROM {{src}}` to see the schema, or a `GROUP BY` over a team column
+once you know what it's called.
