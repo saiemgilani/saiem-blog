@@ -1,8 +1,12 @@
 name: unit-tests
 
-# The frontend's lint (`npm run lint`) and unit tests (`npm run test:lib`) —
+# The frontend's lint (`npm run lint`), unit tests (`npm run test:lib`), and the
+# built-HTML metadata checks (`npm run test:built`, after a real `npm run build`) —
 # lib/, content/, and redirect/metadata contract coverage for the routes and
-# scripts under frontend/.
+# scripts under frontend/. test:built exists because Next's per-segment metadata
+# merge (a page's own openGraph vs. a file-convention opengraph-image.tsx) can only
+# be observed in the rendered output, not in a unit test of pageMetadata()'s return
+# value alone.
 #
 # Its own workflow with NO paths filter, so it reports on every pull request: a
 # required check whose workflow is skipped by a paths filter stays "expected"
@@ -34,4 +38,8 @@ jobs:
       - run: npm run lint
         working-directory: frontend
       - run: npm run test:lib
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - run: npm run test:built
         working-directory: frontend

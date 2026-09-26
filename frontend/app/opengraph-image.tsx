@@ -2,10 +2,15 @@
 // Unlike the per-note image, this one has no generateStaticParams/dynamic segment, so
 // Next serves it at a stable /opengraph-image path with no per-build hash suffix.
 import { ImageResponse } from "next/og";
+import { OG_IMAGE_SIZE, OG_IMAGE_ALT } from "@lib/ogImage";
 
-export const size = { width: 1200, height: 630 };
+// Re-exported from lib/ogImage.ts, not redeclared here: lib/metadata.ts needs the same
+// width/height/alt to advertise this image in openGraph.images, and it can't import this
+// .tsx route module (it's imported by node --test, which doesn't run through Next's JSX/route
+// pipeline).
+export const size = OG_IMAGE_SIZE;
 export const contentType = "image/png";
-export const alt = "Saiem Gilani — sports, data, software";
+export const alt = OG_IMAGE_ALT;
 
 export default function OpengraphImage() {
   return new ImageResponse(

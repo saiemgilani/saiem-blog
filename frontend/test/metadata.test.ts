@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { baseMetadata, pageMetadata } from "../lib/metadata.ts";
+import { OG_IMAGE_PATH, OG_IMAGE_ALT } from "../lib/ogImage.ts";
 
 test("pageMetadata sets canonical + og:url to the given path", () => {
   const m = pageMetadata("/work");
@@ -29,4 +30,15 @@ test("pageMetadata extra openGraph fields (e.g. article type) override the base 
 test("base metadata carries no canonical/og:url of its own (a page with no override, e.g. 404, must not inherit one)", () => {
   assert.equal(baseMetadata.alternates?.canonical, undefined);
   assert.equal(baseMetadata.openGraph?.url, undefined);
+});
+
+test("pageMetadata attaches the site's default share image by default", () => {
+  const m = pageMetadata("/work");
+  const og = m.openGraph as Record<string, unknown> | undefined;
+  assert.deepEqual(og?.images, [{ url: OG_IMAGE_PATH, width: 1200, height: 630, alt: OG_IMAGE_ALT }]);
+});
+
+test("pageMetadata({ ownImage: true }) sets no images key at all -- Next's per-segment merge supplies the page's own opengraph-image.tsx only when the resolved object has no `images` key", () => {
+  const m = pageMetadata("/notes/intro-to-hoopR", { type: "article" }, { ownImage: true });
+  assert.equal("images" in (m.openGraph ?? {}), false);
 });

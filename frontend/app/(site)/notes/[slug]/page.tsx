@@ -14,7 +14,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const note = readNote(slug);
   if (!note) return {};
-  return { title: note.title, description: note.excerpt || undefined, ...pageMetadata(`/notes/${slug}`, { type: "article" }) };
+  return {
+    title: note.title,
+    description: note.excerpt || undefined,
+    ...pageMetadata(`/notes/${slug}`, { type: "article" }, { ownImage: true }),
+  };
 }
 
 export default async function NotePage({ params }: { params: Promise<{ slug: string }> }) {
