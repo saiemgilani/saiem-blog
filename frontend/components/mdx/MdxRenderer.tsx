@@ -2,6 +2,7 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypePrettyCode from "rehype-pretty-code";
+import { rehypeLazyImages } from "@lib/rehypeLazyImages";
 import MDXComponents from "./components";
 
 /**
@@ -18,6 +19,7 @@ export function MdxRenderer({ source }: { source: string }) {
       options={{
         mdxOptions: {
           rehypePlugins: [
+            rehypeLazyImages,
             rehypeSlug,
             [rehypeAutolinkHeadings, { behaviour: "wrap" }],
             [rehypePrettyCode, { theme: "one-dark-pro", keepBackground: false }],

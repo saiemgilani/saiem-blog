@@ -59,7 +59,7 @@ export function SealFull({ id, ...props }: MarkProps & { id: string }) {
       <text fill="currentColor" fontSize="13" fontWeight={700} letterSpacing="4.6" style={MONO}>
         <textPath href={`#${top}`} startOffset="50%" textAnchor="middle">SAIEM GILANI</textPath>
       </text>
-      <text fill="currentColor" fontSize="10.5" fontWeight={600} letterSpacing="2.2" style={MONO}>
+      <text fill="currentColor" fontSize="12" fontWeight={600} letterSpacing="1.3" style={MONO}>
         <textPath href={`#${bot}`} startOffset="50%" textAnchor="middle">SPORTS · DATA · SOFTWARE</textPath>
       </text>
       <path d="M19 94.5 L23 100 L19 105.5 L15 100 Z M181 94.5 L185 100 L181 105.5 L177 100 Z" fill="currentColor" />
