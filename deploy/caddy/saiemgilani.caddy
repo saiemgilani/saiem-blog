@@ -1,0 +1,16 @@
+# deploy/caddy/saiemgilani.caddy
+# Mode A (default): only the API lives on the droplet; www stays on Vercel.
+api.saiemgilani.com {
+	reverse_proxy 127.0.0.1:8100
+	header -Server
+}
+
+# Mode B (fallback): serve the site from the droplet too. Uncomment both blocks,
+# then point the www A-record at the droplet (docs/runbook-deploy.md "Mode B cutover").
+# www.saiemgilani.com {
+# 	reverse_proxy 127.0.0.1:3100
+# 	header -Server
+# }
+# saiemgilani.com {
+# 	redir https://www.saiemgilani.com{uri} 301
+# }
