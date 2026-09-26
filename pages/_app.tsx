@@ -36,7 +36,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   }, [router.events]);
 
   return (
-    <PlausibleProvider domain="saiemgilani.com">
+    <PlausibleProvider src="https://plausible.io/js/pa-7t8kmJ9qoSSctb4vFKZPH.js">
       <DarkModeProvider>
         <Layout>
           {process.env.NODE_ENV === "production" && (
