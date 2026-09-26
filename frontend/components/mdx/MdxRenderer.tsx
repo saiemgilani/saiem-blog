@@ -13,15 +13,17 @@ import MDXComponents from "./components";
  * writeup-specific components (e.g. /lab's `ParquetPeek`) on top of the
  * site-wide defaults; callers omit it for plain prose.
  *
- * `blockJS: false`: next-mdx-remote 6.x defaults to stripping every JSX
- * attribute expression (`prop={expr}`) as an XSS guard for untrusted MDX --
- * silently, with no build error (confirmed empirically: a `defaultSql={"..."}"`
- * prop vanished with zero diagnostics). All MDX here is first-party (committed
- * to this repo, never user-submitted), and a writeup with a data widget
- * legitimately needs expression props (e.g. `defaultSql={"SELECT ... {{src}}"}`),
- * so the guard is off; `blockDangerousJS` stays at its default `true`, which
- * still throws on the genuinely dangerous constructs (`eval`, `Function`,
- * `require`, `.constructor`/`.prototype`, etc.) regardless of `blockJS`.
+ * `blockJS` is left at next-mdx-remote's default (`true`) deliberately -- P1's review
+ * called it out as site-wide defense in depth, and it stays on even though it has a
+ * sharp edge: it silently strips every JSX attribute written as a JS expression
+ * (`prop={expr}`), with no build/lint/tsc diagnostic (confirmed empirically: a
+ * `defaultSql={"..."}"` prop vanished with zero errors, and the resulting `undefined`
+ * only surfaced as a runtime crash when the widget ran). The fix belongs in the
+ * CONTENT, not here: pass component props as quoted string literals
+ * (`prop="literal text"`) -- a quoted attribute is not a JS expression, so `blockJS`
+ * never touches it, and any `{{...}}` inside the quotes stays literal text.
+ * `test/labMdxContract.test.ts` guards `content/lab/*.mdx` against regressing back
+ * into the expression form.
  */
 export function MdxRenderer({ source, components = {} }: { source: string; components?: MDXRemoteProps["components"] }) {
   return (
@@ -29,7 +31,6 @@ export function MdxRenderer({ source, components = {} }: { source: string; compo
       source={source}
       components={{ ...MDXComponents, ...components }}
       options={{
-        blockJS: false,
         mdxOptions: {
           rehypePlugins: [
             rehypeLazyImages,
