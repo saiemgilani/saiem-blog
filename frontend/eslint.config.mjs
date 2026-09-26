@@ -1,17 +1,16 @@
-// Next 16 removed `next lint`; this is the flat ESLint config. We use
-// @next/eslint-plugin-next's native flat `core-web-vitals` config directly
-// (the full eslint-config-next bundle trips a circular-config bug under
-// FlatCompat). Expand with typescript-eslint / react-hooks flat configs later.
-import nextPlugin from "@next/eslint-plugin-next";
+// Next 16 removed `next lint`; this is the flat ESLint config. `nextPlugin.configs["core-web-vitals"]`
+// is a bare object with no `files`/parser, so ESLint 9 silently skipped every .ts/.tsx ("File
+// ignored because no matching configuration was supplied", exit 0) — `eslint-config-next`'s own
+// flat exports (already installed) carry the TS parser + `files` globs that were missing.
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
-const eslintConfig = [
-  { ignores: [".next/**", "node_modules/**", "public/**", "out/**"] },
-  nextPlugin.configs["core-web-vitals"],
-  {
-    rules: {
-      "@next/next/no-img-element": "off",
-    },
-  },
-];
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  { rules: { "@next/next/no-img-element": "off" } },
+  globalIgnores([".next/**", "out/**", "public/**", "next-env.d.ts"]),
+]);
 
 export default eslintConfig;

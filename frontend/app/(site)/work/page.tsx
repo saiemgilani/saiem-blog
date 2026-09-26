@@ -28,7 +28,7 @@ export default async function Work() {
           </li>
         ))}
       </ul>
-      {!live && <p className="mt-4 font-mono text-[11px] text-muted">Showing a saved list; sportsdataverse.org didn't answer.</p>}
+      {!live && <p className="mt-4 font-mono text-[11px] text-muted">Showing a saved list; sportsdataverse.org didn&apos;t answer.</p>}
     </section>
   );
 }

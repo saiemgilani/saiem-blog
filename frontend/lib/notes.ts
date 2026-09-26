@@ -40,6 +40,7 @@ export function listNotes(dir: string = notesDir()): NoteMeta[] {
     .filter((f) => f.endsWith(".mdx"))
     .map((f) => readNote(f.slice(0, -".mdx".length), dir))
     .filter((n): n is Note => n !== null)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring drops `source` from the rest
     .map(({ source: _source, ...meta }) => meta)
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "") || a.slug.localeCompare(b.slug));
 }
