@@ -31,7 +31,7 @@ export async function getSdvPackages(fetcher: Fetcher = fetch, fallback: SdvPack
     if (!packages.length) throw new Error("empty");
     return { packages, live: true };
   } catch {
-    return { packages: fallback, live: false };
+    return { packages: fallback.map(toPackage).filter((p): p is SdvPackage => p !== null), live: false };
   }
 }
 

@@ -29,6 +29,18 @@ for (const [why, fetcher] of [
   });
 }
 
+test("fallback runs through the same contract as live data: '' hrefs normalize to null, malformed rows drop", async () => {
+  const dirtyFallback = [
+    { title: "nfl-nerd", repoType: "R", sports: "NFL", content: "", sourceHref: "https://github.com/sportsdataverse/nfl-nerd", docsHref: "", logoHref: "" },
+    { title: "", repoType: "R", sports: "NBA", content: "", sourceHref: "https://github.com/sportsdataverse/x", docsHref: null, logoHref: null },
+  ] as unknown as SdvPackage[];
+  const r = await getSdvPackages((async () => new Response("boom", { status: 500 })) as typeof fetch, dirtyFallback);
+  assert.equal(r.live, false);
+  assert.equal(r.packages.length, 1);
+  assert.equal(r.packages[0].docsHref, null);
+  assert.equal(r.packages[0].logoHref, null);
+});
+
 test("stats: numbers pass through; anything odd → null", async () => {
   assert.deepEqual(await getEcosystemStats(ok({ repos: 40, gists: 1, followers: 900, githubStars: 5000, forks: 700 })), { repos: 40, followers: 900, githubStars: 5000, forks: 700 });
   assert.equal(await getEcosystemStats(ok({ repos: "40" })), null);
