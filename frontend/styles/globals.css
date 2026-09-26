@@ -56,3 +56,7 @@ body { background: var(--page); color: var(--ink); font-family: var(--font-sans)
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+@keyframes stamp-in { from { transform: scale(1.12) rotate(-11deg); opacity: 0; } to { opacity: .92; } }
+.stamp-in { animation: stamp-in 380ms cubic-bezier(.2,.9,.3,1.2) both; }
+.dark .stamp-in { mix-blend-mode: normal !important; }
