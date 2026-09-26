@@ -1,0 +1,36 @@
+# deploy/compose.yml — `docker compose -f deploy/compose.yml …`
+# Images come from GHCR on the droplet (`pull`); CI and dev `build` from source.
+# HARDENING: every published port binds 127.0.0.1 (Docker bypasses ufw); only Caddy
+# on the host listens publicly. Enforced by api/tests/test_compose_ports.py.
+name: saiem
+services:
+  api:
+    image: ghcr.io/saiemgilani/saiem-blog-api:${TAG:-latest}
+    build:
+      context: ../api
+      dockerfile: ../deploy/Dockerfile.api
+    ports:
+      - "127.0.0.1:8100:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status == 200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped
+  web:
+    image: ghcr.io/saiemgilani/saiem-blog-web:${TAG:-latest}
+    build:
+      context: ../frontend
+      dockerfile: ../deploy/Dockerfile.web
+    environment:
+      API_BASE_URL: http://api:8000
+    ports:
+      - "127.0.0.1:3100:3000"
+    volumes:
+      - web-cache:/app/.next/cache
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+volumes:
+  web-cache: {}

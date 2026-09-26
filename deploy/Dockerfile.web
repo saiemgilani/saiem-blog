@@ -1,0 +1,28 @@
+# deploy/Dockerfile.web — build context: frontend/
+# syntax=docker/dockerfile:1.7
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --no-audit --no-fund
+
+FROM node:22-alpine AS build
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+FROM node:22-alpine AS run
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+# Notes and lab MDX are read with fs at render time (ISR); standalone tracing can't see
+# those dynamic paths, so ship content/ explicitly. public/ ships too — it holds
+# sw.js, the service-worker kill switch, which standalone tracing also can't see.
+COPY --from=build --chown=node:node /app/content ./content
+COPY --from=build --chown=node:node /app/public ./public
+RUN mkdir -p .next/cache && chown node:node .next/cache
+USER node
+EXPOSE 3000
+CMD ["node", "server.js"]
