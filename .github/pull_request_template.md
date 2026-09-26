@@ -9,7 +9,7 @@
      Vercel preview, a walkthrough clip per route, and a Lighthouse comparison against the base as a
      comment, updated on every push. Pick the pages (up to 4) with the first line; public (site) routes
      only. Name committed scripts/walkthroughs/*.mjs flows (up to 4) with the second line when the PR
-     adds or alters an interaction. Fork PR, or nothing under frontend/? See CLAUDE.md "PR evidence". -->
+     adds or alters an interaction. Fork PR, or nothing under frontend/? See README.md "Commands". -->
 
 Evidence routes: / /notes
 Walkthrough steps:

@@ -1,14 +1,14 @@
 // Visual verification: shoot the {desktop, mobile} x {light, dark} matrix for a set of
 // routes, so a change to any rendered page/component/style is reviewed the way people
-// actually see it. See ../../CLAUDE.md "Visual verification".
+// actually see it. See README.md "Commands".
 //
-//   BASE=https://www.saiemgilani.com node scripts/visual-check.mjs / /packages
+//   BASE=https://www.saiemgilani.com node scripts/visual-check.mjs / /notes
 //   node scripts/visual-check.mjs                      # BASE defaults to localhost:3000
 //
-// Theme: next-themes runs with defaultTheme="dark" (app/providers.tsx), so emulating
-// prefers-color-scheme alone never shows light mode. Each context seeds next-themes'
-// `theme` key in localStorage before any script runs AND emulates the matching
-// color scheme, which is what a visitor who picked that theme gets.
+// Theme: next-themes runs with defaultTheme="system" (app/providers.tsx) -- it would
+// already follow prefers-color-scheme on its own, but each context still seeds next-themes'
+// `theme` key in localStorage explicitly for the given scheme AND emulates the matching
+// color scheme, so a run never depends on the OS/CI runner's actual preference.
 //
 // Deliberately NOT a repo dependency (keeps `npm ci` lean): the driver is playwright-core,
 // resolved from a local or global install (`npm i -g playwright-core`). It downloads no

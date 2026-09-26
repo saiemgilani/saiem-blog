@@ -1,9 +1,9 @@
-// Lighthouse comparison of a PR's deployment against its base, the evidence CLAUDE.md
-// "PR evidence" requires (and .github/workflows/pr-evidence.yml posts on every PR).
+// Lighthouse comparison of a PR's deployment against its base, the evidence README.md
+// "Commands" section requires (and .github/workflows/pr-evidence.yml posts on every PR).
 //
 //   node scripts/lighthouse-compare.mjs \
 //     --base-url https://www.saiemgilani.com \
-//     --head-url https://sportsdataverse-<hash>-sportsdataverse.vercel.app --shots / /packages
+//     --head-url https://saiemgilani-com-<hash>.vercel.app --shots / /notes
 //
 // Unlike game-on-paper (which builds both trees), this site already has a real deployment
 // for every commit: Vercel builds a Preview per PR push and a Production deployment per
@@ -94,11 +94,11 @@ function findLighthouse() {
 const LIGHTHOUSE = findLighthouse();
 // The Vercel Toolbar (vercel.live feedback.js, sometimes a 35 KB iframe) is injected into every
 // Preview and never into Production; it loads at low priority, so blocking it on both sides costs
-// nothing (measured: preview /packages FCP 977-1147 ms blocked vs 1015-1135 ms unblocked).
+// nothing (measured on sdv-web's package-listing route: FCP 977-1147 ms blocked vs 1015-1135 ms unblocked).
 //
 // Do NOT block plausible.io, although it loads only in production: the page PRELOADS its script
 // at high priority, and Lighthouse's simulated throttling treats a blocked high-priority request
-// as a long stall -- production /packages FCP read 1716 ms blocked vs 1134 ms unblocked, which
+// as a long stall -- sdv-web's package-listing route read FCP 1716 ms blocked vs 1134 ms unblocked, which
 // flagged a fake FCP "improvement" on #45. The 2 KB deferred script is left in as real weight.
 const DEPLOYMENT_ONLY = ['*vercel.live*'];
 // Third-party origins only Production loads (next-plausible runs only there). Lighthouse's simulated
@@ -146,7 +146,7 @@ function metrics(report) {
       .filter((i) => i.statusCode !== -1)
       .map((i) => { try { return new URL(i.url).hostname; } catch { return null; } })
       .filter((h) => h && h !== new URL(report.finalDisplayedUrl ?? report.requestedUrl).hostname
-        && !/(^|\.)www\.sportsdataverse\.org$|^sportsdataverse\.org$/.test(h)))],
+        && !/(^|\.)saiemgilani\.com$/.test(h)))],
   };
 }
 

@@ -34,9 +34,10 @@ export const SCHEMES = ['light', 'dark'];
 
 export const slug = (r) => (r === '/' ? 'home' : r.replace(/^\/+|\/+$/g, '').replace(/[^\w-]+/g, '-'));
 
-// Theme: next-themes runs with defaultTheme="dark" (app/providers.tsx), so emulating
-// prefers-color-scheme alone never shows light mode. Seed next-themes' `theme` key in
-// localStorage before any script runs AND emulate the matching color scheme.
+// Theme: next-themes runs with defaultTheme="system" (app/providers.tsx) -- it would
+// already follow prefers-color-scheme on its own, but seed next-themes' `theme` key in
+// localStorage before any script runs AND emulate the matching color scheme anyway, so a
+// run never depends on the OS/CI runner's actual preference.
 export async function newThemedContext(browser, device, scheme, extra = {}) {
   const ctx = await browser.newContext({
     viewport: { width: device.width, height: device.height },

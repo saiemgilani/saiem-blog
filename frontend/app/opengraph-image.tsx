@@ -1,3 +1,6 @@
+// Wired into every page's og:image automatically (via metadataBase); never hand-link it.
+// Unlike the per-note image, this one has no generateStaticParams/dynamic segment, so
+// Next serves it at a stable /opengraph-image path with no per-build hash suffix.
 import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };

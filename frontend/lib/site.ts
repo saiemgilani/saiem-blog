@@ -9,6 +9,9 @@ export function absoluteUrl(pathname = "/"): string {
   if (
     /^[a-z][a-z0-9+.-]*:/i.test(normalized) ||
     normalized.startsWith("//") ||
+    // No normalization needed here: trimStart() only strips leading whitespace, which
+    // can't hide or reveal a backslash, so checking the raw input catches the same
+    // "\evil.example" (WHATWG treats \ as / in a special-scheme URL) either way.
     pathname.includes("\\")
   ) {
     throw new Error(`absoluteUrl expects an absolute path, got ${pathname}`);

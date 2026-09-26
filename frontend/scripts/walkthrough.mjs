@@ -1,8 +1,8 @@
 // Walkthrough video: record a short clip of the site being used, per {device, scheme}, so a
-// PR reviewer sees the change move, not just the screenshot matrix. See ../../CLAUDE.md
-// "PR evidence" — every UI PR carries BOTH the screenshots and a walkthrough.
+// PR reviewer sees the change move, not just the screenshot matrix. See README.md "Commands"
+// — every UI PR carries BOTH the screenshots and a walkthrough.
 //
-//   BASE=$PREVIEW_URL npm run walkthrough -- / /packages          # auto scroll-through per route
+//   BASE=$PREVIEW_URL npm run walkthrough -- / /notes            # auto scroll-through per route
 //   BASE=$PREVIEW_URL npm run walkthrough -- --steps scripts/walkthroughs/join.mjs
 //
 // A steps module exports `default async (page, base) => { ... }` written against the plain
@@ -11,7 +11,7 @@
 // Output: img/walkthrough/<name>-<device>-<scheme>.webm, plus an .mp4 (h264, what GitHub's
 // PR editor accepts by drag-and-drop) when `ffmpeg` is on PATH. Recording itself needs
 // Playwright's own ffmpeg build once: `playwright-core install ffmpeg` (no browser download). Defaults record
-// desktop + mobile in the site's default theme (dark); WALKTHROUGH_SCHEMES=light,dark widens
+// desktop + mobile in the site's default theme (system); WALKTHROUGH_SCHEMES=light,dark widens
 // it, WALKTHROUGH_DEVICES=desktop narrows it. Exits non-zero if any route fails to load.
 import { mkdir, readdir, rename, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';

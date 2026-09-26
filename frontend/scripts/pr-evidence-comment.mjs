@@ -95,7 +95,7 @@ out.push('', '<details><summary>Method</summary>', '',
   '- **Warm-up:** each route is fetched twice on both sides before measuring, so a cold serverless render or an edge-cache miss doesn\'t land on one side.',
   '- **Runs:** Lighthouse CLI with simulated throttling, mobile and desktop presets, base and PR runs alternating. A delta is flagged only when the gap between the base and PR run ranges clears an absolute floor **and** the median moved by a relative floor (`frontend/scripts/lighthouse-verdicts.mjs`; Performance, already a 0–100 score, needs only the 3-point gap).',
   '- **Walkthrough:** `frontend/scripts/walkthrough.mjs` records the PR preview (desktop + mobile, default theme) and the clips are published beside the screenshots, pinned to a commit.',
-  '- **Tooling:** `frontend/scripts/lighthouse-compare.mjs`, `visual-check.mjs` and `walkthrough.mjs`; see CLAUDE.md "PR evidence".',
+  '- **Tooling:** `frontend/scripts/lighthouse-compare.mjs`, `visual-check.mjs` and `walkthrough.mjs`; see README.md "Commands".',
   '', '</details>');
 
 process.stdout.write(`${out.join('\n')}\n`);

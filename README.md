@@ -13,8 +13,8 @@ docs/       DESIGN.md — color tokens, type, seal usage, verification rules
 scripts/    repo-wide guards (e.g. dead/non-canonical domain check)
 ```
 
-`api/` and `deploy/` arrive in P3 (the platform + deployment phases); this repo is
-frontend-only for now.
+`api/` and `deploy/` arrive in a later phase, once the backing platform and its
+deployment pipeline are built; this repo is frontend-only for now.
 
 ## Commands
 

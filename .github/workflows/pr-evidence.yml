@@ -1,6 +1,6 @@
 name: pr-evidence
 
-# Posts the review evidence CLAUDE.md "PR evidence" requires on every PR that touches
+# Posts the review evidence README.md "Commands" requires on every PR that touches
 # frontend/: the desktop/mobile x light/dark screenshots of the PR, a Lighthouse
 # comparison against its base, and a walkthrough video per evidence route (plus any
 # `Walkthrough steps: scripts/walkthroughs/<flow>.mjs` the PR names), as ONE comment
