@@ -1,5 +1,6 @@
 import Head from "next/head";
 import useWindowLocation from "@hooks/useWindowLocation";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 type Props = {
@@ -22,6 +23,8 @@ export default function MetaData({
   suffix,
 }: Props) {
   const { currentURL } = useWindowLocation();
+  const { asPath } = useRouter();
+  const canonical = `https://www.saiemgilani.com${asPath.split(/[?#]/)[0]}`;
   const [faviconHref, setFaviconHref] = useState("/favicon-dark.ico");
 
   useEffect(() => {
@@ -54,12 +57,13 @@ export default function MetaData({
         name="keywords"
         content={`${keywords || ""} Saiem, Saiem Gilani, saiemgilani`}
       />
+      <link rel="canonical" href={canonical} key="canonical" />
 
       {/* Og */}
       <meta property="og:title" content={`${title || "The personal blog of Saiem Gilani"}`} />
       <meta property="og:description" content={description || "From the personal blog of Saiem Gilani: The PR Review"} />
       <meta property="og:site_name" content="The PR Review" />
-      <meta property="og:url" content={currentURL} key="ogurl" />
+      <meta property="og:url" content={canonical} key="ogurl" />
       <meta property="og:image" content={previewImage || ""} />
 
       {/* Twitter */}
