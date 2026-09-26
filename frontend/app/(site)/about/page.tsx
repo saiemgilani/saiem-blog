@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { readMdxPage } from "@lib/pages";
 import { MdxRenderer } from "@components/mdx/MdxRenderer";
+import { pageMetadata } from "@lib/metadata";
 
-export const metadata: Metadata = { title: "About", alternates: { canonical: "/about" } };
+export const metadata: Metadata = { title: "About", ...pageMetadata("/about") };
 
 export default function About() {
   const page = readMdxPage("about");

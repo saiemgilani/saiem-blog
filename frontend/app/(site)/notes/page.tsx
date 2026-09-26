@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listNotes } from "@lib/notes";
+import { pageMetadata } from "@lib/metadata";
 
-export const metadata: Metadata = { title: "Notes", alternates: { canonical: "/notes" } };
+export const metadata: Metadata = { title: "Notes", ...pageMetadata("/notes") };
 
 export default function NotesIndex() {
   const notes = listNotes();

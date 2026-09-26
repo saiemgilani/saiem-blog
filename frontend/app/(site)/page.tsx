@@ -1,7 +1,11 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { site } from "@content/site";
 import { listNotes } from "@lib/notes";
 import { StampedSeal } from "@components/brand/Seal";
+import { pageMetadata } from "@lib/metadata";
+
+export const metadata: Metadata = pageMetadata("/");
 
 export default function Home() {
   const notes = listNotes().slice(0, 3);

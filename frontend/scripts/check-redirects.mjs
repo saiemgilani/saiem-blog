@@ -2,7 +2,7 @@
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const CASES = [
   ["/blog/intro-to-hoopR", "/notes/intro-to-hoopR"], ["/blog/intro-to-hoopR/", "/notes/intro-to-hoopR"],
-  ["/blog", "/notes"], ["/blog/bookmark", "/notes"], ["/snippets/supabase-policy", "/notes"], ["/projects", "/work"], ["/rss", "/feed.xml"],
+  ["/blog", "/notes"], ["/blog/bookmark", "/notes"], ["/blog/js-cheatsheet", "/notes"], ["/snippets/supabase-policy", "/notes"], ["/projects", "/work"], ["/rss", "/feed.xml"], ["/sitemap", "/sitemap.xml"],
 ];
 let failed = 0;
 for (const [from, want] of CASES) {

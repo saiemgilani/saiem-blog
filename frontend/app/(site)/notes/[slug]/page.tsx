@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listNotes, readNote } from "@lib/notes";
 import { MdxRenderer } from "@components/mdx/MdxRenderer";
+import { pageMetadata } from "@lib/metadata";
 
 export const dynamicParams = false;
 
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const note = readNote(slug);
   if (!note) return {};
-  return { title: note.title, description: note.excerpt || undefined, alternates: { canonical: `/notes/${slug}` }, openGraph: { type: "article", url: `/notes/${slug}` } };
+  return { title: note.title, description: note.excerpt || undefined, ...pageMetadata(`/notes/${slug}`, { type: "article" }) };
 }
 
 export default async function NotePage({ params }: { params: Promise<{ slug: string }> }) {

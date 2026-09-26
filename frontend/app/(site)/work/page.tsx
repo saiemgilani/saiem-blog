@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import fallback from "@content/fallback/sdv-packages.json";
 import { getEcosystemStats, getSdvPackages, type SdvPackage } from "@lib/sdvOrg";
+import { pageMetadata } from "@lib/metadata";
 
-export const metadata: Metadata = { title: "Work", alternates: { canonical: "/work" } };
+export const metadata: Metadata = { title: "Work", ...pageMetadata("/work") };
 export const revalidate = 3600;
 
 export default async function Work() {

@@ -4,6 +4,9 @@ export type Redirect = { source: string; destination: string; permanent: true };
 export const REDIRECTS: Redirect[] = [
   { source: "/blog", destination: "/notes", permanent: true },
   { source: "/blog/bookmark", destination: "/notes", permanent: true },
+  // Deleted post (no /notes/js-cheatsheet exists) — must land before /blog/:slug
+  // or it 308s straight into a 404.
+  { source: "/blog/js-cheatsheet", destination: "/notes", permanent: true },
   { source: "/blog/:slug", destination: "/notes/:slug", permanent: true },
   { source: "/projects", destination: "/work", permanent: true },
   { source: "/stats", destination: "/work", permanent: true },
@@ -12,6 +15,7 @@ export const REDIRECTS: Redirect[] = [
   { source: "/snippets/:slug", destination: "/notes", permanent: true },
   { source: "/home", destination: "/", permanent: true },
   { source: "/rss", destination: "/feed.xml", permanent: true },
+  { source: "/sitemap", destination: "/sitemap.xml", permanent: true },
 ];
 
 /** Mirrors Next's matching for these simple rules (single-segment `:slug`, trailing slash ignored). */

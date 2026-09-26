@@ -7,16 +7,17 @@ const cases: [string, string][] = [
   ["/blog/intro-to-hoopR", "/notes/intro-to-hoopR"],
   ["/blog/intro-to-hoopR/", "/notes/intro-to-hoopR"], // trailing slash
   ["/blog/bookmark", "/notes"], // old page, not a post
+  ["/blog/js-cheatsheet", "/notes"], // deleted post
   ["/projects", "/work"], ["/stats", "/work"], ["/utilities", "/about"],
   ["/snippets", "/notes"], ["/snippets/supabase-policy", "/notes"],
-  ["/home", "/"], ["/rss", "/feed.xml"],
+  ["/home", "/"], ["/rss", "/feed.xml"], ["/sitemap", "/sitemap.xml"],
 ];
 for (const [from, to] of cases) {
   test(`${from} → ${to}`, () => assert.equal(resolveRedirect(from), to));
 }
 
 test("current routes are never redirected", () => {
-  for (const p of ["/", "/notes", "/notes/intro-to-hoopR", "/work", "/about", "/privacy", "/feed.xml"]) {
+  for (const p of ["/", "/notes", "/notes/intro-to-hoopR", "/work", "/about", "/privacy", "/feed.xml", "/sitemap.xml"]) {
     assert.equal(resolveRedirect(p), null, p);
   }
 });
