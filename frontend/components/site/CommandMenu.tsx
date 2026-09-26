@@ -21,7 +21,15 @@ export function CommandMenu({ items }: { items: CommandItemData[] }) {
   const groups = [...new Set(items.map((i) => i.group))];
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label="Open command menu" className="rounded border border-rule px-1.5 font-mono text-xs text-muted hover:text-ink">⌘K</button>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Open command menu"
+        aria-keyshortcuts="Meta+K Control+K"
+        className="rounded border border-rule px-1.5 font-mono text-xs text-muted hover:text-ink"
+      >
+        ⌘K
+      </button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Jump to…" />
         <CommandList>

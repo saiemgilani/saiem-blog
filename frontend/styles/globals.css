@@ -46,13 +46,27 @@ html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 body { background: var(--page); color: var(--ink); font-family: var(--font-sans); }
 
-/* Tailwind preflight sets img{display:block}, which stacks a Markdown badge row
-   (several <img> siblings inside one <p>, e.g. the hoopR note) one per line. Scope
-   the fix to images inside a paragraph — a standalone image alone in its own <p>
-   is unaffected either way, since the <p> itself still block-lays-out on its own line. */
-.prose p img {
+/* Tailwind preflight sets img{display:block}, which stacks a row of images one per
+   line: a Markdown badge row (several <img> siblings inside one <p>, e.g. the hoopR
+   note) and About's "R Packages" logos (<a href><img/></a> lines written as raw JSX
+   in MDX, which is NOT wrapped in a <p> — the MDX compiler treats adjacent JSX as
+   siblings, not paragraph content) both need it. margin-block:0 removes the
+   typography plugin's ~2em block image margin, which otherwise makes an inline-block
+   badge/logo row ~92px tall per image; a standalone image alone in its own <p> keeps
+   normal spacing from the <p>'s own margin, so it still looks right. */
+.prose p img,
+.prose a > img {
   display: inline-block;
   vertical-align: middle;
+  margin-block: 0;
+}
+
+/* Nav brand hidden below ~360px (see components/site/Nav.tsx's .brand-text); the media
+   query lives here because Tailwind has no default breakpoint that narrow. */
+@media (max-width: 359px) {
+  .brand-text {
+    display: none;
+  }
 }
 
 .grid-paper {
