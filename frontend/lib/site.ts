@@ -2,9 +2,21 @@
 export const SITE_URL = "https://www.saiemgilani.com";
 
 export function absoluteUrl(pathname = "/"): string {
-  if (/^[a-z][a-z0-9+.-]*:/i.test(pathname) || pathname.startsWith("//")) {
+  // The WHATWG URL parser strips leading ASCII whitespace/control chars before
+  // tokenizing, so check the same normalized form it will actually see — otherwise
+  // "  //evil.example" slips past a raw startsWith("//") check.
+  const normalized = pathname.trimStart();
+  if (
+    /^[a-z][a-z0-9+.-]*:/i.test(normalized) ||
+    normalized.startsWith("//") ||
+    pathname.includes("\\")
+  ) {
     throw new Error(`absoluteUrl expects an absolute path, got ${pathname}`);
   }
-  const p = pathname.startsWith("/") ? pathname : `/${pathname}`;
-  return new URL(p, SITE_URL).toString();
+  const p = normalized.startsWith("/") ? normalized : `/${normalized}`;
+  const url = new URL(p, SITE_URL);
+  if (url.origin !== new URL(SITE_URL).origin) {
+    throw new Error(`absoluteUrl would leave the canonical host: ${pathname}`);
+  }
+  return url.toString();
 }

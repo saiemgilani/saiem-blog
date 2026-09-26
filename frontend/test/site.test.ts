@@ -14,4 +14,11 @@ test("absoluteUrl never leaves the canonical host", () => {
   assert.throws(() => absoluteUrl("//evil.example/x"), /absolute path/);
   // Built in pieces: the dead-domain guard (scripts/check-dead-domains.mjs) scans every tracked file.
   assert.throws(() => absoluteUrl("https://saiemgilani" + ".me/"), /absolute path/);
+  // Backslash host escapes: the WHATWG URL parser normalizes `\` to `/` for special
+  // schemes, so these would otherwise resolve off the canonical host.
+  assert.throws(() => absoluteUrl("/\\evil.example"), /absolute path|canonical host/);
+  assert.throws(() => absoluteUrl("\\\\evil.example"), /absolute path|canonical host/);
+  assert.throws(() => absoluteUrl("/\\/evil.example/x"), /absolute path|canonical host/);
+  assert.throws(() => absoluteUrl("  //evil.example"), /absolute path|canonical host/);
+  assert.throws(() => absoluteUrl("https:evil.example"), /absolute path|canonical host/);
 });
