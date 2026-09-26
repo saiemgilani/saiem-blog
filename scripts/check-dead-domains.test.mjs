@@ -1,6 +1,26 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { join, dirname } from "node:path";
 import { findViolations, FORBIDDEN, EXEMPT_PATHS } from "./check-dead-domains.mjs";
+
+const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "check-dead-domains.mjs");
+const ROOT = join(dirname(SCRIPT), "..");
+
+test("CLI reports the same clean coverage from the root, scripts/, and lib/", () => {
+  const cwds = [ROOT, join(ROOT, "scripts"), join(ROOT, "lib")];
+  const counts = cwds.map((cwd) => {
+    const result = spawnSync(process.execPath, [SCRIPT], { cwd, encoding: "utf8" });
+    assert.equal(result.status, 0, `expected exit 0 from cwd ${cwd}, got ${result.status}: ${result.stdout}${result.stderr}`);
+    const match = result.stdout.match(/dead-domain guard: clean \((\d+) files\)/);
+    assert.ok(match, `expected clean-count message from cwd ${cwd}, got: ${result.stdout}`);
+    return Number(match[1]);
+  });
+  assert.equal(counts[0], counts[1]);
+  assert.equal(counts[1], counts[2]);
+  assert.ok(counts[0] > 100, `expected > 100 files scanned, got ${counts[0]}`);
+});
 
 test("flags the unowned .me domain in any case, but not lookalikes", () => {
   const hits = findViolations([

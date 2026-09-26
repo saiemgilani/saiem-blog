@@ -5,6 +5,11 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { join } from "node:path";
+
+// Script lives at <root>/scripts/check-dead-domains.mjs — resolve the root
+// from here so results don't depend on the caller's cwd.
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 export const FORBIDDEN = [
   { name: "unowned-domain", re: /saiemgilani\.me\b/i },
@@ -31,19 +36,20 @@ export function findViolations(files) {
 }
 
 function trackedTextFiles() {
-  const out = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" });
+  const out = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8" });
   return out
     .split("\0")
     .filter((p) => p && !BINARY.test(p))
-    .map((path) => ({ path, text: readFileSync(path, "utf8") }));
+    .map((path) => ({ path, text: readFileSync(join(ROOT, path), "utf8") }));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const hits = findViolations(trackedTextFiles());
+  const files = trackedTextFiles();
+  const hits = findViolations(files);
   for (const h of hits) console.log(`${h.path}:${h.line}  [${h.name}]  ${h.excerpt}`);
   if (hits.length) {
     console.error(`\n${hits.length} dead/non-canonical host reference(s). Canonical host: https://www.saiemgilani.com`);
     process.exit(1);
   }
-  console.log("dead-domain guard: clean");
+  console.log(`dead-domain guard: clean (${files.length} files)`);
 }
