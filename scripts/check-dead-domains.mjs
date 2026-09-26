@@ -21,6 +21,12 @@ export const EXEMPT_PATHS = ["scripts/check-dead-domains.mjs", "scripts/check-de
 
 const BINARY = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|otf|pdf|zip|gz|parquet|mp4|webm)$/i;
 
+/**
+ * Scan file contents for dead or non-canonical host references.
+ * Files listed in EXEMPT_PATHS are skipped (they must spell the patterns).
+ * @param {{ path: string, text: string }[]} files repo-root-relative paths with their contents
+ * @returns {{ path: string, line: number, name: string, excerpt: string }[]} one entry per matching line and rule (1-based line numbers)
+ */
 export function findViolations(files) {
   const hits = [];
   for (const { path, text } of files) {
@@ -35,6 +41,11 @@ export function findViolations(files) {
   return hits;
 }
 
+/**
+ * Read every git-tracked, non-binary file, resolved from the repo root so the
+ * result does not depend on the caller's working directory.
+ * @returns {{ path: string, text: string }[]}
+ */
 function trackedTextFiles() {
   const out = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8" });
   return out
