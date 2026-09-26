@@ -38,6 +38,18 @@ done and recorded** — see Preconditions.
 2. `ssh sdv-data 'ss -ltn'` — `3100` and `8100` must show `127.0.0.1` only,
    never `0.0.0.0` or `::`.
 
+### Caddy `trusted_proxies` and the lab data proxy
+
+`/api/lab/data` rate-limits per client IP, taken from the first hop of
+`X-Forwarded-For`. Stock Caddy ignores an incoming `X-Forwarded-For` and sets its
+own, so in mode B the key is the real client. **If you ever add `trusted_proxies`
+to the Caddy config** (for example to put Cloudflare in front), the first hop
+becomes client-controlled: a caller can rotate it to dodge the limit, and rotating
+past 10,000 keys clears every visitor's bucket. Before enabling it, change the
+limiter's key to the address Caddy verifies (`CF-Connecting-IP`, or the last
+trusted hop) and add a test. In mode A the real limit is the Vercel Firewall rule
+(`/api/lab/data`, 120 req/min per IP, deny); the in-process bucket is a backstop.
+
 ## 5. Mode B cutover / rollback
 
 **Cutover** (serve the site from the droplet instead of Vercel):
