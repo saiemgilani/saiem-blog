@@ -24,3 +24,18 @@ for (const [why, deps] of [
     assert.deepEqual(await getProjects(deps[0], deps[1]), []);
   });
 }
+
+test("calls GET /v1/projects with a bearer service token and no body", async () => {
+  const calls: { url: string; method: string; auth: string | null; body: unknown }[] = [];
+  const fetcher = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    calls.push({ url: String(input), method: init?.method ?? "GET", auth: new Headers(init?.headers).get("authorization"), body: init?.body });
+    return new Response(JSON.stringify({ projects: [row("a")] }), { status: 200 });
+  }) as typeof fetch;
+  const p = await getProjects(env, fetcher);
+  assert.equal(p.length, 1);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "https://api.example/v1/projects");
+  assert.equal(calls[0].method, "GET");
+  assert.match(calls[0].auth ?? "", /^Bearer [\w-]+\.[\w-]+\.[\w-]+$/);
+  assert.equal(calls[0].body, undefined);
+});
