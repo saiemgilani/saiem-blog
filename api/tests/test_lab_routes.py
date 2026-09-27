@@ -1,6 +1,7 @@
 import time
 from datetime import UTC, datetime, timedelta
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -127,6 +128,39 @@ def test_execute_raising_still_refunds_and_marks_the_row_error(client, pool, mon
             "order by started_at desc limit 1"
         ).fetchone()[0]
     assert status == "error"  # not left "running"
+
+
+def test_row_update_failure_after_an_ok_run_still_refunds(client, pool, monkeypatch):  # fix round 2
+    # SF-1 residual: `execute()` succeeds, but persisting that success (the row UPDATE) raises.
+    # Fail toward refund even here -- the ledger must not say "charged" for a run the DB never
+    # recorded as ok. Patches the driver's Connection.execute so only the FIRST call matching the
+    # finishing UPDATE raises; the except branch's own best-effort error-mark write (same SQL
+    # text, second call) is allowed through to the real driver.
+    original_execute = psycopg.Connection.execute
+    calls = {"n": 0}
+
+    def _flaky_execute(self, query, *args, **kwargs):
+        if isinstance(query, str) and "set status = %s, finished_at = now()" in query:
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise psycopg.OperationalError("connection lost mid-update")
+        return original_execute(self, query, *args, **kwargs)
+
+    monkeypatch.setattr(psycopg.Connection, "execute", _flaky_execute)
+    with pytest.raises(psycopg.OperationalError):
+        client.post(
+            "/v1/lab/series-odds/runs",
+            json=SERIES_ODDS_PARAMS,
+            headers={**auth("run", sub="50"), "X-Login": "a"},
+        )
+    assert _quota_used(pool, "50", "series-odds") == 0  # refunded, not charged
+    assert spend_status(pool)["units_used"] == 0
+    with pool.connection() as conn:
+        status = conn.execute(
+            "select status from app.lab_runs where entry_slug = 'series-odds' "
+            "order by started_at desc limit 1"
+        ).fetchone()[0]
+    assert status == "error"  # the best-effort second write still landed
 
 
 def test_cache_key_uses_validated_params_not_the_raw_body(client, pool):  # SF-3

@@ -98,8 +98,7 @@ def post_run(
     ok = False
     try:
         out = execute(slug, params, timeout_s=settings.lab_run_timeout_s)
-        ok = out.status == "ok"
-        cost_units = units if ok else 0
+        cost_units = units if out.status == "ok" else 0
         with pool.connection() as conn:
             conn.execute(
                 _UPDATE_FINISHED,
@@ -111,6 +110,12 @@ def post_run(
                     run_id,
                 ),
             )
+        # Fix round 2 (SF-1 residual gap): only flip to True once the row update has actually
+        # committed. Setting this right after execute() returns -- before the persistence
+        # attempt -- meant a failed UPDATE (PoolTimeout, a bad JSON value, ...) after a
+        # genuinely-ok run still settled "success" in the finally below, charging the user for a
+        # run whose result was never durably stored.
+        ok = out.status == "ok"
     except Exception:
         cost_units = 0
         with pool.connection() as conn:
