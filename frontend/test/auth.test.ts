@@ -24,3 +24,19 @@ test("menu decision table", () => {
   assert.equal(sessionLogin(200, { user: { name: "S" }, login: "saiemgilani" }), "saiemgilani");
   assert.equal(sessionLogin(200, { user: { name: "S" } }), "out", "a session without a login can't act");
 });
+
+test("jwt: provider-seeded email and picture are dropped", () => {
+  const t = jwtCallback({
+    token: { name: "S", email: "s@example.com", picture: "https://avatars.example/1", sub: "1" },
+    profile: { id: 1, login: "saiemgilani", email: "s@example.com" },
+  });
+  assert.deepEqual(t, { name: "S", sub: "1", githubId: "1", login: "saiemgilani" });
+});
+
+test("session: email and image never cross to the client", () => {
+  const s = sessionCallback({
+    session: { user: { name: "S", email: "s@example.com", image: "https://avatars.example/1" }, expires: "x" },
+    token: { githubId: "1", login: "l" },
+  });
+  assert.deepEqual(s, { user: { name: "S" }, expires: "x", githubId: "1", login: "l" });
+});

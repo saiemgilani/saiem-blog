@@ -7,6 +7,10 @@ export function jwtCallback<T extends TokenClaims>(args: { token: T; profile?: R
     args.token.githubId = String(p.id);
     args.token.login = p.login;
   }
+  // Auth.js seeds the token with the provider profile's email/picture before this callback runs;
+  // never let either persist into the token (and from there, the session).
+  delete args.token.email;
+  delete args.token.picture;
   return args.token;
 }
 
@@ -19,8 +23,14 @@ export function jwtCallback<T extends TokenClaims>(args: { token: T; profile?: R
 // index signature. `object` satisfies both; the cast below is the (behavior-preserving) cost.
 export function sessionCallback<S extends object>(args: { session: S; token: TokenClaims }): S {
   // Nothing else crosses to the browser — never the OAuth access token.
-  const session = args.session as { githubId?: string; login?: string };
+  const session = args.session as { githubId?: string; login?: string; user?: { name?: string; email?: string; image?: string } };
   session.githubId = args.token.githubId;
   session.login = args.token.login;
+  // Auth.js rebuilds session.user = { name, email, image } from the token before this callback
+  // runs; email/image never belong on the wire — strip them here too (defense in depth).
+  if (session.user && typeof session.user === "object") {
+    delete session.user.email;
+    delete session.user.image;
+  }
   return args.session;
 }
