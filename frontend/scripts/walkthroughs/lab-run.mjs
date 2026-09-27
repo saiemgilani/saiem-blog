@@ -22,8 +22,13 @@ export default async function labRun(page, base) {
   // The status line is always rendered (empty when idle, "running…" mid-fetch), so waiting on
   // its mere presence resolves immediately and races the fetch -- wait for the text to actually
   // change to a settled (non-"running") value instead.
+  const pGame = page.getByLabel("p(win a game)");
   for (let i = 0; i < 8; i++) {
     const prev = (await status.innerText()).trim();
+    // Identical params would hit the run cache from the 2nd click on (free, no quota spend, and
+    // a repeated "cached · free" status text the waitForFunction below would never see change) --
+    // nudge p_game so every iteration is a fresh, quota-charged miss.
+    await pGame.fill((0.55 + i * 0.01).toFixed(2));
     await run.click();
     await page.waitForFunction(
       (prevText) => {
