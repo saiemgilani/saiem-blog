@@ -6,6 +6,7 @@ byte-stable)."""
 
 import random
 from math import comb
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +17,7 @@ _HOME_GAME = {7: (1, 1, 0, 0, 1, 0, 1), 5: (1, 1, 0, 0, 1), 3: (1, 0, 1)}
 
 class Params(BaseModel):
     p_game: float = Field(gt=0, lt=1, description="single-game win probability for the team of interest")
-    best_of: int = Field(default=7, description="3, 5 or 7")
+    best_of: Literal[3, 5, 7] = Field(default=7, description="3, 5 or 7")
     home_edge: float = Field(
         default=0.0, ge=0, le=0.2, description="added to p_game in home games (2-2-1-1-1 format)"
     )
@@ -35,8 +36,6 @@ def _series_exact(p: float, wins_needed: int) -> float:
 
 
 def run(params: Params) -> Result:
-    if params.best_of not in (3, 5, 7):
-        raise ValueError("best_of must be 3, 5 or 7")
     n = params.best_of // 2 + 1
     home = _HOME_GAME[params.best_of]
     rng = random.Random(_SEED)

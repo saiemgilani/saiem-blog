@@ -39,6 +39,7 @@ where id = %s
 
 
 def purge_lab_runs(pool: ConnectionPool, keep_days: int) -> int:
+    keep_days = max(keep_days, 1)  # N-10: a retention of 0 or less would also delete in-flight rows
     with pool.connection() as conn:
         return conn.execute(
             "delete from app.lab_runs where started_at < now() - make_interval(days => %s)", (keep_days,)
@@ -58,9 +59,15 @@ def post_run(
     if spec is None:
         raise HTTPException(404, f"unknown lab entry {slug!r}")
     try:
-        spec["Params"].model_validate(params)
+        validated = spec["Params"].model_validate(params)
     except ValidationError as e:
-        raise HTTPException(422, e.errors()) from e
+        # include_context=False: a custom validator's ctx can carry a raw exception object,
+        # which is not JSON-encodable and would turn this 422 into a 500 (N-3).
+        raise HTTPException(422, e.errors(include_context=False, include_url=False)) from e
+    # SF-3: hash and execute the VALIDATED, defaults-filled params, never the raw body -- two
+    # requests that are semantically identical (defaults spelled out, or an ignored extra key)
+    # must hit the same cache row.
+    params = validated.model_dump(mode="json")
 
     h = params_hash(slug, params)
     with pool.connection() as conn:
@@ -70,7 +77,7 @@ def post_run(
         return {"run_id": str(run_id), "status": "ok", "result": result, "cost_units": 0, "cached": True}
 
     settings = request.app.state.settings
-    login = request.headers.get("X-Login", "")
+    login = request.headers.get("X-Login", "")[:39]  # N-8: matches Task 1's ReserveIn.login cap
     user_id = ensure_user(pool, int(principal.sub), login)
     units = spec["cost_units"]
     r = reserve(
@@ -84,21 +91,33 @@ def post_run(
     with pool.connection() as conn:
         run_id = conn.execute(_INSERT_RUNNING, (slug, user_id, h)).fetchone()[0]
 
-    out = execute(slug, params, timeout_s=settings.lab_run_timeout_s)
-    ok = out.status == "ok"
-    cost_units = units if ok else 0
-    with pool.connection() as conn:
-        conn.execute(
-            _UPDATE_FINISHED,
-            (
-                out.status,
-                Jsonb(out.result) if out.result is not None else None,
-                out.error,
-                cost_units,
-                run_id,
-            ),
-        )
-    settle(pool, r, "success" if ok else "refund")
+    # SF-1: once a unit is reserved, ANY exception here (execute raising, the row update
+    # failing, JSON serialisation) must still settle the reservation and leave the row finished,
+    # not stuck "running" while the ledger says charged. `ok` stays False unless the run AND its
+    # persistence both succeed, so a failure anywhere here fails toward refund.
+    ok = False
+    try:
+        out = execute(slug, params, timeout_s=settings.lab_run_timeout_s)
+        ok = out.status == "ok"
+        cost_units = units if ok else 0
+        with pool.connection() as conn:
+            conn.execute(
+                _UPDATE_FINISHED,
+                (
+                    out.status,
+                    Jsonb(out.result) if out.result is not None else None,
+                    out.error,
+                    cost_units,
+                    run_id,
+                ),
+            )
+    except Exception:
+        cost_units = 0
+        with pool.connection() as conn:
+            conn.execute(_UPDATE_FINISHED, ("error", None, "internal error", 0, run_id))
+        raise
+    finally:
+        settle(pool, r, "success" if ok else "refund")
 
     return {
         "run_id": str(run_id),
