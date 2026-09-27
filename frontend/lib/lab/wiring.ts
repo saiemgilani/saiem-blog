@@ -1,4 +1,4 @@
-import type { LabEntry, LabSource } from "./registry-schema.ts";
+import { formatEntryNumber, type LabEntry, type LabSource } from "./registry-schema.ts";
 
 export function sourceKey(s: LabSource): string {
   return s.kind === "release" ? `release:${s.repo}@${s.tag}/${s.asset}` : `${s.kind}:${s.path}`;
@@ -7,6 +7,7 @@ const middle = (s: string, max: number) => (s.length <= max ? s : `${s.slice(0, 
 export function sourceLabel(s: LabSource): string {
   return middle(s.kind === "release" ? s.asset : s.path, 28);
 }
+export const entryLabel = (n: number, title: string): string => middle(`${formatEntryNumber(n)} ${title}`, 30);
 
 const ORDER = { release: 0, "sdv-api": 1, "sdv-org": 2, github: 3 } as const;
 type Node = { x: number; y: number };

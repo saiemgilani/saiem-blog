@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { layoutWiring, sourceKey, sourceLabel } from "../lib/lab/wiring.ts";
+import { entryLabel, layoutWiring, sourceKey, sourceLabel } from "../lib/lab/wiring.ts";
 import type { LabEntry } from "../lib/lab/registry-schema.ts";
 import { LAB } from "../content/lab/registry.ts";
 
@@ -34,4 +34,12 @@ test("rows sit on the grid and the box fits every node", () => {
     assert.equal(n.y % 40, 0);
     assert.ok(n.x >= 0 && n.x <= L.width && n.y <= L.height);
   }
+});
+
+test("entryLabel carries the number and bounds the title", () => {
+  assert.equal(entryLabel(2, "Series odds, two ways"), "№ 002 Series odds, two ways");
+  const long = entryLabel(14, "A title so long that it would run straight through the source column");
+  assert.ok(long.length <= 30);
+  assert.match(long, /^№ 014 /);
+  assert.match(long, /…/);
 });
