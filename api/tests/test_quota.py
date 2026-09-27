@@ -7,7 +7,6 @@ from datetime import date
 import pytest
 from fastapi.testclient import TestClient
 
-from saiem_api import quota_routes
 from saiem_api.app import create_app
 from saiem_api.db import make_pool
 from saiem_api.quota import QuotaExceeded, Reservation, ensure_user, reserve, settle, spend_status
@@ -249,22 +248,22 @@ def test_settle_of_an_already_expired_entry_is_404(client):  # SF-3
     assert r.status_code == 404
 
 
-def test_expired_reservations_are_pruned_on_the_next_reserve(client, monkeypatch):  # SF-3
-    monkeypatch.setattr(quota_routes, "_RESERVATION_TTL_S", 0)
+def test_expired_reservations_are_pruned_on_the_next_reserve(client):  # SF-3
+    # Pin the prune, not the settle path: plant an already-expired entry directly and leave it
+    # unsettled, so the only way it can disappear is _prune_locked running inside post_reserve.
+    fake = Reservation(uuid.uuid4(), 1, "e", 1, date.today(), date.today().replace(day=1), remaining_today=4)
+    fake_id = str(fake.id)
+    with client.app.state.reservations_lock:
+        client.app.state.reservations[fake_id] = (fake, time.monotonic() - 1)  # already expired
+
     r = client.post(
         "/v1/quota/reserve", json={"entry_slug": "e", "units": 1, "login": "a"}, headers=auth("run", sub="1")
     )
+    assert r.status_code == 200
     rid = r.json()["reservation_id"]
-    s = client.post(
-        "/v1/quota/settle", json={"reservation_id": rid, "outcome": "refund"}, headers=auth("run")
-    )
-    assert s.status_code == 404  # already "expired" by the time settle runs, with a 0 s TTL
 
-    r2 = client.post(
-        "/v1/quota/reserve", json={"entry_slug": "e", "units": 1, "login": "a"}, headers=auth("run", sub="1")
-    )
-    assert r2.status_code == 200
-    assert len(client.app.state.reservations) == 1  # the stale entry was pruned, not accumulated
+    assert fake_id not in client.app.state.reservations  # the expired entry was pruned
+    assert set(client.app.state.reservations) == {rid}  # only the fresh reservation remains
 
 
 def test_admin_spend_is_owner_only(client):
