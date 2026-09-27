@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { listNotes, readNote } from "@lib/notes";
 import { MdxRenderer } from "@components/mdx/MdxRenderer";
 import { pageMetadata } from "@lib/metadata";
+import { ViewCounter } from "@components/notes/ViewCounter";
 
 export const dynamicParams = false;
 
@@ -27,7 +28,7 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
   if (!note) notFound();
   return (
     <article className="mx-auto max-w-[70ch] py-12">
-      <p className="font-mono text-xs text-muted">{note.date ?? "undated"} · {note.readingMinutes} min</p>
+      <p className="font-mono text-xs text-muted">{note.date ?? "undated"} · {note.readingMinutes} min<ViewCounter slug={slug} /></p>
       <h1 className="mt-2 font-display text-4xl leading-tight">{note.title}</h1>
       <div className="prose mt-8 max-w-none dark:prose-invert prose-a:text-brand prose-headings:font-display">
         <MdxRenderer source={note.source} />

@@ -1,0 +1,8 @@
+# deploy/systemd/saiem-purge.timer
+[Unit]
+Description=daily saiem-api purge
+[Timer]
+OnCalendar=*-*-* 09:20:00 UTC
+Persistent=true
+[Install]
+WantedBy=timers.target

@@ -5,6 +5,7 @@ import yaml
 from tests.compose_policy import violations
 
 COMPOSE = Path(__file__).resolve().parents[2] / "deploy" / "compose.yml"
+COMPOSE_DEV = COMPOSE.with_name("compose.dev.yml")
 
 
 def svc(**kw):
@@ -42,3 +43,25 @@ def test_the_real_compose_file_passes():
     compose = yaml.safe_load(COMPOSE.read_text())
     assert set(compose["services"]) == {"web", "api"}
     assert violations(compose) == []
+
+
+def test_the_dev_override_passes_too():
+    dev = yaml.safe_load(COMPOSE_DEV.read_text())
+    assert set(dev["services"]) == {"db", "api", "web"}
+    assert violations(dev) == []
+    assert dev["services"]["db"]["ports"] == ["127.0.0.1:5439:5432"]
+
+
+def test_postgres_socket_mount_is_allowed_docker_socket_is_not():
+    assert violations(svc(volumes=["/var/run/postgresql:/var/run/postgresql:ro"])) == []
+    assert violations(svc(volumes=[{"type": "bind", "source": "/var/run/docker.sock", "target": "/x"}])) == [
+        "x: mounts the Docker socket"
+    ]
+
+
+def test_the_real_compose_file_mounts_the_host_postgres_socket_read_only():
+    api = yaml.safe_load(COMPOSE.read_text())["services"]["api"]
+    assert "${PG_SOCKET_DIR:-/var/run/postgresql}:/var/run/postgresql:ro" in api["volumes"]
+    assert api["command"][-1].startswith(
+        "/app/.venv/bin/saiem-api migrate && exec /app/.venv/bin/saiem-api serve"
+    )

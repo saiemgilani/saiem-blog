@@ -57,3 +57,6 @@ public/sitemap.xml
 tsconfig.tsbuildinfo
 # brainstorming companion + SDD scratch
 .superpowers/
+
+# droplet secrets
+deploy/.env

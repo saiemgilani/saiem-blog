@@ -1,0 +1,20 @@
+[
+  {
+    "id": "game-on-paper",
+    "title": "Game on Paper",
+    "summary": "Live win probability, EPA, and box scores for college football and the NFL.",
+    "url": "https://gameonpaper.com",
+    "repo": "saiemgilani/game-on-paper-app",
+    "tags": ["cfb", "nfl", "web"],
+    "sort": 10
+  },
+  {
+    "id": "sportsdataverse",
+    "title": "SportsDataverse",
+    "summary": "The open-source sports data ecosystem: R, Python, and Node packages plus the data releases behind them.",
+    "url": "https://sportsdataverse.org",
+    "repo": "sportsdataverse/sportsdataverse-web",
+    "tags": ["open-source", "data"],
+    "sort": 20
+  }
+]

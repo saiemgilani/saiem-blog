@@ -1,0 +1,29 @@
+# deploy/compose.dev.yml — dev/CI override: a throwaway Postgres 15 (the droplet's major)
+# plus dev secrets. Production NEVER uses this file: there the api reaches the HOST's
+# Postgres over the unix socket mounted in compose.yml and secrets come from deploy/.env.
+#   docker compose -f deploy/compose.yml -f deploy/compose.dev.yml up -d
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: saiem_app
+      POSTGRES_PASSWORD: saiem_dev
+      POSTGRES_DB: saiem
+    ports:
+      - "127.0.0.1:5439:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saiem_app -d saiem"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  api:
+    environment:
+      DATABASE_URL: postgresql://saiem_app:saiem_dev@db:5432/saiem
+      SAIEM_API_SECRET: dev-secret-not-for-production
+      SAIEM_ALLOW_DEV_SECRET: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+  web:
+    environment:
+      SAIEM_API_SECRET: dev-secret-not-for-production

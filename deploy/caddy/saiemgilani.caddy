@@ -1,6 +1,9 @@
 # deploy/caddy/saiemgilani.caddy
 # Mode A (default): only the API lives on the droplet; www stays on Vercel.
 api.saiemgilani.com {
+	request_body {
+		max_size 16KB
+	}
 	reverse_proxy 127.0.0.1:8100
 	header -Server
 }
