@@ -7,6 +7,7 @@ dependencies = [
     "fastapi>=0.115",
     "psycopg-pool>=3.2",
     "psycopg[binary]>=3.2",
+    "pyjwt>=2.9",
     "uvicorn[standard]>=0.30",
 ]
 
@@ -32,3 +33,6 @@ select = ["E", "F", "I", "B", "UP"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Path", "fastapi.Query", "fastapi.Body"]
