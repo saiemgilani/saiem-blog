@@ -1,0 +1,93 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { entryLabel, layoutWiring, sourceKey, sourceLabel } from "../lib/lab/wiring.ts";
+import type { LabEntry } from "../lib/lab/registry-schema.ts";
+import { LAB } from "../content/lab/registry.ts";
+
+const rel = (asset: string) => ({ kind: "release" as const, repo: "sportsdataverse/sportsdataverse-data", tag: "espn_nba_rosters", asset });
+const relT = (tag: string, asset: string) => ({ kind: "release" as const, repo: "sportsdataverse/sportsdataverse-data", tag, asset });
+const e = (n: number, slug: string, sources: LabEntry["sources"], status: LabEntry["status"] = "prototype"): LabEntry =>
+  ({ n, slug, title: slug, summary: "", status, kind: "app", runtime: ["browser"], sources, started: "2026-09-26", tags: [] });
+
+test("shared sources collapse to one node with one wire per entry", () => {
+  const L = layoutWiring([e(1, "a", [rel("rosters_2026.parquet")]), e(2, "b", [rel("rosters_2026.parquet"), { kind: "github", path: "/repos/x" }])]);
+  assert.equal(L.sources.length, 2);
+  assert.equal(L.wires.length, 3);
+  assert.deepEqual(L.wires.map((w) => w.from), ["a", "b", "b"]);
+});
+
+test("an entry with no sources is still a node; archived entries are excluded", () => {
+  const L = layoutWiring([e(1, "solo", []), e(2, "old", [], "archived")]);
+  assert.deepEqual(L.entries.map((x) => x.slug), ["solo"]);
+  assert.equal(L.wires.length, 0);
+});
+
+test("labels are bounded and keys are stable", () => {
+  const long = rel("a_very_long_asset_name_that_would_overflow_the_column_2026.parquet");
+  assert.ok(sourceLabel(long).length <= 28);
+  assert.match(sourceLabel(long), /…/);
+  assert.equal(sourceKey(long), "release:sportsdataverse/sportsdataverse-data@espn_nba_rosters/a_very_long_asset_name_that_would_overflow_the_column_2026.parquet");
+});
+
+test("rows sit on the grid and the box fits every node", () => {
+  const L = layoutWiring(LAB, { rowGap: 40 });
+  for (const n of [...L.entries, ...L.sources]) {
+    assert.equal(n.y % 40, 0);
+    assert.ok(n.x >= 0 && n.x <= L.width && n.y <= L.height);
+  }
+});
+
+test("entryLabel carries the number and bounds the title", () => {
+  assert.equal(entryLabel(2, "Series odds, two ways"), "№ 002 Series odds, two ways");
+  const long = entryLabel(14, "A title so long that it would run straight through the source column");
+  assert.ok(long.length <= 30);
+  assert.match(long, /^№ 014 /);
+  assert.match(long, /…/);
+});
+
+test("sources of the same kind sort by label; kind order is not overridden", () => {
+  const L = layoutWiring([
+    e(1, "x", [{ kind: "github", path: "/repos/zeta" }, { kind: "github", path: "/repos/alpha" }, { kind: "release", repo: "sportsdataverse/sportsdataverse-data", tag: "t", asset: "a.parquet" }]),
+  ]);
+  assert.deepEqual(
+    L.sources.map((s) => s.label),
+    ["a.parquet", "/repos/alpha", "/repos/zeta"],
+  );
+});
+
+test("width is clamped to 440 minimum (220 entry + 20 gap + 200 source)", () => {
+  const L = layoutWiring([e(1, "x", [{ kind: "github", path: "/repos/x" }])], { width: 100 });
+  assert.equal(L.width, 440);
+  assert.ok(L.sources.every((s) => s.x >= 220));
+});
+
+test("sources with equal kind and label tie-break deterministically by key, declared in reverse key order", () => {
+  const higherKey = relT("z_tag", "same.parquet"); // release:...@z_tag/same.parquet
+  const lowerKey = relT("a_tag", "same.parquet"); // release:...@a_tag/same.parquet -- sorts first
+  const L = layoutWiring([e(1, "a", [higherKey]), e(2, "b", [lowerKey])]);
+  assert.deepEqual(
+    L.sources.map((s) => s.full),
+    [sourceKey(lowerKey), sourceKey(higherKey)],
+  );
+});
+
+test("colliding source labels are disambiguated with a tag/path prefix; a lone source keeps the plain label", () => {
+  const nba = relT("espn_nba_rosters", "rosters_2026.parquet");
+  const wnba = relT("espn_wnba_rosters", "rosters_2026.parquet");
+  const unique = relT("espn_mlb_rosters", "teams_2026.parquet");
+  const L = layoutWiring([e(1, "nba", [nba]), e(2, "wnba", [wnba]), e(3, "mlb", [unique])]);
+  assert.equal(L.sources.length, 3);
+  const byFull = new Map(L.sources.map((s) => [s.full, s]));
+  const nbaLabel = byFull.get(sourceKey(nba))!.label;
+  const wnbaLabel = byFull.get(sourceKey(wnba))!.label;
+  const mlbLabel = byFull.get(sourceKey(unique))!.label;
+  assert.notEqual(nbaLabel, wnbaLabel);
+  assert.ok(nbaLabel.length <= 28 && wnbaLabel.length <= 28);
+  assert.ok(nbaLabel.startsWith("espn_nba"));
+  assert.ok(wnbaLabel.startsWith("espn_wnba"));
+  // the full key stays complete (only the visible label is disambiguated/truncated)
+  assert.equal(byFull.get(sourceKey(nba))!.full, sourceKey(nba));
+  assert.equal(byFull.get(sourceKey(wnba))!.full, sourceKey(wnba));
+  // no collision -> plain asset label, unchanged by disambiguation
+  assert.equal(mlbLabel, sourceLabel(unique));
+});

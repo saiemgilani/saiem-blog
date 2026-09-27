@@ -76,6 +76,10 @@ body { background: var(--page); color: var(--ink); font-family: var(--font-sans)
   background-size: 16px 16px;
 }
 
+/* P6 wiring map: the SVG keeps its intrinsic width; the container scrolls, the page never does. */
+.wiring { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.wiring svg { display: block; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
