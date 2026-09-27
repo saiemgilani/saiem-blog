@@ -1,15 +1,25 @@
 "use client";
-import { useState, type ReactNode } from "react";
-import { viewHref, type LabView } from "@lib/lab/labView";
+import { useEffect, useState, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import { parseView, viewHref, type LabView } from "@lib/lab/labView";
 import { LabViewToggle } from "./LabViewToggle";
 
-export function LabViews({ initial, runtime, index, map }: { initial: LabView; runtime?: string; index: ReactNode; map: ReactNode }) {
-  const [view, setView] = useState<LabView>(initial);
+export function LabViews({ runtime, index, map }: { runtime?: string; index: ReactNode; map: ReactNode }) {
+  const searchParams = useSearchParams();
+  const urlView = parseView(searchParams.get("view") ?? undefined);
+  const [override, setOverride] = useState<LabView | null>(null);
+  // The URL is the single source of truth (R-P6-8): whenever it changes — including a
+  // Back/Forward history traversal, which Next replays without remounting this component
+  // via a stale useState — drop any local override so the URL drives the view again.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- deliberate reset-on-prop-change (R-P6-8's own prescription), not a derived value computable during render.
+  useEffect(() => setOverride(null), [urlView]);
+  const view = override ?? urlView;
   const change = (v: LabView) => {
-    setView(v);
-    // Mirror the choice into the URL without a navigation (the page stays as rendered); nothing
-    // on the server depends on this — the server only uses ?view for the FIRST render.
-    if (typeof window !== "undefined") window.history.replaceState(null, "", viewHref(v, runtime));
+    setOverride(v);
+    // Mirror the choice into the URL without a navigation; useSearchParams() then reflects
+    // it (Next patches history.replaceState), so the effect above clears the override on the
+    // next render and `view` keeps agreeing with the URL.
+    window.history.replaceState(null, "", viewHref(v, runtime));
   };
   return (
     <>

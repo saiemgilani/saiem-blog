@@ -5,7 +5,7 @@ import { EntryCard } from "@components/lab/EntryCard";
 import { WiringMap } from "@components/lab/WiringMap";
 import { LabViews } from "@components/lab/LabViews";
 import { layoutWiring } from "@lib/lab/wiring";
-import { parseView, viewHref } from "@lib/lab/labView";
+import { viewHref } from "@lib/lab/labView";
 import { pageMetadata } from "@lib/metadata";
 
 const DESCRIPTION = "Ideas that don't fit neatly anywhere else: sketches, prototypes, and the occasional thing that ships.";
@@ -18,9 +18,8 @@ export const metadata: Metadata = {
 const RUNTIMES = ["browser", "server", "python", "llm"] as const;
 
 export default async function LabIndex({ searchParams }: { searchParams: Promise<{ runtime?: string; view?: string }> }) {
-  const { runtime, view } = await searchParams;
+  const { runtime } = await searchParams;
   const active = RUNTIMES.find((r) => r === runtime);
-  const initial = parseView(view);
   const entries = [...LAB].filter((e) => e.status !== "archived" && (!active || e.runtime.includes(active))).sort((a, b) => b.n - a.n);
   const layout = layoutWiring(LAB);
   const index = (
@@ -40,7 +39,7 @@ export default async function LabIndex({ searchParams }: { searchParams: Promise
     <section className="py-12">
       <h1 className="font-display text-4xl">The lab</h1>
       <p className="mt-3 max-w-[60ch] text-muted">{DESCRIPTION}</p>
-      <LabViews initial={initial} runtime={active} index={index} map={map} />
+      <LabViews runtime={active} index={index} map={map} />
     </section>
   );
 }
