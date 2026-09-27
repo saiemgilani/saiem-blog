@@ -1,0 +1,6 @@
+{
+  "transcript": [
+    { "role": "user", "text": "What data can you see?" },
+    { "role": "assistant", "text": "One declared source: the espn_nba_rosters release asset rosters_2026.parquet from sportsdataverse/sportsdataverse-data. I can list sources; querying them is a follow-up." }
+  ]
+}
