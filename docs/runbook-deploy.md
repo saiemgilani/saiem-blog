@@ -33,13 +33,15 @@ the verify step must use the same value.
 
 ```bash
 PW=$(openssl rand -hex 24)
-ssh root@161.35.59.239 "sudo -u sdv psql -d postgres -v ON_ERROR_STOP=1 -v pw='$PW' -f /opt/saiem-blog/deploy/sql/00_saiem_db.sql"
+printf '\\set pw %s\n\\i /opt/saiem-blog/deploy/sql/00_saiem_db.sql\n' "'$PW'" | ssh root@161.35.59.239 'sudo -u sdv psql -d postgres -v ON_ERROR_STOP=1'
 ```
 
-`-v ON_ERROR_STOP=1` aborts the script on its first error instead of
-continuing past it. If it does error, the password may already be in the
-Postgres log (`log_min_error_statement` logs the failing statement) — rotate
-it: pick a new `$PW` and re-run this whole step.
+The value travels on ssh's stdin, never in a remote `ps`/argv (`$PW` stays in
+the LOCAL shell's variable only): `\set pw 'value'` binds `:'pw'`, then `\i`
+runs the file. `-v ON_ERROR_STOP=1` aborts the script on its first error
+instead of continuing past it. If it does error, the password may already be
+in the Postgres log (`log_min_error_statement` logs the failing statement) —
+rotate it: pick a new `$PW` and re-run this whole step.
 
 Insert the new `pg_hba.conf` line **above** the peer rule (line 95 today),
 then reload:
