@@ -14,6 +14,19 @@ const entries: LabEntry[] = [
     started: "2026-09-26",
     tags: ["duckdb", "parquet", "nba"],
   },
+  {
+    n: 2,
+    slug: "series-odds",
+    title: "Series odds, two ways",
+    summary: "Exact best-of-N series win probability from a per-game edge, checked against a Monte-Carlo run on the server.",
+    status: "prototype",
+    kind: "app",
+    runtime: ["python"],
+    sources: [],
+    limits: "timeout 30 s · 512 MB · 5 runs/day",
+    started: "2026-09-27",
+    tags: ["probability", "simulation", "python"],
+  },
 ];
 
 export const LAB: LabEntry[] = LabRegistrySchema.parse(entries);

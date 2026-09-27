@@ -29,6 +29,8 @@ export const LabEntrySchema = z.object({
   updated: z.string().regex(ISO_DAY).optional(),
   repo: z.string().url().optional(),
   tags: z.array(z.string()),
+  llm: z.object({ model: z.string().min(1), maxOutputTokens: z.number().int().positive() }).optional(),
+  limits: z.string().min(1).optional(),
 });
 
 export const LabRegistrySchema = z.array(LabEntrySchema).superRefine((entries, ctx) => {

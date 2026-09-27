@@ -1,4 +1,4 @@
-import { formatEntryNumber, type LabEntry, type LabSource } from "@lib/lab/registry-schema";
+import { formatEntryNumber, isGated, type LabEntry, type LabSource } from "@lib/lab/registry-schema";
 
 function sourceLabel(s: LabSource): { label: string; href: string } {
   switch (s.kind) {
@@ -21,6 +21,8 @@ export function MarginRail({ entry }: { entry: LabEntry }) {
       <p className={row}>STARTED<br /><span className="text-ink">{entry.started}</span></p>
       {entry.updated && <p className={row}>UPDATED<br /><span className="text-ink">{entry.updated}</span></p>}
       <p className={row}>RUNS IN<br /><span className="text-ink">{entry.runtime.join(", ")}</span></p>
+      {isGated(entry) && <p className={row}>ACCESS<br /><span className="text-ink">gated · sign in to run</span></p>}
+      {entry.limits && <p className={row}>LIMITS<br /><span className="text-ink">{entry.limits}</span></p>}
       {entry.sources.length > 0 && (
         <div className={row}>DATA
           <ul>{entry.sources.map((s) => { const x = sourceLabel(s); return <li key={x.href}><a className="text-ink underline decoration-rule underline-offset-2 hover:text-brand" href={x.href}>{x.label} ↗</a></li>; })}</ul>

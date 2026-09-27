@@ -1,0 +1,18 @@
+export type RunOutcome =
+  | { kind: "ok"; result: unknown; cached: boolean; costUnits: number }
+  | { kind: "quota"; message: string }
+  | { kind: "paused" }
+  | { kind: "signin" }
+  | { kind: "error"; message: string };
+
+export function runOutcome(status: number, body: unknown, dailyQuota: number): RunOutcome {
+  const b = (body ?? {}) as Record<string, unknown>;
+  if (status === 200 && b.status === "ok") return { kind: "ok", result: b.result, cached: Boolean(b.cached), costUnits: Number(b.cost_units ?? 0) };
+  if (status === 200 && b.status === "timeout") return { kind: "error", message: "the run timed out — units refunded" };
+  if (status === 200) return { kind: "error", message: "the run failed — units refunded" };
+  if (status === 429) return b.reason === "spend_cap" ? { kind: "quota", message: "the lab's monthly budget is spent — back next month" } : { kind: "quota", message: `quota used up for today (${dailyQuota}/day) — back tomorrow` };
+  if (status === 503 && b.paused === true) return { kind: "paused" };
+  if (status === 401) return { kind: "signin" };
+  if (status === 422) return { kind: "error", message: "those parameters were rejected" };
+  return { kind: "error", message: "the lab is unreachable right now" };
+}
