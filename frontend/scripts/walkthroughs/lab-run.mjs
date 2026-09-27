@@ -18,10 +18,23 @@ export default async function labRun(page, base) {
   await page.reload({ waitUntil: "networkidle" });
   const run = page.getByRole("button", { name: /^run$/i });
   await run.waitFor({ timeout: 15_000 });
+  const status = page.getByRole("status");
+  // The status line is always rendered (empty when idle, "running…" mid-fetch), so waiting on
+  // its mere presence resolves immediately and races the fetch -- wait for the text to actually
+  // change to a settled (non-"running") value instead.
   for (let i = 0; i < 8; i++) {
+    const prev = (await status.innerText()).trim();
     await run.click();
-    await page.getByRole("status").waitFor({ timeout: 45_000 });
-    const text = await page.getByRole("status").innerText();
+    await page.waitForFunction(
+      (prevText) => {
+        const el = document.querySelector('[role="status"]');
+        const t = el?.textContent?.trim() ?? "";
+        return t !== "" && t !== prevText && !/running/i.test(t);
+      },
+      prev,
+      { timeout: 45_000 },
+    );
+    const text = await status.innerText();
     if (/quota used up for today/i.test(text)) { await page.waitForTimeout(1500); return; }
     await page.waitForTimeout(800);
   }
