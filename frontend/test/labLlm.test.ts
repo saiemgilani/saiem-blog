@@ -5,7 +5,10 @@ import type { LabEntry } from "../lib/lab/registry-schema.ts";
 
 const env = { baseUrl: "https://api.test", secret: "s".repeat(32), viewsHashSecret: "v" };
 const entry: LabEntry = { n: 3, slug: "ask-the-lab", title: "t", summary: "s", status: "prototype", kind: "app", runtime: ["llm"], sources: [{ kind: "release", repo: "o/r", tag: "t", asset: "a.parquet" }], started: "2026-09-27", tags: [], llm: { model: "anthropic/claude-haiku-4-5", maxOutputTokens: 600 } };
-const req = (body: unknown = { messages: [{ role: "user", parts: [{ type: "text", text: "hi" }] }] }) => new Request("http://x", { method: "POST", body: JSON.stringify(body) });
+// Fix round 1 / SF-4: the real client (ai@7's HttpChatTransport) always sends this header, so the
+// default request carries it -- a dedicated test below covers a request that omits/misstates it.
+const req = (body: unknown = { messages: [{ role: "user", parts: [{ type: "text", text: "hi" }] }] }, headers: Record<string, string> = { "content-type": "application/json" }) =>
+  new Request("http://x", { method: "POST", body: JSON.stringify(body), headers });
 
 test("pickModel: default, allowed, denied", () => {
   assert.equal(pickModel(undefined, "a/b", ["a/b"]), "a/b");
@@ -74,4 +77,37 @@ test("reserve 429 passes through; stream error settles refund", async () => {
   await h(req(), entry);
   await (opts().onError as (e: unknown) => Promise<void>)({ error: new Error("boom") });
   assert.deepEqual(api[1].body, { reservation_id: "res-1", outcome: "refund" });
+});
+
+// --- Fix round 1 ---
+
+test("SF-4: content-type must be application/json — a text/plain POST is 400 with no reserve", async () => {
+  const { h, api } = harness();
+  const r = await h(req(undefined, { "content-type": "text/plain" }), entry);
+  assert.equal(r.status, 400);
+  assert.deepEqual(await r.json(), { error: "bad json" });
+  assert.equal(api.length, 0);
+});
+
+test("R-P5-11: an oversize transcript (too many messages or too much text) is 400 with no reserve, before conversion", async () => {
+  const { h, api } = harness();
+  const tooManyMessages = { messages: Array.from({ length: 21 }, () => ({ role: "user", parts: [{ type: "text", text: "hi" }] })) };
+  const r1 = await h(req(tooManyMessages), entry);
+  assert.equal(r1.status, 400);
+  assert.deepEqual(await r1.json(), { error: "too long" });
+  assert.equal(api.length, 0);
+
+  const tooMuchText = { messages: [{ role: "user", parts: [{ type: "text", text: "x".repeat(8001) }] }] };
+  const r2 = await h(req(tooMuchText), entry);
+  assert.equal(r2.status, 400);
+  assert.deepEqual(await r2.json(), { error: "too long" });
+  assert.equal(api.length, 0);
+});
+
+test("R-P5-11: a transcript that makes toModelMessages throw is 400 with no reserve, before conversion succeeds", async () => {
+  const { h, api } = harness({ toModelMessages: () => { throw new Error("malformed"); } });
+  const r = await h(req(), entry);
+  assert.equal(r.status, 400);
+  assert.deepEqual(await r.json(), { error: "bad messages" });
+  assert.equal(api.length, 0);
 });

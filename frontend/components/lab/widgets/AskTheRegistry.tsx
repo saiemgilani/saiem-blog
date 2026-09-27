@@ -4,7 +4,6 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useRunGate, RunGatePrompt, DAILY_QUOTA } from "@components/lab/RunGate";
 import { ExampleOutput } from "@components/lab/ExampleOutput";
-import { unitsFor } from "@lib/lab/llm";
 
 export type AskTheRegistryExample = { transcript: { role: "user" | "assistant"; text: string }[] };
 
@@ -17,16 +16,8 @@ function mapError(message: string): string {
   if (message.includes("daily")) return `quota used up for today (${DAILY_QUOTA}/day) — back tomorrow`;
   if (message.includes("spend_cap")) return "the lab's monthly budget is spent — back next month";
   if (message.includes("paused")) return "demo paused";
+  if (message.includes("sign-in")) return "sign in again to ask"; // NIT 7: a session that expired mid-page
   return "the lab is unreachable right now";
-}
-
-/** Best-effort unit display: only renders when a message carries usage in its metadata (no
- *  plumbing failure if it doesn't -- the settle already happened server-side regardless). */
-function unitsLabel(message: { metadata?: unknown }): string | null {
-  const usage = (message.metadata as { usage?: { inputTokens?: number; outputTokens?: number } } | undefined)?.usage;
-  if (!usage) return null;
-  const n = unitsFor(usage);
-  return `≈ ${n} unit${n === 1 ? "" : "s"}`;
 }
 
 function MessageParts({ parts }: { parts: { type: string; text?: string; output?: unknown }[] }) {
@@ -74,13 +65,15 @@ export function AskTheRegistry({ example }: { example: AskTheRegistryExample }) 
 
   return (
     <div>
+      {/* NIT 5: the prompt sits above the frame it refers to ("the example output below") --
+          SeriesOdds follows the same order (prompt, then the live/example result). */}
+      <RunGatePrompt state={state} />
       {signedIn ? (
         <div className="mt-6 space-y-2">
           {messages.map((m) => (
             <div key={m.id}>
               <span className="font-mono text-[11px] uppercase text-muted">{m.role} </span>
               <MessageParts parts={m.parts as { type: string; text?: string; output?: unknown }[]} />
-              {m.role === "assistant" && unitsLabel(m) && <p className="font-mono text-[11px] text-muted">{unitsLabel(m)}</p>}
             </div>
           ))}
           <form onSubmit={onSubmit} className="flex gap-2">
@@ -101,7 +94,6 @@ export function AskTheRegistry({ example }: { example: AskTheRegistryExample }) 
           <Transcript turns={example.transcript} />
         </ExampleOutput>
       )}
-      <RunGatePrompt state={state} />
       <p role="status" className="mt-3 font-mono text-[11px] text-muted">{statusText}</p>
     </div>
   );

@@ -7,6 +7,9 @@ import { LAB } from "@content/lab/registry";
 import type { LabEntry } from "@lib/lab/registry-schema";
 
 export const dynamic = "force-dynamic";
+// NIT 3: coupled to the API's `_RESERVATION_TTL_S = 60` (quota_routes.py) -- an answer that ends
+// right at this limit settles into a pruned/expired reservation (404, ignored) and keeps the full
+// reserved units. Fails closed (no free tokens), so left coupled rather than desynced.
 export const maxDuration = 60;
 
 // Mirrors the run route's guard: without AUTH_* set, calling auth() just logs Auth.js
@@ -23,7 +26,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
     env: apiEnv(),
     auth: () => (authConfigured ? auth() : Promise.resolve(null)),
     paused: () => process.env.LAB_LIVE_RUNS === "off",
-    allowModels: (process.env.LAB_LLM_MODELS ?? entry.llm.model).split(",").map((s) => s.trim()).filter(Boolean),
+    // NIT 11: `||` (not `??`) so an accidentally-empty LAB_LLM_MODELS="" falls back to the
+    // entry's own model instead of yielding [] and 400-ing every request.
+    allowModels: (process.env.LAB_LLM_MODELS || entry.llm.model).split(",").map((s) => s.trim()).filter(Boolean),
     gatewayConfigured: () => Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL === "1"),
     gateway,
     // `streamText`'s real signature is far more specific than ChatDeps's `Record<string, unknown>`
