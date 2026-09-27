@@ -34,6 +34,7 @@ class ReserveIn(BaseModel):
 class SettleIn(BaseModel):
     reservation_id: str
     outcome: Literal["success", "refund"]
+    units_used: int | None = Field(None, ge=0)
 
 
 def _looks_like_github_id(sub: str) -> bool:
@@ -109,7 +110,7 @@ def post_settle(
     if entry is None or entry[1] <= time.monotonic():
         raise HTTPException(404, "unknown or expired reservation")
     try:
-        settle(pool, entry[0], body.outcome)
+        settle(pool, entry[0], body.outcome, units_used=body.units_used)
     except Exception:
         # N-4: a transient DB failure shouldn't burn the reservation — put it back for a retry.
         with lock:

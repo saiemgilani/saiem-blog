@@ -89,18 +89,32 @@ def reserve(
     )
 
 
-def settle(pool: ConnectionPool, r: Reservation, outcome: Literal["success", "refund"]) -> None:
-    if outcome == "success":
+def settle(
+    pool: ConnectionPool,
+    r: Reservation,
+    outcome: Literal["success", "refund"],
+    *,
+    units_used: int | None = None,
+) -> None:
+    # R-P5-5: a "success" with units_used refunds reserved - units_used (partial refund for
+    # usage-based metering); units_used=None keeps the original all-or-nothing behavior (no
+    # refund). Never charges more than what was reserved -- give_back floors at 0.
+    give_back = (
+        r.units
+        if outcome == "refund"
+        else max(r.units - (units_used if units_used is not None else r.units), 0)
+    )
+    if give_back == 0:
         return
     with pool.connection() as conn:
         conn.execute(
             "update app.quotas set used = greatest(used - %s, 0) "
             "where user_id = %s and entry_slug = %s and day = %s",
-            (r.units, r.user_id, r.entry_slug, r.day),
+            (give_back, r.user_id, r.entry_slug, r.day),
         )
         conn.execute(
             "update app.spend set units_used = greatest(units_used - %s, 0) where month = %s",
-            (r.units, r.month),
+            (give_back, r.month),
         )
 
 

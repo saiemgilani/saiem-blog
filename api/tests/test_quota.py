@@ -52,6 +52,21 @@ def test_reserve_then_refund_returns_the_units(pool):
     assert spend_status(pool)["units_used"] == 0
 
 
+def test_settle_success_with_units_used_refunds_the_difference(pool):  # R-P5-5
+    u = ensure_user(pool, 1, "a")
+    r = reserve(pool, user_id=u, entry_slug="e", units=2, daily_limit=5, month_cap=100)
+    settle(pool, r, "success", units_used=1)
+    with pool.connection() as conn:
+        assert conn.execute("select used from app.quotas where user_id = %s", (u,)).fetchone()[0] == 1
+    assert spend_status(pool)["units_used"] == 1
+
+    r2 = reserve(pool, user_id=u, entry_slug="e", units=2, daily_limit=5, month_cap=100)
+    settle(pool, r2, "success", units_used=5)  # never charges more than reserved
+    with pool.connection() as conn:
+        assert conn.execute("select used from app.quotas where user_id = %s", (u,)).fetchone()[0] == 3
+    assert spend_status(pool)["units_used"] == 3
+
+
 def test_daily_limit_is_enforced_and_spend_untouched_on_failure(pool):
     u = ensure_user(pool, 1, "a")
     for _ in range(5):
@@ -227,6 +242,21 @@ def test_settle_refund_then_replay_is_404(client):
         "/v1/quota/settle", json={"reservation_id": rid, "outcome": "refund"}, headers=auth("run")
     )
     assert s2.status_code == 404
+
+
+def test_settle_success_with_units_used_route(client):  # R-P5-5
+    r = client.post(
+        "/v1/quota/reserve", json={"entry_slug": "e", "units": 2, "login": "a"}, headers=auth("run", sub="1")
+    )
+    rid = r.json()["reservation_id"]
+    s = client.post(
+        "/v1/quota/settle",
+        json={"reservation_id": rid, "outcome": "success", "units_used": 1},
+        headers=auth("run"),
+    )
+    assert s.status_code == 200
+    with client.app.state.pool.connection() as conn:
+        assert conn.execute("select used from app.quotas where user_id = 1").fetchone()[0] == 1
 
 
 def test_settle_unknown_reservation_is_404(client):
