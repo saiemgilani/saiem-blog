@@ -38,8 +38,33 @@ def test_lab_settings_have_defaults_and_parse_from_env():
     assert s.run_retention_days == 30
 
 
-@pytest.mark.parametrize("value,expected", [("off", False), ("on", True), ("1", True), ("", True)])
-def test_lab_live_runs_is_off_only_for_the_exact_string_off(value, expected):
+@pytest.mark.parametrize(
+    "name", ["LAB_DAILY_QUOTA", "SPEND_UNITS_CAP", "LAB_RUN_TIMEOUT_S", "RUN_RETENTION_DAYS"]
+)
+def test_int_lab_settings_fall_back_to_the_default_when_set_but_empty(name):  # N-7
+    # compose's `X: ${X:-}` idiom yields an empty string, not an unset var; `int("")` would crash.
+    defaults = Settings.from_env({})
+    assert getattr(Settings.from_env({name: ""}), name.lower()) == getattr(defaults, name.lower())
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        ("off", False),
+        ("OFF", False),
+        (" off", False),
+        ("false", False),
+        ("False", False),
+        ("0", False),
+        ("no", False),
+        ("NO", False),
+        ("on", True),
+        ("1", True),
+        ("true", True),
+        ("", True),
+    ],
+)
+def test_lab_live_runs_is_paused_for_any_spelling_of_off_false_0_no(value, expected):  # R-P5-7
     assert Settings.from_env({"LAB_LIVE_RUNS": value}).lab_live_runs is expected
 
 

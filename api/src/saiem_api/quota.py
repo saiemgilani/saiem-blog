@@ -33,16 +33,24 @@ returning id
 """
 # The conditional UPDATE is the whole trick: the row lock taken by the upsert serializes racers,
 # and the WHERE makes the loser's update affect zero rows → no RETURNING row → QuotaExceeded.
+# R-P5-6: also refresh "limit"/units_cap from THIS call's request (excluded.*) on every conflict,
+# and gate the WHERE on that fresh value, not the possibly-stale stored one — the env is the
+# authority for caps, so a lowered LAB_DAILY_QUOTA/SPEND_UNITS_CAP is enforced on the very next
+# reservation instead of waiting for the day/month to roll over. Note: when the WHERE is false,
+# Postgres's ON CONFLICT DO UPDATE ... WHERE leaves the row completely untouched (no partial
+# SET) — so the persisted column only catches up to the new value on an ACCEPTED reservation,
+# not a rejected one; see tests/test_quota.py for the verified behavior.
 _QUOTA = """
 insert into app.quotas (user_id, entry_slug, day, used, "limit") values (%(u)s, %(e)s, %(d)s, %(n)s, %(lim)s)
-on conflict (user_id, entry_slug, day) do update set used = app.quotas.used + %(n)s
-  where app.quotas.used + %(n)s <= app.quotas."limit"
+on conflict (user_id, entry_slug, day) do update
+  set used = app.quotas.used + %(n)s, "limit" = excluded."limit"
+  where app.quotas.used + %(n)s <= excluded."limit"
 returning used, "limit"
 """
 _SPEND = """
 insert into app.spend (month, units_used, units_cap) values (%(m)s, %(n)s, %(cap)s)
-on conflict (month) do update set units_used = app.spend.units_used + %(n)s
-  where app.spend.units_used + %(n)s <= app.spend.units_cap
+on conflict (month) do update set units_used = app.spend.units_used + %(n)s, units_cap = excluded.units_cap
+  where app.spend.units_used + %(n)s <= excluded.units_cap
 returning units_used
 """
 

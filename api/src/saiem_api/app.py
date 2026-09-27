@@ -1,3 +1,5 @@
+import threading
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
@@ -19,7 +21,9 @@ def create_app(
         database_url=None, api_secret=api_secret, owner_github_id=None, allow_dev_secret=False
     )
     # reservation_id -> (Reservation, expires_at_monotonic); see quota_routes.post_reserve/post_settle.
+    # Sync routes run in Starlette's threadpool, so every read/write of this dict is under this lock.
     app.state.reservations = {}
+    app.state.reservations_lock = threading.Lock()
     app.include_router(views.router)
     app.include_router(projects.router)
     app.include_router(quota_routes.router)
