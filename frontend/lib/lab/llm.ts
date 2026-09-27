@@ -12,6 +12,9 @@ export function unitsFor(usage: { inputTokens?: number; outputTokens?: number })
 
 const MAX_MESSAGES = 20;
 const MAX_TEXT_CHARS = 8_000;
+const MAX_BODY_CHARS = 32_000; // SF-3: text-only bound above counts `text` parts alone -- file /
+// reasoning / tool-output parts ride along uncounted and still forward to the model. Bounding the
+// whole serialized body is the backstop so the 2 reserved units actually bound real spend.
 
 /** Sums every `text` part's length across a raw UI-message array. Defensive against malformed
  *  shapes (non-array `parts`, non-string `text`) -- this runs before the transcript is trusted. */
@@ -62,7 +65,12 @@ export function createChatHandler(deps: ChatDeps) {
     // to happen only inside the streamText() call, after reserve already succeeded), and an
     // unbounded transcript must never bill far more tokens than the reserved units cover.
     const rawMessages = Array.isArray(body.messages) ? body.messages : [];
-    if (rawMessages.length > MAX_MESSAGES || totalTextLength(rawMessages) > MAX_TEXT_CHARS) {
+    if (rawMessages.length === 0) return json(400, { error: "no messages" }); // N-2
+    if (
+      rawMessages.length > MAX_MESSAGES ||
+      totalTextLength(rawMessages) > MAX_TEXT_CHARS ||
+      JSON.stringify(body).length > MAX_BODY_CHARS
+    ) {
       return json(400, { error: "too long" });
     }
     let modelMessages: unknown;

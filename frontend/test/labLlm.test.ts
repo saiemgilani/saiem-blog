@@ -38,10 +38,11 @@ function harness(over: Partial<Parameters<typeof createChatHandler>[0]> = {}) {
   return { h, api, opts: () => streamOpts! };
 }
 
-test("model outside the allowlist → 400 and NO reserve call", async () => {
+test("model outside the allowlist → 400 and NO reserve call", async () => {  // N-8: pin the body too
   const { h, api } = harness();
   const r = await h(req({ messages: [], model: "evil/x" }), entry);
   assert.equal(r.status, 400);
+  assert.deepEqual(await r.json(), { error: "model" });
   assert.equal(api.length, 0);
 });
 
@@ -101,6 +102,27 @@ test("R-P5-11: an oversize transcript (too many messages or too much text) is 40
   const r2 = await h(req(tooMuchText), entry);
   assert.equal(r2.status, 400);
   assert.deepEqual(await r2.json(), { error: "too long" });
+  assert.equal(api.length, 0);
+});
+
+test("N-2: empty/missing messages is 400 with no reserve, before conversion", async () => {
+  const { h, api } = harness();
+  const r = await h(req({ messages: [] }), entry);
+  assert.equal(r.status, 400);
+  assert.deepEqual(await r.json(), { error: "no messages" });
+  assert.equal(api.length, 0);
+});
+
+test("SF-3: a body padded with a large non-text part is 400 with no reserve, even though text parts stay tiny", async () => {
+  const { h, api } = harness();
+  const padded = {
+    messages: [
+      { role: "user", parts: [{ type: "text", text: "hi" }, { type: "file", data: "x".repeat(33_000) }] },
+    ],
+  };
+  const r = await h(req(padded), entry);
+  assert.equal(r.status, 400);
+  assert.deepEqual(await r.json(), { error: "too long" });
   assert.equal(api.length, 0);
 });
 

@@ -3,6 +3,7 @@ import { convertToModelMessages, createUIMessageStreamResponse, gateway, isStepC
 import { auth } from "@lib/auth";
 import { apiEnv } from "@lib/api/client";
 import { createChatHandler } from "@lib/lab/llm";
+import { isPaused } from "@lib/lab/run";
 import { LAB } from "@content/lab/registry";
 import type { LabEntry } from "@lib/lab/registry-schema";
 
@@ -25,7 +26,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
   const handler = createChatHandler({
     env: apiEnv(),
     auth: () => (authConfigured ? auth() : Promise.resolve(null)),
-    paused: () => process.env.LAB_LIVE_RUNS === "off",
+    paused: () => isPaused(),
     // NIT 11: `||` (not `??`) so an accidentally-empty LAB_LLM_MODELS="" falls back to the
     // entry's own model instead of yielding [] and 400-ing every request.
     allowModels: (process.env.LAB_LLM_MODELS || entry.llm.model).split(",").map((s) => s.trim()).filter(Boolean),

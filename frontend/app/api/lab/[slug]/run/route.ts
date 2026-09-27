@@ -1,6 +1,6 @@
 import { auth } from "@lib/auth";
 import { apiEnv } from "@lib/api/client";
-import { createRunHandler } from "@lib/lab/run";
+import { createRunHandler, isPaused } from "@lib/lab/run";
 import { LAB } from "@content/lab/registry";
 import { isGated } from "@lib/lab/registry-schema";
 
@@ -13,7 +13,7 @@ const authConfigured = Boolean(process.env.AUTH_SECRET && process.env.AUTH_GITHU
 const handler = createRunHandler({
   env: apiEnv(),
   auth: () => (authConfigured ? auth() : Promise.resolve(null)),
-  paused: () => process.env.LAB_LIVE_RUNS === "off",
+  paused: () => isPaused(),
 });
 
 export async function POST(req: Request, ctx: { params: Promise<{ slug: string }> }) {

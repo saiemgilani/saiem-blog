@@ -5,6 +5,16 @@ export type RunDeps = { env: ApiEnv | null; auth: RunAuth; paused: () => boolean
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/; // registry slug shape
 const RUN_TIMEOUT_MS = 35_000; // > LAB_RUN_TIMEOUT_S (30 s) so the API's own timeout answer arrives first
 const json = (status: number, body: unknown) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
+const PAUSED_LAB_LIVE_RUNS_VALUES = new Set(["off", "false", "0", "no"]);
+
+/** SF-4 (R-P5-16): the run and chat routes were each matching `LAB_LIVE_RUNS === "off"` only, so
+ *  `LAB_LIVE_RUNS=false` (or any other spelling) left the UI-side mirror live while the droplet
+ *  API's `settings.py` -- which accepts the whole off|false|0|no set -- correctly paused. This is
+ *  NOT the authoritative switch; it only short-circuits the Next route before the API is called.
+ *  See docs/runbook-deploy.md §6 for which value is authoritative. */
+export function isPaused(env: NodeJS.ProcessEnv = process.env): boolean {
+  return PAUSED_LAB_LIVE_RUNS_VALUES.has((env.LAB_LIVE_RUNS ?? "").trim().toLowerCase());
+}
 
 /** Next-side gate for python runs: paused → 503, no session → 401, else forward to the API with a
  *  run-scoped token for THIS user. The browser never sees the API. */

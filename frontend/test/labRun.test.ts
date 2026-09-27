@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createRunHandler } from "../lib/lab/run.ts";
+import { createRunHandler, isPaused } from "../lib/lab/run.ts";
 import { runOutcome } from "../lib/lab/runClient.ts";
 import { apiFetch } from "../lib/api/client.ts";
 
@@ -94,6 +94,14 @@ test("runOutcome validates a live result's shape when a guard is given; a malfor
     { kind: "error", message: "the run returned something unexpected" },
   );
   // No guard given (every other test above): any 200-ok body is trusted as-is -- unchanged.
+});
+
+test("isPaused: off|false|0|no (case/whitespace-insensitive) pause; on and unset don't", () => {  // SF-4 (R-P5-16)
+  for (const v of ["off", "OFF", " off ", "false", "False", "0", "no", "NO"]) {
+    assert.equal(isPaused({ ...process.env, LAB_LIVE_RUNS: v }), true, v);
+  }
+  assert.equal(isPaused({ ...process.env, LAB_LIVE_RUNS: "on" }), false);
+  assert.equal(isPaused({ ...process.env, LAB_LIVE_RUNS: undefined }), false); // unset === live
 });
 
 test("apiFetch: a caller-supplied authorization header can never override the minted bearer", async () => {

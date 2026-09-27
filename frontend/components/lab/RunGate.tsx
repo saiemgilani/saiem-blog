@@ -28,7 +28,7 @@ export function useRunGate(slug: string, isResult?: ResultGuard): { state: MenuS
 /** The one-line prompt under a gated widget: sign-in button when signed out; nothing when signed in. */
 export function RunGatePrompt({ state }: { state: MenuState | null }) {
   if (state === null) return <p className="mt-3 font-mono text-[11px] text-muted">checking sign-in…</p>;
-  if (state.kind === "off") return <p className="mt-3 font-mono text-[11px] text-muted">live runs are not enabled on this deployment — the example output below is a real cached run.</p>;
+  if (state.kind === "off") return <p className="mt-3 font-mono text-[11px] text-muted">live runs are not enabled on this deployment — the example output below is not a live run.</p>;
   if (state.kind === "out")
     return (
       <p className="mt-3 font-mono text-[11px] text-muted">
