@@ -26,14 +26,23 @@ def test_migrate_creates_tables_and_is_idempotent(pool):
                 "select table_name from information_schema.tables where table_schema = 'app'"
             )
         }
-    assert {"schema_migrations", "users", "views", "view_events", "projects"} <= tables
+    assert {
+        "schema_migrations",
+        "users",
+        "views",
+        "view_events",
+        "projects",
+        "quotas",
+        "spend",
+        "lab_runs",
+    } <= tables
     assert migrate(pool) == []  # Review Focus #4: a second run has nothing left to apply
 
 
 def test_migrations_are_recorded_by_name(pool):
     with pool.connection() as conn:
         names = [r[0] for r in conn.execute("select name from app.schema_migrations order by name")]
-    assert names == ["0001_app.sql"]
+    assert names == ["0001_app.sql", "0002_lab.sql"]
 
 
 def test_views_count_cannot_go_negative(pool):

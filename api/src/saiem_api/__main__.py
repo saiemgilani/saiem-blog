@@ -23,7 +23,7 @@ def _pool_from_env() -> ConnectionPool:
 def create_app_from_env() -> FastAPI:
     s = Settings.from_env()
     pool = make_pool(s.database_url) if s.database_url else None
-    return create_app(pool=pool, api_secret=s.api_secret)
+    return create_app(pool=pool, api_secret=s.api_secret, settings=s)
 
 
 def main(argv: list[str] | None = None) -> None:
