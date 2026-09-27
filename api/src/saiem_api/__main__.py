@@ -1,21 +1,29 @@
 import argparse
-import os
 import sys
 
 import uvicorn
+from fastapi import FastAPI
 from psycopg_pool import ConnectionPool
+
+from saiem_api.app import create_app
+from saiem_api.db import make_pool
+from saiem_api.settings import Settings
 
 
 def _pool_from_env() -> ConnectionPool:
-    """DATABASE_URL, read once here; Task 4 moves this onto Settings. Callers use it as a
-    context manager so the pool always closes."""
-    url = os.environ.get("DATABASE_URL")
+    """DATABASE_URL, read via Settings. Callers use it as a context manager so the pool always
+    closes."""
+    url = Settings.from_env().database_url
     if not url:
         print("saiem-api: DATABASE_URL is not set", file=sys.stderr)
         sys.exit(2)
-    from saiem_api.db import make_pool
-
     return make_pool(url)
+
+
+def create_app_from_env() -> FastAPI:
+    s = Settings.from_env()
+    pool = make_pool(s.database_url) if s.database_url else None
+    return create_app(pool=pool, api_secret=s.api_secret)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -30,7 +38,11 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("purge", help="delete view_events older than 2 days")
     args = parser.parse_args(argv)
     if args.cmd == "serve":
-        uvicorn.run("saiem_api.app:create_app", factory=True, host=args.host, port=args.port)
+        problem = Settings.from_env().secret_problem()
+        if problem:
+            print(f"saiem-api serve: {problem}", file=sys.stderr)
+            sys.exit(2)
+        uvicorn.run(create_app_from_env(), host=args.host, port=args.port)
     elif args.cmd == "migrate":
         from saiem_api.db import migrate
 

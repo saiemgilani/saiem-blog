@@ -9,6 +9,19 @@ services:
     build:
       context: ../api
       dockerfile: ../deploy/Dockerfile.api
+    # Values come from deploy/.env on the droplet (chmod 600, never committed — see .env.example);
+    # compose.dev.yml overrides them for dev/CI.
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      SAIEM_API_SECRET: ${SAIEM_API_SECRET:-}
+      OWNER_GITHUB_ID: ${OWNER_GITHUB_ID:-}
+    volumes:
+      # Production database access = the HOST's Postgres unix socket (spec §3): no TCP listener
+      # is added for this app. Read-only is enough — connecting to a socket needs no write
+      # permission on the mount. Dev/CI point DATABASE_URL at the `db` container instead and
+      # never use this mount (Docker just creates an empty host dir).
+      - ${PG_SOCKET_DIR:-/var/run/postgresql}:/var/run/postgresql:ro
+    command: ["sh", "-c", "/app/.venv/bin/saiem-api migrate && exec /app/.venv/bin/saiem-api serve --host 0.0.0.0 --port 8000"]
     ports:
       - "127.0.0.1:8100:8000"
     healthcheck:
@@ -24,6 +37,11 @@ services:
       dockerfile: ../deploy/Dockerfile.web
     environment:
       API_BASE_URL: http://api:8000
+      SAIEM_API_SECRET: ${SAIEM_API_SECRET:-}
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      AUTH_GITHUB_ID: ${AUTH_GITHUB_ID:-}
+      AUTH_GITHUB_SECRET: ${AUTH_GITHUB_SECRET:-}
+      AUTH_TRUST_HOST: "true"
     ports:
       - "127.0.0.1:3100:3000"
     volumes:
