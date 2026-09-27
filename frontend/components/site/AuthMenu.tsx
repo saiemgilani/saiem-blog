@@ -7,7 +7,7 @@ import { sessionLogin, type MenuState } from "@lib/authClient";
 export function AuthMenu() {
   const [state, setState] = useState<MenuState | null>(null); // null = still loading
   useEffect(() => {
-    fetch("/api/auth/session")
+    fetch("/api/me")
       .then(async (r) => setState(sessionLogin(r.status, r.ok ? await r.json() : null)))
       .catch(() => setState({ kind: "off" }));
   }, []);

@@ -18,11 +18,12 @@ test("session: only githubId and login cross to the client", () => {
 });
 
 test("menu decision table", () => {
-  assert.deepEqual(sessionLogin(500, null), { kind: "off" }); // MissingSecret → auth not configured → hide
-  assert.deepEqual(sessionLogin(200, null), { kind: "out" });
-  assert.deepEqual(sessionLogin(200, {}), { kind: "out" });
-  assert.deepEqual(sessionLogin(200, { user: { name: "S" }, login: "saiemgilani" }), { kind: "in", login: "saiemgilani" });
-  assert.deepEqual(sessionLogin(200, { user: { name: "S" } }), { kind: "out" }, "a session without a login can't act");
+  assert.deepEqual(sessionLogin(500, null), { kind: "off" }); // non-200 → off
+  assert.deepEqual(sessionLogin(200, { enabled: false }), { kind: "off" }); // sign-in not configured here
+  assert.deepEqual(sessionLogin(200, { enabled: true, login: null }), { kind: "out" });
+  assert.deepEqual(sessionLogin(200, { enabled: true, login: "saiemgilani" }), { kind: "in", login: "saiemgilani" });
+  assert.deepEqual(sessionLogin(200, {}), { kind: "off" }, "no enabled flag → off");
+  assert.deepEqual(sessionLogin(200, { login: "x" }), { kind: "off" }, "login with no enabled flag → off");
 });
 
 test("jwt: provider-seeded email and picture are dropped", () => {

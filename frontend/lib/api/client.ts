@@ -8,7 +8,7 @@ export function apiEnv(env: NodeJS.ProcessEnv = process.env): ApiEnv | null {
   const baseUrl = env.API_BASE_URL?.replace(/\/$/, "");
   const secret = env.SAIEM_API_SECRET;
   // VIEWS_HASH_SECRET is optional: falling back to SAIEM_API_SECRET keeps existing deploys working.
-  return baseUrl && secret ? { baseUrl, secret, viewsHashSecret: env.VIEWS_HASH_SECRET ?? secret } : null;
+  return baseUrl && secret ? { baseUrl, secret, viewsHashSecret: env.VIEWS_HASH_SECRET || secret } : null;
 }
 
 export async function apiFetch(

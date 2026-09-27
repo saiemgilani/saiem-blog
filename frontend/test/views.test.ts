@@ -88,4 +88,5 @@ test("only known note slugs are counted; unknown slugs 404 before the limiter", 
 test("apiEnv sets viewsHashSecret from VIEWS_HASH_SECRET, falling back to SAIEM_API_SECRET", () => {
   assert.equal(apiEnv({ ...process.env, API_BASE_URL: "https://x", SAIEM_API_SECRET: "s", VIEWS_HASH_SECRET: "v" })?.viewsHashSecret, "v");
   assert.equal(apiEnv({ ...process.env, API_BASE_URL: "https://x", SAIEM_API_SECRET: "s", VIEWS_HASH_SECRET: undefined })?.viewsHashSecret, "s");
+  assert.equal(apiEnv({ ...process.env, API_BASE_URL: "https://x", SAIEM_API_SECRET: "s", VIEWS_HASH_SECRET: "" })?.viewsHashSecret, "s");
 });

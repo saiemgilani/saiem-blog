@@ -12,7 +12,7 @@ At [saiemgilani.com](https://www.saiemgilani.com), I do not collect contact info
 
 **The lab.** Interactive entries under `/lab` run in your browser. When one reads a public SportsDataverse data file, the request passes through this site and on to GitHub's release servers, which see it as they would any download. To stop abuse, the relay limits how many requests each IP address can make over a short period; that tally lives in memory only and is not stored or logged.
 
-**View counts.** Each note shows a view count. To count a visitor once per day, the site sends its backend a keyed hash (HMAC) of the visitor's IP address, never the address itself. Those hashes are kept for 2 days, only so the same visitor isn't counted twice in one day, and then purged; only the running totals remain.
+**View counts.** Each note shows a view count. To count a visitor once per day, the site sends its backend a keyed hash (HMAC) of the visitor's IP address, never the address itself. Those hashes are kept for the current and previous two calendar days (purged daily once older than that), then only totals remain.
 
 **Sign-in.** Sign-in with GitHub is optional and only needed to run gated lab experiments (coming later). The session cookie carries your GitHub id and login — no email, no avatar, no access token — and Auth.js sets its usual csrf/callback/session cookies for that flow. Nothing is set until you sign in.
 
