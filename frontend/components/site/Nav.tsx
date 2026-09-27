@@ -3,6 +3,7 @@ import { site } from "@content/site";
 import { Seal } from "@components/brand/Seal";
 import { ThemeToggle } from "./ThemeToggle";
 import { CommandMenu, type CommandItemData } from "./CommandMenu";
+import { AuthMenu } from "./AuthMenu";
 
 export function Nav({ commandItems }: { commandItems: CommandItemData[] }) {
   return (
@@ -20,6 +21,7 @@ export function Nav({ commandItems }: { commandItems: CommandItemData[] }) {
           ))}
           {/* keyboard-only feature; the shortcut still works below sm, it just has no chip */}
           <li className="hidden sm:block"><CommandMenu items={commandItems} /></li>
+          <li><AuthMenu /></li>
           <li><ThemeToggle /></li>
         </ul>
       </nav>
