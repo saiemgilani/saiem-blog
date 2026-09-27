@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from psycopg_pool import ConnectionPool
 
-from saiem_api import __version__, projects, quota_routes, views
+from saiem_api import __version__, lab_routes, projects, quota_routes, views
 from saiem_api.quota import QuotaExceeded
 from saiem_api.settings import Settings
 
@@ -27,6 +27,7 @@ def create_app(
     app.include_router(views.router)
     app.include_router(projects.router)
     app.include_router(quota_routes.router)
+    app.include_router(lab_routes.router)
 
     @app.exception_handler(QuotaExceeded)
     def _quota_exceeded(_: Request, exc: QuotaExceeded) -> JSONResponse:
