@@ -55,11 +55,11 @@ def _client() -> TestClient:
     app.state.api_secret = SECRET
 
     @app.get("/r")
-    def r(p: Principal = Depends(require("read"))) -> dict[str, str]:  # noqa: B008
+    def r(p: Principal = Depends(require("read"))) -> dict[str, str]:
         return {"sub": p.sub}
 
     @app.get("/run")
-    def run(p: Principal = Depends(require("run"))) -> dict[str, str]:  # noqa: B008
+    def run(p: Principal = Depends(require("run"))) -> dict[str, str]:
         return {"sub": p.sub}
 
     return TestClient(app)
