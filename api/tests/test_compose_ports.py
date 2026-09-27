@@ -49,4 +49,4 @@ def test_the_dev_override_passes_too():
     dev = yaml.safe_load(COMPOSE_DEV.read_text())
     assert set(dev["services"]) == {"db", "api", "web"}
     assert violations(dev) == []
-    assert dev["services"]["db"]["ports"] == ["127.0.0.1:5433:5432"]
+    assert dev["services"]["db"]["ports"] == ["127.0.0.1:5439:5432"]

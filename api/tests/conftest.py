@@ -11,7 +11,7 @@ def pool():
     if not url:
         pytest.skip(
             "TEST_DATABASE_URL not set — start deploy/compose.dev.yml's db and export "
-            "postgresql://saiem_app:saiem_dev@127.0.0.1:5433/saiem"
+            "postgresql://saiem_app:saiem_dev@127.0.0.1:5439/saiem"
         )
     with make_pool(url, max_size=2) as p:
         with p.connection() as conn:
