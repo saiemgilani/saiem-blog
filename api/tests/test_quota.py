@@ -2,14 +2,22 @@ import os
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
 from saiem_api.app import create_app
 from saiem_api.db import make_pool
-from saiem_api.quota import QuotaExceeded, Reservation, ensure_user, reserve, settle, spend_status
+from saiem_api.quota import (
+    QuotaExceeded,
+    Reservation,
+    ensure_user,
+    purge_quotas,
+    reserve,
+    settle,
+    spend_status,
+)
 from saiem_api.settings import Settings
 from tests.test_views import SECRET, auth
 
@@ -65,6 +73,23 @@ def test_settle_success_with_units_used_refunds_the_difference(pool):  # R-P5-5
     with pool.connection() as conn:
         assert conn.execute("select used from app.quotas where user_id = %s", (u,)).fetchone()[0] == 3
     assert spend_status(pool)["units_used"] == 3
+
+
+def test_purge_quotas_deletes_rows_past_retention(pool):  # SF-7
+    u = ensure_user(pool, 2, "b")
+    with pool.connection() as conn:
+        conn.execute(
+            "insert into app.quotas (user_id, entry_slug, day, used, \"limit\") values (%s, 'e', %s, 1, 5)",
+            (u, date.today() - timedelta(days=100)),
+        )
+        conn.execute(
+            "insert into app.quotas (user_id, entry_slug, day, used, \"limit\") values (%s, 'e2', %s, 1, 5)",
+            (u, date.today()),
+        )
+    assert purge_quotas(pool, 90) == 1
+    with pool.connection() as conn:
+        remaining = {r[0] for r in conn.execute("select entry_slug from app.quotas where user_id = %s", (u,))}
+    assert remaining == {"e2"}
 
 
 def test_daily_limit_is_enforced_and_spend_untouched_on_failure(pool):

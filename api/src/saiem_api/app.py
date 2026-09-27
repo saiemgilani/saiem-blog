@@ -24,6 +24,10 @@ def create_app(
     # Sync routes run in Starlette's threadpool, so every read/write of this dict is under this lock.
     app.state.reservations = {}
     app.state.reservations_lock = threading.Lock()
+    # SF-2 (R-P5-14): bounds concurrent python runner children against the container's memory
+    # limit -- one process, one semaphore. lab_routes.post_run acquires non-blocking before
+    # reserve, so a full semaphore charges nothing.
+    app.state.lab_run_semaphore = threading.BoundedSemaphore(app.state.settings.lab_max_concurrent_runs)
     app.include_router(views.router)
     app.include_router(projects.router)
     app.include_router(quota_routes.router)
@@ -36,6 +40,10 @@ def create_app(
     @app.exception_handler(quota_routes.Paused)
     def _paused(_: Request, __: quota_routes.Paused) -> JSONResponse:
         return JSONResponse(status_code=503, content={"paused": True})
+
+    @app.exception_handler(lab_routes.Busy)
+    def _busy(_: Request, __: lab_routes.Busy) -> JSONResponse:
+        return JSONResponse(status_code=503, content={"busy": True})
 
     @app.get("/health")
     def health() -> dict[str, str]:

@@ -21,6 +21,7 @@ class Settings:
     lab_live_runs: bool = True
     lab_run_timeout_s: int = 30
     run_retention_days: int = 90
+    lab_max_concurrent_runs: int = 2
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] = os.environ) -> "Settings":
@@ -35,6 +36,7 @@ class Settings:
             not in _PAUSED_LAB_LIVE_RUNS_VALUES,
             lab_run_timeout_s=int(env.get("LAB_RUN_TIMEOUT_S") or "30"),
             run_retention_days=int(env.get("RUN_RETENTION_DAYS") or "90"),
+            lab_max_concurrent_runs=int(env.get("LAB_MAX_CONCURRENT_RUNS") or "2"),
         )
 
     def secret_problem(self) -> str | None:

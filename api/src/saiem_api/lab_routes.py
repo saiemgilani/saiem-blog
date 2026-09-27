@@ -23,6 +23,13 @@ from saiem_api.views import Slug
 
 router = APIRouter(prefix="/v1/lab", tags=["lab"])
 
+
+class Busy(Exception):
+    """Raised when the process-wide runner semaphore is full; app.py's handler turns it into 503
+    {"busy": true}. See SF-2 (R-P5-14): bounds concurrent runner children against the container's
+    memory limit."""
+
+
 _CACHE_HIT = """
 select id, result from app.lab_runs
 where entry_slug = %s and params_hash = %s and status = 'ok'
@@ -77,52 +84,62 @@ def post_run(
         return {"run_id": str(run_id), "status": "ok", "result": result, "cost_units": 0, "cached": True}
 
     settings = request.app.state.settings
-    login = request.headers.get("X-Login", "")[:39]  # N-8: matches Task 1's ReserveIn.login cap
-    user_id = ensure_user(pool, int(principal.sub), login)
-    units = spec["cost_units"]
-    r = reserve(
-        pool,
-        user_id=user_id,
-        entry_slug=slug,
-        units=units,
-        daily_limit=settings.lab_daily_quota,
-        month_cap=settings.spend_units_cap,
-    )
-    with pool.connection() as conn:
-        run_id = conn.execute(_INSERT_RUNNING, (slug, user_id, h)).fetchone()[0]
 
-    # SF-1: once a unit is reserved, ANY exception here (execute raising, the row update
-    # failing, JSON serialisation) must still settle the reservation and leave the row finished,
-    # not stuck "running" while the ledger says charged. `ok` stays False unless the run AND its
-    # persistence both succeed, so a failure anywhere here fails toward refund.
-    ok = False
+    # SF-2 (R-P5-14): non-blocking acquire BEFORE reserve -- and before ensure_user, so a full
+    # semaphore charges nothing and touches nothing else (no user upsert either).
+    semaphore = request.app.state.lab_run_semaphore
+    if not semaphore.acquire(blocking=False):
+        raise Busy()
     try:
-        out = execute(slug, params, timeout_s=settings.lab_run_timeout_s)
-        cost_units = units if out.status == "ok" else 0
-        with pool.connection() as conn:
-            conn.execute(
-                _UPDATE_FINISHED,
-                (
-                    out.status,
-                    Jsonb(out.result) if out.result is not None else None,
-                    out.error,
-                    cost_units,
-                    run_id,
-                ),
-            )
-        # Fix round 2 (SF-1 residual gap): only flip to True once the row update has actually
-        # committed. Setting this right after execute() returns -- before the persistence
-        # attempt -- meant a failed UPDATE (PoolTimeout, a bad JSON value, ...) after a
-        # genuinely-ok run still settled "success" in the finally below, charging the user for a
-        # run whose result was never durably stored.
-        ok = out.status == "ok"
-    except Exception:
-        cost_units = 0
-        with pool.connection() as conn:
-            conn.execute(_UPDATE_FINISHED, ("error", None, "internal error", 0, run_id))
-        raise
+        login = request.headers.get("X-Login", "")[:39]  # N-8: matches Task 1's ReserveIn.login cap
+        user_id = ensure_user(pool, int(principal.sub), login)
+        units = spec["cost_units"]
+        r = reserve(
+            pool,
+            user_id=user_id,
+            entry_slug=slug,
+            units=units,
+            daily_limit=settings.lab_daily_quota,
+            month_cap=settings.spend_units_cap,
+        )
+        # SF-1: `_INSERT_RUNNING` must live INSIDE the same guard that settles on any exception
+        # after `reserve` -- it used to run between `reserve` and `try`, so a failed insert
+        # (PoolTimeout, a DB blip) raised out with the unit charged, no run, and no row. `run_id`
+        # starts None so the except branch can tell whether the insert itself is what failed.
+        run_id = None
+        ok = False
+        try:
+            with pool.connection() as conn:
+                run_id = conn.execute(_INSERT_RUNNING, (slug, user_id, h)).fetchone()[0]
+            out = execute(slug, params, timeout_s=settings.lab_run_timeout_s)
+            cost_units = units if out.status == "ok" else 0
+            with pool.connection() as conn:
+                conn.execute(
+                    _UPDATE_FINISHED,
+                    (
+                        out.status,
+                        Jsonb(out.result) if out.result is not None else None,
+                        out.error,
+                        cost_units,
+                        run_id,
+                    ),
+                )
+            # Fix round 2 (SF-1 residual gap): only flip to True once the row update has actually
+            # committed. Setting this right after execute() returns -- before the persistence
+            # attempt -- meant a failed UPDATE (PoolTimeout, a bad JSON value, ...) after a
+            # genuinely-ok run still settled "success" in the finally below, charging the user
+            # for a run whose result was never durably stored.
+            ok = out.status == "ok"
+        except Exception:
+            cost_units = 0
+            if run_id is not None:  # the insert itself may be what raised -- nothing to update
+                with pool.connection() as conn:
+                    conn.execute(_UPDATE_FINISHED, ("error", None, "internal error", 0, run_id))
+            raise
+        finally:
+            settle(pool, r, "success" if ok else "refund")
     finally:
-        settle(pool, r, "success" if ok else "refund")
+        semaphore.release()
 
     return {
         "run_id": str(run_id),

@@ -1,7 +1,7 @@
 """Run a lab entry in a child process with a wall-clock timeout and an address-space cap.
 What this does NOT do: OS-level network egress filtering — the child inherits the container's
-network. The only fetch helper exposed to runners is the allowlisted release-asset reader; the
-entry's margin rail says so."""
+network. No fetch helper exists yet; runners in P5 use no network. An entry that needs data
+must get an allowlisted reader first."""
 
 import hashlib
 import json

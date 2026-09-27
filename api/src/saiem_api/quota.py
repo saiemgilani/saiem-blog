@@ -118,6 +118,17 @@ def settle(
         )
 
 
+def purge_quotas(pool: ConnectionPool, keep_days: int) -> int:
+    """SF-7: `app.quotas` rows are per-entry daily usage counters, kept alongside `app.lab_runs`
+    under the same RUN_RETENTION_DAYS -- otherwise they accumulate forever and the privacy page's
+    retention claim covers only run results/hashes, not the daily counts."""
+    keep_days = max(keep_days, 1)  # N-10 parity: never delete today's row even at retention <= 0
+    with pool.connection() as conn:
+        return conn.execute(
+            "delete from app.quotas where day < current_date - make_interval(days => %s)", (keep_days,)
+        ).rowcount
+
+
 def spend_status(pool: ConnectionPool) -> dict:
     month = datetime.now(UTC).date().replace(day=1)
     with pool.connection() as conn:

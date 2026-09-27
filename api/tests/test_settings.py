@@ -23,6 +23,7 @@ def test_lab_settings_have_defaults_and_parse_from_env():
     assert defaults.lab_live_runs is True
     assert defaults.lab_run_timeout_s == 30
     assert defaults.run_retention_days == 90
+    assert defaults.lab_max_concurrent_runs == 2  # SF-2 (R-P5-14)
 
     s = Settings.from_env(
         {
@@ -30,16 +31,25 @@ def test_lab_settings_have_defaults_and_parse_from_env():
             "SPEND_UNITS_CAP": "500",
             "LAB_RUN_TIMEOUT_S": "45",
             "RUN_RETENTION_DAYS": "30",
+            "LAB_MAX_CONCURRENT_RUNS": "4",
         }
     )
     assert s.lab_daily_quota == 10
     assert s.spend_units_cap == 500
     assert s.lab_run_timeout_s == 45
     assert s.run_retention_days == 30
+    assert s.lab_max_concurrent_runs == 4
 
 
 @pytest.mark.parametrize(
-    "name", ["LAB_DAILY_QUOTA", "SPEND_UNITS_CAP", "LAB_RUN_TIMEOUT_S", "RUN_RETENTION_DAYS"]
+    "name",
+    [
+        "LAB_DAILY_QUOTA",
+        "SPEND_UNITS_CAP",
+        "LAB_RUN_TIMEOUT_S",
+        "RUN_RETENTION_DAYS",
+        "LAB_MAX_CONCURRENT_RUNS",
+    ],
 )
 def test_int_lab_settings_fall_back_to_the_default_when_set_but_empty(name):  # N-7
     # compose's `X: ${X:-}` idiom yields an empty string, not an unset var; `int("")` would crash.

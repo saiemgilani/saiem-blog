@@ -130,6 +130,52 @@ def test_execute_raising_still_refunds_and_marks_the_row_error(client, pool, mon
     assert status == "error"  # not left "running"
 
 
+def test_running_row_insert_failure_still_refunds(client, pool, monkeypatch):  # SF-1
+    # The "running" row insert now lives INSIDE the same try/finally that settles on any
+    # exception after reserve. Before this fix it sat between reserve() and the try, so a
+    # failure there raised out with the unit charged and no row at all.
+    original_execute = psycopg.Connection.execute
+
+    def _flaky_execute(self, query, *args, **kwargs):
+        if isinstance(query, str) and "'running')" in query:
+            raise psycopg.OperationalError("connection lost before the insert")
+        return original_execute(self, query, *args, **kwargs)
+
+    monkeypatch.setattr(psycopg.Connection, "execute", _flaky_execute)
+    with pytest.raises(psycopg.OperationalError):
+        client.post(
+            "/v1/lab/series-odds/runs",
+            json=SERIES_ODDS_PARAMS,
+            headers={**auth("run", sub="51"), "X-Login": "a"},
+        )
+    assert _quota_used(pool, "51", "series-odds") == 0  # refunded even though the insert itself raised
+    assert spend_status(pool)["units_used"] == 0
+    with pool.connection() as conn:
+        assert (
+            conn.execute("select count(*) from app.lab_runs where entry_slug = 'series-odds'").fetchone()[0]
+            == 0
+        )  # nothing to update -- the insert never landed
+
+
+def test_concurrent_run_limit_returns_503_busy_and_charges_nothing(pool):  # SF-2 (R-P5-14)
+    c = TestClient(create_app(pool=pool, api_secret=SECRET, settings=_settings(lab_max_concurrent_runs=1)))
+    semaphore = c.app.state.lab_run_semaphore
+    assert semaphore.acquire(blocking=False)  # simulate one run already in flight
+    try:
+        r = c.post(
+            "/v1/lab/series-odds/runs",
+            json=SERIES_ODDS_PARAMS,
+            headers={**auth("run", sub="52"), "X-Login": "a"},
+        )
+        assert r.status_code == 503
+        assert r.json() == {"busy": True}
+        assert _quota_used(pool, "52", "series-odds") == 0  # nothing was reserved
+        with pool.connection() as conn:
+            assert conn.execute("select count(*) from app.users where github_id = 52").fetchone()[0] == 0
+    finally:
+        semaphore.release()
+
+
 def test_row_update_failure_after_an_ok_run_still_refunds(client, pool, monkeypatch):  # fix round 2
     # SF-1 residual: `execute()` succeeds, but persisting that success (the row UPDATE) raises.
     # Fail toward refund even here -- the ledger must not say "charged" for a run the DB never
