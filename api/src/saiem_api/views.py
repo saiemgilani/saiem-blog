@@ -43,6 +43,9 @@ def record_view(pool: ConnectionPool, slug: str, visitor: str) -> tuple[int, boo
 
 
 def purge_view_events(pool: ConnectionPool, keep_days: int = 2) -> int:
+    # Keeps today + the previous `keep_days` calendar days. Run daily at 09:20 UTC
+    # (deploy/systemd/saiem-purge.timer), so right before that run a hash can be up to
+    # keep_days + 1 (~3) calendar days old — see privacy.mdx's "View counts" paragraph.
     with pool.connection() as conn:
         return conn.execute(
             "delete from app.view_events where day < current_date - %s", (keep_days,)

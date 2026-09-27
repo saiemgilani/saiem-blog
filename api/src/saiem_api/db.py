@@ -20,6 +20,9 @@ def migrate(pool: ConnectionPool) -> list[str]:
     """Apply every migrations/*.sql not yet recorded, in name order, in ONE transaction."""
     applied: list[str] = []
     with pool.connection() as conn:
+        # Transaction-scoped advisory lock, released at commit: two `migrate` runs racing (e.g.
+        # a `compose run` beside `up`) apply in sequence instead of racing on `create table`.
+        conn.execute("select pg_advisory_xact_lock(7264930001)")
         conn.execute("create schema if not exists app")
         conn.execute(
             "create table if not exists app.schema_migrations "
