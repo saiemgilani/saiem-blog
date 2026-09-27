@@ -1,0 +1,7 @@
+# deploy/systemd/saiem-purge.service — install to /etc/systemd/system/ with the .timer
+[Unit]
+Description=saiem-api: purge view_events older than 2 days
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/saiem-blog/deploy
+ExecStart=/usr/bin/docker compose run --rm --no-deps api /app/.venv/bin/saiem-api purge
