@@ -34,7 +34,6 @@ export function RunGatePrompt({ state }: { state: MenuState | null }) {
       <p className="mt-3 font-mono text-[11px] text-muted">
         showing the example output ·{" "}
         <button type="button" onClick={() => signIn("github")} className="text-ink underline decoration-rule underline-offset-2 hover:text-brand">sign in with GitHub to run your own</button>
-        {" "}({DAILY_QUOTA} runs/day)
       </p>
     );
   return null;

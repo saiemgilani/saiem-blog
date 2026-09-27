@@ -130,8 +130,10 @@ web container signing users in itself — see §5) and stay empty in mode A.
 2. `ssh root@161.35.59.239 'ss -ltn'` — `3100` and `8100` must show
    `127.0.0.1` only, never `0.0.0.0` or `::`.
 3. `ssh root@161.35.59.239 'cd /opt/saiem-blog/deploy && docker compose logs api | grep applied'`
-   — shows `0001_app.sql` and `0002_lab.sql` (both migrations ran at container
-   start).
+   — on an **upgrade** (0001 already recorded) shows only `applied 1
+   migration(s): 0002_lab.sql`; on a **fresh** box shows both names,
+   `applied 2 migration(s): 0001_app.sql, 0002_lab.sql`. Either way,
+   `select name from app.schema_migrations` should list both migration names.
 4. `curl -sS -o /dev/null -w '%{http_code}' https://api.saiemgilani.com/v1/views`
    — expect `401` (no service token → unauthenticated).
 5. **Mode B note:** the web image is built without API env, so on the

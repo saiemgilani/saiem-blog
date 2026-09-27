@@ -5,6 +5,7 @@ reserve/settle metering and its current_user/paused dependencies verbatim. GET
 metering."""
 
 import json
+import logging
 from importlib.resources import files
 from typing import Any
 
@@ -22,6 +23,7 @@ from saiem_api.runner import execute, params_hash
 from saiem_api.views import Slug
 
 router = APIRouter(prefix="/v1/lab", tags=["lab"])
+logger = logging.getLogger(__name__)
 
 
 class Busy(Exception):
@@ -133,8 +135,11 @@ def post_run(
         except Exception:
             cost_units = 0
             if run_id is not None:  # the insert itself may be what raised -- nothing to update
-                with pool.connection() as conn:
-                    conn.execute(_UPDATE_FINISHED, ("error", None, "internal error", 0, run_id))
+                try:  # best-effort compensation: a failed error-mark must never mask the original exception
+                    with pool.connection() as conn:
+                        conn.execute(_UPDATE_FINISHED, ("error", None, "internal error", 0, run_id))
+                except Exception:
+                    logger.exception("failed to mark lab run %s as error", run_id)
             raise
         finally:
             settle(pool, r, "success" if ok else "refund")

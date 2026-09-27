@@ -94,23 +94,30 @@ export function createChatHandler(deps: ChatDeps) {
     const { reservation_id } = (await reserved.json()) as { reservation_id: string };
     const settle = (payload: Record<string, unknown>) =>
       apiFetch(env, "/v1/quota/settle", { method: "POST", body: { reservation_id, ...payload }, sub: session.githubId, scope: "run" }, deps.fetcher).catch(() => undefined);
-    const result = deps.streamText({
-      model: deps.gateway(model),
-      instructions: `You answer questions about the SportsDataverse lab. You can list the entry's declared data sources with the list_sources tool; you cannot query them yet. Be brief.`,
-      messages: modelMessages,
-      maxOutputTokens: entry.llm.maxOutputTokens,
-      tools: (deps.makeTools ?? (() => ({ list_sources: { description: "list the entry's declared data sources" } })))(entry),
-      // NIT 1: onError can fire (refund) and onEnd can still fire afterward (success settle) when
-      // a later step recovers after an earlier one errored -- the API's atomic pop makes the
-      // second settle call a harmless 404 (see quota_routes.py's post_settle), so the net effect
-      // is a full refund even though some tokens were spent. Acceptable; documented, not "fixed".
-      onEnd: async ({ usage }: { usage: { inputTokens?: number; outputTokens?: number } }) => { await settle({ outcome: "success", units_used: unitsFor(usage ?? {}) }); },
-      onError: async () => { await settle({ outcome: "refund" }); },
-      // NIT 2: no abortSignal is wired, so a client disconnect never fires onEnd/onError/onAbort --
-      // the reservation is simply pruned at its TTL with the full units kept. Fails closed (no
-      // free tokens), so left as-is rather than adding abort plumbing beyond what was asked.
-      ...(deps.streamOptions ?? {}),
-    });
-    return deps.toResponse(result);
+    try {
+      const result = deps.streamText({
+        model: deps.gateway(model),
+        instructions: `You answer questions about the SportsDataverse lab. You can list the entry's declared data sources with the list_sources tool; you cannot query them yet. Be brief.`,
+        messages: modelMessages,
+        maxOutputTokens: entry.llm.maxOutputTokens,
+        tools: (deps.makeTools ?? (() => ({ list_sources: { description: "list the entry's declared data sources" } })))(entry),
+        // NIT 1: onError can fire (refund) and onEnd can still fire afterward (success settle) when
+        // a later step recovers after an earlier one errored -- the API's atomic pop makes the
+        // second settle call a harmless 404 (see quota_routes.py's post_settle), so the net effect
+        // is a full refund even though some tokens were spent. Acceptable; documented, not "fixed".
+        onEnd: async ({ usage }: { usage: { inputTokens?: number; outputTokens?: number } }) => { await settle({ outcome: "success", units_used: unitsFor(usage ?? {}) }); },
+        onError: async () => { await settle({ outcome: "refund" }); },
+        // NIT 2: no abortSignal is wired, so a client disconnect never fires onEnd/onError/onAbort --
+        // the reservation is simply pruned at its TTL with the full units kept. Fails closed (no
+        // free tokens), so left as-is rather than adding abort plumbing beyond what was asked.
+        ...(deps.streamOptions ?? {}),
+      });
+      return deps.toResponse(result);
+    } catch {
+      // A synchronous throw from streamText/toResponse (bad gateway config, model setup, response
+      // construction) happens before the stream lifecycle callbacks exist to refund -- settle here.
+      await settle({ outcome: "refund" });
+      return json(502, { error: "gateway" });
+    }
   };
 }

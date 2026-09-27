@@ -57,6 +57,13 @@ def test_int_lab_settings_fall_back_to_the_default_when_set_but_empty(name):  # 
     assert getattr(Settings.from_env({name: ""}), name.lower()) == getattr(defaults, name.lower())
 
 
+@pytest.mark.parametrize("value", ["0", "-3"])
+def test_capacity_settings_clamp_non_positive_values_to_one(value):
+    s = Settings.from_env({"LAB_MAX_CONCURRENT_RUNS": value, "LAB_DAILY_QUOTA": value})
+    assert s.lab_max_concurrent_runs == 1
+    assert s.lab_daily_quota == 1
+
+
 @pytest.mark.parametrize(
     "value,expected",
     [

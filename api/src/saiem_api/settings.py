@@ -30,13 +30,13 @@ class Settings:
             api_secret=env.get("SAIEM_API_SECRET", ""),
             owner_github_id=env.get("OWNER_GITHUB_ID") or None,
             allow_dev_secret=env.get("SAIEM_ALLOW_DEV_SECRET") == "1",
-            lab_daily_quota=int(env.get("LAB_DAILY_QUOTA") or "5"),
+            lab_daily_quota=max(1, int(env.get("LAB_DAILY_QUOTA") or "5")),
             spend_units_cap=int(env.get("SPEND_UNITS_CAP") or "2000"),
             lab_live_runs=(env.get("LAB_LIVE_RUNS") or "").strip().lower()
             not in _PAUSED_LAB_LIVE_RUNS_VALUES,
             lab_run_timeout_s=int(env.get("LAB_RUN_TIMEOUT_S") or "30"),
             run_retention_days=int(env.get("RUN_RETENTION_DAYS") or "90"),
-            lab_max_concurrent_runs=int(env.get("LAB_MAX_CONCURRENT_RUNS") or "2"),
+            lab_max_concurrent_runs=max(1, int(env.get("LAB_MAX_CONCURRENT_RUNS") or "2")),
         )
 
     def secret_problem(self) -> str | None:

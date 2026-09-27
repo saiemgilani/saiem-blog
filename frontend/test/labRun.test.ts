@@ -71,9 +71,10 @@ test("handler order holds under multiple true conditions: paused beats signed-ou
 test("runOutcome maps API answers to UI states", () => {
   assert.deepEqual(runOutcome(200, { run_id: "r", status: "ok", result: { exact: 0.71 }, cost_units: 1, cached: false }, 5), { kind: "ok", result: { exact: 0.71 }, cached: false, costUnits: 1 });
   assert.deepEqual(runOutcome(200, { status: "timeout", result: null, cost_units: 0, cached: false, error: "timeout" }, 5), { kind: "error", message: "the run timed out — units refunded" });
-  assert.deepEqual(runOutcome(429, { reason: "daily" }, 5), { kind: "quota", message: "quota used up for today (5/day) — back tomorrow" });
+  assert.deepEqual(runOutcome(429, { reason: "daily" }, 5), { kind: "quota", message: "quota used up for today — back tomorrow" });
   assert.deepEqual(runOutcome(429, { reason: "spend_cap" }, 5), { kind: "quota", message: "the lab's monthly budget is spent — back next month" });
   assert.deepEqual(runOutcome(503, { paused: true }, 5), { kind: "paused" });
+  assert.deepEqual(runOutcome(503, { busy: true }, 5), { kind: "error", message: "the lab is busy right now — try again in a moment" });
   assert.deepEqual(runOutcome(401, { error: "sign-in" }, 5), { kind: "signin" });
   assert.deepEqual(runOutcome(422, { detail: [] }, 5), { kind: "error", message: "those parameters were rejected" });
   assert.deepEqual(runOutcome(502, { error: "api" }, 5), { kind: "error", message: "the lab is unreachable right now" });

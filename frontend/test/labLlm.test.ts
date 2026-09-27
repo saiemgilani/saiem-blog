@@ -70,6 +70,15 @@ test("happy path: reserve 2 units, then stream with the entry's cap, instruction
   assert.deepEqual(api[1].body, { reservation_id: "res-1", outcome: "success", units_used: 1 });
 });
 
+test("streamText throws synchronously after reservation → 502 and the reservation is refunded", async () => {
+  const { h, api } = harness({ streamText: (() => { throw new Error("boom"); }) as never });
+  const r = await h(req(), entry);
+  assert.equal(r.status, 502);
+  assert.deepEqual(await r.json(), { error: "gateway" });
+  assert.equal(api[1]?.url, "https://api.test/v1/quota/settle");
+  assert.deepEqual(api[1]?.body, { reservation_id: "res-1", outcome: "refund" });
+});
+
 test("reserve 429 passes through; stream error settles refund", async () => {
   const deny = harness({ fetcher: (async () => Response.json({ reason: "daily" }, { status: 429 })) as typeof fetch });
   const r = await deny.h(req(), entry);

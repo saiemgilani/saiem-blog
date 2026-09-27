@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useRunGate, RunGatePrompt, DAILY_QUOTA } from "@components/lab/RunGate";
+import { useRunGate, RunGatePrompt } from "@components/lab/RunGate";
 import { ExampleOutput } from "@components/lab/ExampleOutput";
 
 export type AskTheRegistryExample = { transcript: { role: "user" | "assistant"; text: string }[] };
@@ -13,10 +13,11 @@ const buttonClass = "shrink-0 bg-brand px-2.5 py-1 text-on-brand disabled:opacit
 // Raw non-2xx response bodies (e.g. `{"reason":"daily"}`) land verbatim in `error.message` --
 // see createUIApiCallError in the installed ai@7 DefaultChatTransport (it uses response.text()).
 function mapError(message: string): string {
-  if (message.includes("daily")) return `quota used up for today (${DAILY_QUOTA}/day) — back tomorrow`;
+  if (message.includes("daily")) return "quota used up for today — back tomorrow";
   if (message.includes("spend_cap")) return "the lab's monthly budget is spent — back next month";
   if (message.includes("paused")) return "demo paused";
   if (message.includes("sign-in")) return "sign in again to ask"; // NIT 7: a session that expired mid-page
+  if (message.includes("too long")) return "that message is too long — shorten it and try again";
   return "the lab is unreachable right now";
 }
 
