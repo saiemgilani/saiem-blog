@@ -1,6 +1,6 @@
 # deploy/systemd/saiem-purge.service — install to /etc/systemd/system/ with the .timer
 [Unit]
-Description=saiem-api: purge view_events older than 2 days
+Description=saiem-api: purge view_events (2 days) and lab_runs/quotas (RUN_RETENTION_DAYS)
 After=docker.service
 Requires=docker.service
 [Service]

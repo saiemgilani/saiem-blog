@@ -101,6 +101,7 @@ SPEND_UNITS_CAP=2000
 LAB_RUN_TIMEOUT_S=30
 RUN_RETENTION_DAYS=90
 LAB_LIVE_RUNS=on
+LAB_MAX_CONCURRENT_RUNS=2
 AUTH_SECRET=
 AUTH_GITHUB_ID=
 AUTH_GITHUB_SECRET=
@@ -133,9 +134,7 @@ web container signing users in itself — see §5) and stay empty in mode A.
    start).
 4. `curl -sS -o /dev/null -w '%{http_code}' https://api.saiemgilani.com/v1/views`
    — expect `401` (no service token → unauthenticated).
-5. `curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer <a read token>" https://api.saiemgilani.com/v1/lab/series-odds/example`
-   — expect `200`.
-6. **Mode B note:** the web image is built without API env, so on the
+5. **Mode B note:** the web image is built without API env, so on the
    `/work` page the Projects section stays empty until the page's first ISR
    revalidation (≤ 1 h) — it isn't missing, it just hasn't refreshed yet.
 
@@ -184,9 +183,18 @@ on **Production only**.
      second app, or a second callback, for local dev
      (`http://localhost:3000/api/auth/callback/github`).
    - `OWNER_GITHUB_ID` — the owner's numeric GitHub id (same value as §2b).
-   - `LAB_LIVE_RUNS=on` — flip to `off` to pause gated runs without a redeploy
-     of code (SF-5 / R-P5-7: anything but `off|false|0|no`, case-insensitive,
-     counts as live).
+   - `LAB_LIVE_RUNS=on` — this Vercel value is only the **UI-side mirror**:
+     `isPaused()` in `frontend/lib/lab/run.ts` short-circuits the run/chat
+     routes before the API is ever called, on the same `off`/`false`/`0`/`no`
+     values (case-insensitive, trimmed) as the API accepts. It is NOT the
+     authoritative switch, and changing it here takes effect only after a
+     Production redeploy. The droplet API's own `LAB_LIVE_RUNS` in
+     `deploy/.env` is authoritative — it refuses reserve/runs/chat regardless
+     of what Vercel says. To pause spend immediately: edit
+     `LAB_LIVE_RUNS=off` in `/opt/saiem-blog/deploy/.env` on the droplet, then
+     `ssh root@161.35.59.239 'cd /opt/saiem-blog/deploy && docker compose up -d api'`
+     — a container recreate, not a code deploy (`Settings` is read once at
+     process start).
    - `LAB_LLM_MODELS=anthropic/claude-haiku-4-5` — the allowlist № 003 (`ask
      the lab`) is restricted to.
    - Set the AI Gateway monthly budget in the Vercel dashboard (owner) —
@@ -196,7 +204,10 @@ on **Production only**.
      gateway authenticates via Vercel OIDC automatically; the droplet's web
      container is not running on Vercel, so mode B needs this key set
      explicitly (`deploy/.env` on the droplet) or `/lab/ask-the-lab` reports
-     the gateway unconfigured.
+     the gateway unconfigured. `LAB_LIVE_RUNS` and `LAB_LLM_MODELS` also need
+     setting in `deploy/.env` for mode B (`deploy/compose.yml` passes all
+     three to the `web` service) — in mode A these three live on Vercel only,
+     as set above.
 2. **Remove** `SUPABASE_URL` and `SUPABASE_KEY` — the Supabase project is
    NXDOMAIN and there is nothing to migrate (views start at 0, projects come
    from the committed seed).

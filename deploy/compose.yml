@@ -20,6 +20,7 @@ services:
       LAB_RUN_TIMEOUT_S: ${LAB_RUN_TIMEOUT_S:-}
       RUN_RETENTION_DAYS: ${RUN_RETENTION_DAYS:-}
       LAB_LIVE_RUNS: ${LAB_LIVE_RUNS:-}
+      LAB_MAX_CONCURRENT_RUNS: ${LAB_MAX_CONCURRENT_RUNS:-}
     volumes:
       # Production database access = the HOST's Postgres unix socket (spec §3): no TCP listener
       # is added for this app. Read-only is enough — connecting to a socket needs no write
@@ -48,6 +49,11 @@ services:
       AUTH_GITHUB_ID: ${AUTH_GITHUB_ID:-}
       AUTH_GITHUB_SECRET: ${AUTH_GITHUB_SECRET:-}
       AUTH_TRUST_HOST: "true"
+      # SF-5: mode B only -- these never reached the web container before, so following the
+      # runbook still 503'd "gateway not configured" even with deploy/.env set correctly.
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
+      LAB_LIVE_RUNS: ${LAB_LIVE_RUNS:-}
+      LAB_LLM_MODELS: ${LAB_LLM_MODELS:-}
     ports:
       - "127.0.0.1:3100:3000"
     volumes:
