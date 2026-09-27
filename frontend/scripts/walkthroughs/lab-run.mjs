@@ -19,31 +19,47 @@ export default async function labRun(page, base) {
   const run = page.getByRole("button", { name: /^run$/i });
   await run.waitFor({ timeout: 15_000 });
   const status = page.getByRole("status");
-  // The status line is always rendered (empty when idle, "running…" mid-fetch), so waiting on
-  // its mere presence resolves immediately and races the fetch -- wait for the text to actually
-  // change to a settled (non-"running") value instead.
+  // R-P5-18(a): the settled status text repeats across PAID runs ("1 unit" -> "1 unit" every
+  // time), so waiting for the text to differ from the previous value times out on every run
+  // after the first. Every run passes through "running..." first (the button disables and the
+  // status renders it -- Task 3's SF5 fix), so each click yields >= 2 mutations of the status
+  // node even when the settled text repeats. Track those mutations instead of comparing text.
+  await page.evaluate(() => {
+    const el = document.querySelector('[role="status"]');
+    window.__st = [];
+    new MutationObserver(() => window.__st.push((el.textContent ?? "").trim())).observe(el, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+  });
   const pGame = page.getByLabel("p(win a game)");
-  // SF-9: a fixed p_game sequence (0.55..0.62) only dodges the run cache WITHIN one invocation --
-  // the cache is a database row keyed on params and lives 90 days, so a second walkthrough run
-  // against the same API (preview, post-deploy, or any manual re-run) replays the same sequence
-  // and hits the cache on every click. Seed off the wall clock so each invocation starts at a
-  // different point on the 0.01 grid the input's `step` requires.
-  const base = 0.5 + (Math.floor(Date.now() / 1000) % 40) / 100;
+  const homeEdge = page.getByLabel("home edge");
+  const sims = page.getByLabel("simulations");
+  // R-P5-18(b): p_game alone has only 40 clock-derived bases (0.50..0.89 on its 0.01 grid), so a
+  // re-run of the walkthrough against the same database can collide with an earlier run's exact
+  // params and hit the (free, 90-day) result cache instead of a fresh paid run -- a cache hit is
+  // harmless (free, never exhausts the quota) but would undercount how many paid runs this
+  // walkthrough actually exercised. Spread p_game, home_edge and sims off one timestamp so the
+  // combined key space makes a collision negligible; each stays inside SeriesOdds.tsx's
+  // min/max/step (p_game 0.01-0.99 step 0.01, home_edge 0-0.2 step 0.01, sims 1000-200000 step 1000).
+  const t = Date.now();
   for (let i = 0; i < 8; i++) {
-    const prev = (await status.innerText()).trim();
-    // Identical params would hit the run cache from the 2nd click on (free, no quota spend, and
-    // a repeated "cached · free" status text the waitForFunction below would never see change) --
-    // nudge p_game so every iteration is a fresh, quota-charged miss.
-    const p_game = Math.min(base + i * 0.01, 0.99);
-    await pGame.fill(p_game.toFixed(2));
+    const n = await page.evaluate(() => window.__st.length);
+    const p_game = (0.5 + ((Math.floor(t / 60_000) + i) % 40) / 100).toFixed(2);
+    const home_edge = (((Math.floor(t / 1000) + i) % 20) / 100).toFixed(2);
+    const simCount = String(1000 + ((t + i * 7) % 190) * 1000);
+    await pGame.fill(p_game);
+    await homeEdge.fill(home_edge);
+    await sims.fill(simCount);
     await run.click();
     await page.waitForFunction(
-      (prevText) => {
-        const el = document.querySelector('[role="status"]');
-        const t = el?.textContent?.trim() ?? "";
-        return t !== "" && t !== prevText && !/running/i.test(t);
+      (n) => {
+        const s = window.__st;
+        const last = s[s.length - 1];
+        return s.length > n && last !== undefined && last !== "" && !/running/i.test(last);
       },
-      prev,
+      n,
       { timeout: 45_000 },
     );
     const text = await status.innerText();
