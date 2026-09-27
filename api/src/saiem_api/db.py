@@ -8,9 +8,12 @@ from psycopg_pool import ConnectionPool
 MIGRATIONS = files("saiem_api").joinpath("migrations")
 
 
-def make_pool(url: str, *, max_size: int = 4) -> ConnectionPool:
-    # open=True connects eagerly: a bad DATABASE_URL fails at startup, not on the first request.
-    return ConnectionPool(url, min_size=1, max_size=max_size, open=True, timeout=10)
+def make_pool(url: str, *, max_size: int = 4, wait_timeout: float = 10) -> ConnectionPool:
+    # open=True starts connecting in the background; wait() blocks until min_size connections are
+    # up (or raises PoolTimeout) so a bad DATABASE_URL fails at startup, not on the first request.
+    pool = ConnectionPool(url, min_size=1, max_size=max_size, open=True, timeout=10)
+    pool.wait(timeout=wait_timeout)
+    return pool
 
 
 def migrate(pool: ConnectionPool) -> list[str]:

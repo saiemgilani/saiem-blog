@@ -50,7 +50,7 @@ def purge_view_events(pool: ConnectionPool, keep_days: int = 2) -> int:
 
 
 @router.get("")
-def list_views(pool: ConnectionPool = Depends(get_pool), _: Principal = Depends(require("read"))) -> dict:
+def list_views(_: Principal = Depends(require("read")), pool: ConnectionPool = Depends(get_pool)) -> dict:
     with pool.connection() as conn:
         rows = conn.execute("select slug, count from app.views order by count desc, slug").fetchall()
     return {"views": [{"slug": s, "count": int(c)} for s, c in rows]}
@@ -58,7 +58,7 @@ def list_views(pool: ConnectionPool = Depends(get_pool), _: Principal = Depends(
 
 @router.get("/{slug}")
 def get_view(
-    slug: Slug, pool: ConnectionPool = Depends(get_pool), _: Principal = Depends(require("read"))
+    slug: Slug, _: Principal = Depends(require("read")), pool: ConnectionPool = Depends(get_pool)
 ) -> dict:
     with pool.connection() as conn:
         row = conn.execute("select count from app.views where slug = %s", (slug,)).fetchone()
@@ -69,8 +69,8 @@ def get_view(
 def post_view(
     slug: Slug,
     body: ViewIn,
-    pool: ConnectionPool = Depends(get_pool),
     _: Principal = Depends(require("read")),
+    pool: ConnectionPool = Depends(get_pool),
 ) -> dict:
     count, counted = record_view(pool, slug, body.visitor)
     return {"slug": slug, "count": count, "counted": counted}

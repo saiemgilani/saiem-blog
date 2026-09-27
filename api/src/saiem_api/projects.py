@@ -41,7 +41,7 @@ def seed(pool: ConnectionPool, rows: list[dict]) -> int:
 
 
 @router.get("")
-def list_projects(pool: ConnectionPool = Depends(get_pool), _: Principal = Depends(require("read"))) -> dict:
+def list_projects(_: Principal = Depends(require("read")), pool: ConnectionPool = Depends(get_pool)) -> dict:
     with pool.connection() as conn:
         rows = conn.execute(
             "select id, title, summary, url, repo, tags from app.projects where published "

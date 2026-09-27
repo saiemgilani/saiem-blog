@@ -3,9 +3,9 @@ import time
 import jwt
 import pytest
 from fastapi.testclient import TestClient
-from saiem_api.views import purge_view_events
 
 from saiem_api.app import create_app
+from saiem_api.views import purge_view_events
 
 SECRET = "s" * 32
 V1, V2 = "a" * 64, "b" * 64
@@ -90,3 +90,4 @@ def test_v1_without_a_database_is_503_but_health_is_200():
     assert c.get("/health").status_code == 200
     assert c.get("/v1/views", headers=auth()).status_code == 503
     assert c.get("/v1/projects", headers=auth()).status_code == 503
+    assert c.get("/v1/views").status_code == 401  # auth runs before the pool dependency, even with no pool

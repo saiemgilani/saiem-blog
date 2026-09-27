@@ -1,7 +1,20 @@
+import os
+
 import psycopg
+import psycopg_pool
 import pytest
 
-from saiem_api.db import migrate
+from saiem_api.db import make_pool, migrate
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_DATABASE_URL"),
+    reason="TEST_DATABASE_URL not set — start deploy/compose.dev.yml's db and export "
+    "postgresql://saiem_app:saiem_dev@127.0.0.1:5439/saiem",
+)
+def test_make_pool_fails_fast_on_a_bad_database_url():
+    with pytest.raises(psycopg_pool.PoolTimeout):
+        make_pool("postgresql://saiem_app:wrong@127.0.0.1:5439/saiem", max_size=1, wait_timeout=2)
 
 
 def test_migrate_creates_tables_and_is_idempotent(pool):
