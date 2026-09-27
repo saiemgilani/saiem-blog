@@ -24,6 +24,7 @@ services:
     command: ["sh", "-c", "/app/.venv/bin/saiem-api migrate && exec /app/.venv/bin/saiem-api serve --host 0.0.0.0 --port 8000"]
     ports:
       - "127.0.0.1:8100:8000"
+    mem_limit: 512m
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status == 200 else 1)"]
       interval: 10s

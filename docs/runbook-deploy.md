@@ -33,8 +33,13 @@ the verify step must use the same value.
 
 ```bash
 PW=$(openssl rand -hex 24)
-ssh root@161.35.59.239 "sudo -u sdv psql -d postgres -v pw='$PW' -f /opt/saiem-blog/deploy/sql/00_saiem_db.sql"
+ssh root@161.35.59.239 "sudo -u sdv psql -d postgres -v ON_ERROR_STOP=1 -v pw='$PW' -f /opt/saiem-blog/deploy/sql/00_saiem_db.sql"
 ```
+
+`-v ON_ERROR_STOP=1` aborts the script on its first error instead of
+continuing past it. If it does error, the password may already be in the
+Postgres log (`log_min_error_statement` logs the failing statement) — rotate
+it: pick a new `$PW` and re-run this whole step.
 
 Insert the new `pg_hba.conf` line **above** the peer rule (line 95 today),
 then reload:
@@ -52,6 +57,23 @@ ssh root@161.35.59.239 "psql \"postgresql://saiem_app:$PW@/saiem?host=/var/run/p
 ```
 
 Expect `saiem_app`.
+
+Negative verify — the app role must NOT be reachable over TCP, only over the
+local unix socket the `scram-sha-256` line above allows:
+
+```bash
+ssh root@161.35.59.239 "psql \"postgresql://saiem_app:$PW@127.0.0.1/saiem\" -Atc 'select 1'"
+```
+
+Expect this to FAIL with `no pg_hba.conf entry for host "127.0.0.1"...`.
+
+Harden it explicitly so the app role can never authenticate over TCP, right
+after the `local` line added above (same `sed` technique):
+
+```bash
+ssh root@161.35.59.239 "sed -i '/^local\s\+saiem\s\+saiem_app\s\+scram-sha-256/a host    all             saiem_app       all                     reject' /etc/postgresql/15/main/pg_hba.conf"
+ssh root@161.35.59.239 'systemctl reload postgresql'
+```
 
 ## 2b. Env file
 
@@ -81,7 +103,10 @@ web container signing users in itself — see §5) and stay empty in mode A.
 1. `DEPLOY_HOST=root@161.35.59.239 TAG=<sha7> deploy/deploy.sh --dry-run` —
    read the printed `DRY:` lines before doing anything else.
 2. `DEPLOY_HOST=root@161.35.59.239 TAG=<sha7> deploy/deploy.sh` — run for real
-   once the dry run looks right.
+   once the dry run looks right. `TAG` in `deploy/.env` (§2b) is the value
+   `docker compose run` one-shots (seed, purge) use, not the `TAG` passed to
+   `deploy.sh` — after a `TAG=<sha7>` rollback, also set that same `TAG` in
+   `.env` so one-shots run the deployed image instead of `latest`.
 3. **First deploy only** — seed the projects table:
    `ssh root@161.35.59.239 'cd /opt/saiem-blog/deploy && docker compose run --rm --no-deps api /app/.venv/bin/saiem-api seed-projects'`
 
@@ -95,6 +120,9 @@ web container signing users in itself — see §5) and stay empty in mode A.
    — shows `0001_app.sql` (the migration ran at container start).
 4. `curl -sS -o /dev/null -w '%{http_code}' https://api.saiemgilani.com/v1/views`
    — expect `401` (no service token → unauthenticated).
+5. **Mode B note:** the web image is built without API env, so on the
+   `/work` page the Projects section stays empty until the page's first ISR
+   revalidation (≤ 1 h) — it isn't missing, it just hasn't refreshed yet.
 
 ### Caddy `trusted_proxies` and the lab data proxy
 
@@ -150,7 +178,8 @@ on **Production only**.
    existing `/api/lab/data` rule).
 5. Verify:
    - `curl -sS -X POST https://www.saiemgilani.com/api/views/intro-to-hoopR`
-     → `{"count":N}`
+     → `{"count":N}` where `N` is a number; `{"count":null}` means the API
+     or `SAIEM_API_SECRET` is misconfigured.
    - `/work` lists Projects.
    - Owner clicks "sign in" → `@saiemgilani` appears in the nav.
 
