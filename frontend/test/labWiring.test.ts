@@ -43,3 +43,19 @@ test("entryLabel carries the number and bounds the title", () => {
   assert.match(long, /^№ 014 /);
   assert.match(long, /…/);
 });
+
+test("sources of the same kind sort by label; kind order is not overridden", () => {
+  const L = layoutWiring([
+    e(1, "x", [{ kind: "github", path: "/repos/zeta" }, { kind: "github", path: "/repos/alpha" }, { kind: "release", repo: "sportsdataverse/sportsdataverse-data", tag: "t", asset: "a.parquet" }]),
+  ]);
+  assert.deepEqual(
+    L.sources.map((s) => s.label),
+    ["a.parquet", "/repos/alpha", "/repos/zeta"],
+  );
+});
+
+test("width is clamped to 440 minimum (220 entry + 20 gap + 200 source)", () => {
+  const L = layoutWiring([e(1, "x", [{ kind: "github", path: "/repos/x" }])], { width: 100 });
+  assert.equal(L.width, 440);
+  assert.ok(L.sources.every((s) => s.x >= 220));
+});

@@ -20,13 +20,17 @@ export type Wiring = {
 };
 
 export function layoutWiring(all: LabEntry[], opts: { width?: number; rowGap?: number } = {}): Wiring {
-  const width = opts.width ?? 720;
+  const width = Math.max(opts.width ?? 720, 440); // 220 entry column + 20 gap + 200 source column
   const gap = opts.rowGap ?? 44;
   const live = all.filter((e) => e.status !== "archived");
   const byKey = new Map<string, LabSource>();
   for (const e of live) for (const s of e.sources) byKey.set(sourceKey(s), s);
   const sources = [...byKey.entries()]
-    .sort(([, a], [, b]) => ORDER[a.kind] - ORDER[b.kind] || sourceLabel(a).localeCompare(sourceLabel(b)))
+    .sort(([, a], [, b]) => {
+      const la = sourceLabel(a);
+      const lb = sourceLabel(b);
+      return ORDER[a.kind] - ORDER[b.kind] || (la < lb ? -1 : la > lb ? 1 : 0);
+    })
     .map(([key, s], i) => ({ key, kind: s.kind, label: sourceLabel(s), full: sourceKey(s), x: width - 200, y: gap * (i + 1) }));
   const entries = live.map((e, i) => ({ slug: e.slug, n: e.n, title: e.title, status: e.status, x: 0, y: gap * (i + 1) }));
   const sy = new Map(sources.map((s) => [s.key, s.y]));
