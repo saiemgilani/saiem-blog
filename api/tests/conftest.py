@@ -18,3 +18,13 @@ def pool():
             conn.execute("drop schema if exists app cascade")
         migrate(p)
         yield p
+
+
+@pytest.fixture
+def extra_lab_modules(monkeypatch):
+    """Registers tests/lab_fixtures.py's hostile runners (sleepy/hungry/angry/big) for the
+    duration of one test, by pointing SAIEM_LAB_EXTRA_MODULES at that module -- inherited by any
+    child that runner.execute() spawns during the test. Lives here (N-12) rather than in
+    lab_fixtures.py itself, since a conftest fixture is auto-discovered for every test module
+    without an import -- no `# noqa: F401` or `usefixtures` workaround needed."""
+    monkeypatch.setenv("SAIEM_LAB_EXTRA_MODULES", "tests.lab_fixtures")

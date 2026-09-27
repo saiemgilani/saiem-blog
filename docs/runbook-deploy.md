@@ -60,15 +60,6 @@ ssh root@161.35.59.239 "psql \"postgresql://saiem_app:$PW@/saiem?host=/var/run/p
 
 Expect `saiem_app`.
 
-Negative verify — the app role must NOT be reachable over TCP, only over the
-local unix socket the `scram-sha-256` line above allows:
-
-```bash
-ssh root@161.35.59.239 "psql \"postgresql://saiem_app:$PW@127.0.0.1/saiem\" -Atc 'select 1'"
-```
-
-Expect this to FAIL with `no pg_hba.conf entry for host "127.0.0.1"...`.
-
 Harden it explicitly so the app role can never authenticate over TCP, right
 after the `local` line added above (same `sed` technique):
 
@@ -76,6 +67,20 @@ after the `local` line added above (same `sed` technique):
 ssh root@161.35.59.239 "sed -i '/^local\s\+saiem\s\+saiem_app\s\+scram-sha-256/a host    all             saiem_app       all                     reject' /etc/postgresql/15/main/pg_hba.conf"
 ssh root@161.35.59.239 'systemctl reload postgresql'
 ```
+
+Negative verify — the app role must NOT be reachable over TCP, only over the
+local unix socket the `scram-sha-256` line above allows. Run this check ONLY
+after the `reject` line above is in place and Postgres has reloaded: the TCP
+attempt must fail, but on a box whose `pg_hba.conf` has a generic `host all
+all 127.0.0.1/32 scram-sha-256` line ABOVE the per-role lines, it only fails
+once the `host all saiem_app all reject` line is there to match first:
+
+```bash
+ssh root@161.35.59.239 "psql \"postgresql://saiem_app:$PW@127.0.0.1/saiem\" -Atc 'select 1'"
+```
+
+Expect this to FAIL with `no pg_hba.conf entry for host "127.0.0.1"...` (or
+the `reject` line's own auth failure).
 
 ## 2b. Env file
 
@@ -91,6 +96,12 @@ TAG=latest
 DATABASE_URL=postgresql://saiem_app:$PW@/saiem?host=/var/run/postgresql
 SAIEM_API_SECRET=$SECRET
 OWNER_GITHUB_ID=$(gh api user --jq .id)
+LAB_DAILY_QUOTA=5
+SPEND_UNITS_CAP=2000
+LAB_RUN_TIMEOUT_S=30
+RUN_RETENTION_DAYS=90
+LAB_LIVE_RUNS=on
+LAB_MAX_CONCURRENT_RUNS=2
 AUTH_SECRET=
 AUTH_GITHUB_ID=
 AUTH_GITHUB_SECRET=
@@ -119,7 +130,10 @@ web container signing users in itself — see §5) and stay empty in mode A.
 2. `ssh root@161.35.59.239 'ss -ltn'` — `3100` and `8100` must show
    `127.0.0.1` only, never `0.0.0.0` or `::`.
 3. `ssh root@161.35.59.239 'cd /opt/saiem-blog/deploy && docker compose logs api | grep applied'`
-   — shows `0001_app.sql` (the migration ran at container start).
+   — on an **upgrade** (0001 already recorded) shows only `applied 1
+   migration(s): 0002_lab.sql`; on a **fresh** box shows both names,
+   `applied 2 migration(s): 0001_app.sql, 0002_lab.sql`. Either way,
+   `select name from app.schema_migrations` should list both migration names.
 4. `curl -sS -o /dev/null -w '%{http_code}' https://api.saiemgilani.com/v1/views`
    — expect `401` (no service token → unauthenticated).
 5. **Mode B note:** the web image is built without API env, so on the
@@ -171,6 +185,31 @@ on **Production only**.
      second app, or a second callback, for local dev
      (`http://localhost:3000/api/auth/callback/github`).
    - `OWNER_GITHUB_ID` — the owner's numeric GitHub id (same value as §2b).
+   - `LAB_LIVE_RUNS=on` — this Vercel value is only the **UI-side mirror**:
+     `isPaused()` in `frontend/lib/lab/run.ts` short-circuits the run/chat
+     routes before the API is ever called, on the same `off`/`false`/`0`/`no`
+     values (case-insensitive, trimmed) as the API accepts. It is NOT the
+     authoritative switch, and changing it here takes effect only after a
+     Production redeploy. The droplet API's own `LAB_LIVE_RUNS` in
+     `deploy/.env` is authoritative — it refuses reserve/runs/chat regardless
+     of what Vercel says. To pause spend immediately: edit
+     `LAB_LIVE_RUNS=off` in `/opt/saiem-blog/deploy/.env` on the droplet, then
+     `ssh root@161.35.59.239 'cd /opt/saiem-blog/deploy && docker compose up -d api'`
+     — a container recreate, not a code deploy (`Settings` is read once at
+     process start).
+   - `LAB_LLM_MODELS=anthropic/claude-haiku-4-5` — the allowlist № 003 (`ask
+     the lab`) is restricted to.
+   - Set the AI Gateway monthly budget in the Vercel dashboard (owner) —
+     Vercel Project Settings → AI Gateway; this is a spend backstop above the
+     per-user quota/cap and is not itself an env var.
+   - **Mode B only:** `AI_GATEWAY_API_KEY` — on Vercel (`VERCEL=1`) the
+     gateway authenticates via Vercel OIDC automatically; the droplet's web
+     container is not running on Vercel, so mode B needs this key set
+     explicitly (`deploy/.env` on the droplet) or `/lab/ask-the-lab` reports
+     the gateway unconfigured. `LAB_LIVE_RUNS` and `LAB_LLM_MODELS` also need
+     setting in `deploy/.env` for mode B (`deploy/compose.yml` passes all
+     three to the `web` service) — in mode A these three live on Vercel only,
+     as set above.
 2. **Remove** `SUPABASE_URL` and `SUPABASE_KEY` — the Supabase project is
    NXDOMAIN and there is nothing to migrate (views start at 0, projects come
    from the committed seed).

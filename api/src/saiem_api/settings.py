@@ -5,6 +5,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 MIN_SECRET_LEN = 32
+# R-P5-7: the operator reaches for LAB_LIVE_RUNS at 3am to stop spend — fail closed (paused) on
+# any spelling of "off", not just the exact string, so a typo or a habit like "false" still pauses.
+_PAUSED_LAB_LIVE_RUNS_VALUES = {"off", "false", "0", "no"}
 
 
 @dataclass(frozen=True)
@@ -13,6 +16,12 @@ class Settings:
     api_secret: str
     owner_github_id: str | None
     allow_dev_secret: bool
+    lab_daily_quota: int = 5
+    spend_units_cap: int = 2000
+    lab_live_runs: bool = True
+    lab_run_timeout_s: int = 30
+    run_retention_days: int = 90
+    lab_max_concurrent_runs: int = 2
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] = os.environ) -> "Settings":
@@ -21,6 +30,13 @@ class Settings:
             api_secret=env.get("SAIEM_API_SECRET", ""),
             owner_github_id=env.get("OWNER_GITHUB_ID") or None,
             allow_dev_secret=env.get("SAIEM_ALLOW_DEV_SECRET") == "1",
+            lab_daily_quota=max(1, int(env.get("LAB_DAILY_QUOTA") or "5")),
+            spend_units_cap=int(env.get("SPEND_UNITS_CAP") or "2000"),
+            lab_live_runs=(env.get("LAB_LIVE_RUNS") or "").strip().lower()
+            not in _PAUSED_LAB_LIVE_RUNS_VALUES,
+            lab_run_timeout_s=int(env.get("LAB_RUN_TIMEOUT_S") or "30"),
+            run_retention_days=int(env.get("RUN_RETENTION_DAYS") or "90"),
+            lab_max_concurrent_runs=max(1, int(env.get("LAB_MAX_CONCURRENT_RUNS") or "2")),
         )
 
     def secret_problem(self) -> str | None:

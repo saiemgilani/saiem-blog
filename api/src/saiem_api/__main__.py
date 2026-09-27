@@ -23,7 +23,7 @@ def _pool_from_env() -> ConnectionPool:
 def create_app_from_env() -> FastAPI:
     s = Settings.from_env()
     pool = make_pool(s.database_url) if s.database_url else None
-    return create_app(pool=pool, api_secret=s.api_secret)
+    return create_app(pool=pool, api_secret=s.api_secret, settings=s)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -35,7 +35,10 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("migrate", help="apply pending SQL migrations to DATABASE_URL")
     sp = sub.add_parser("seed-projects", help="upsert projects from a JSON file (default: the packaged seed)")
     sp.add_argument("path", nargs="?")
-    sub.add_parser("purge", help="delete view_events older than 2 days")
+    sub.add_parser(
+        "purge",
+        help="delete view_events older than 2 days, plus lab_runs and quotas past RUN_RETENTION_DAYS",
+    )
     args = parser.parse_args(argv)
     if args.cmd == "serve":
         problem = Settings.from_env().secret_problem()
@@ -63,10 +66,16 @@ def main(argv: list[str] | None = None) -> None:
         with _pool_from_env() as pool:
             print(f"seeded {seed(pool, json.loads(text))} project(s)")
     elif args.cmd == "purge":
+        from saiem_api.lab_routes import purge_lab_runs
+        from saiem_api.quota import purge_quotas
         from saiem_api.views import purge_view_events
 
+        settings = Settings.from_env()
         with _pool_from_env() as pool:
-            print(f"purged {purge_view_events(pool)} view event(s)")
+            views_n = purge_view_events(pool)
+            runs_n = purge_lab_runs(pool, settings.run_retention_days)
+            quotas_n = purge_quotas(pool, settings.run_retention_days)
+        print(f"purged {views_n} view event(s), {runs_n} lab run(s), {quotas_n} quota day(s)")
 
 
 if __name__ == "__main__":
