@@ -1,13 +1,14 @@
 import { mintServiceToken, type Scope } from "./serviceToken.ts";
 
-export type ApiEnv = { baseUrl: string; secret: string };
+export type ApiEnv = { baseUrl: string; secret: string; viewsHashSecret: string };
 const TIMEOUT_MS = 5000;
 
 /** null when the API isn't configured (previews, CI builds, a fresh clone): callers render without it. */
 export function apiEnv(env: NodeJS.ProcessEnv = process.env): ApiEnv | null {
   const baseUrl = env.API_BASE_URL?.replace(/\/$/, "");
   const secret = env.SAIEM_API_SECRET;
-  return baseUrl && secret ? { baseUrl, secret } : null;
+  // VIEWS_HASH_SECRET is optional: falling back to SAIEM_API_SECRET keeps existing deploys working.
+  return baseUrl && secret ? { baseUrl, secret, viewsHashSecret: env.VIEWS_HASH_SECRET ?? secret } : null;
 }
 
 export async function apiFetch(

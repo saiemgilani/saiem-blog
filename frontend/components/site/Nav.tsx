@@ -21,7 +21,7 @@ export function Nav({ commandItems }: { commandItems: CommandItemData[] }) {
           ))}
           {/* keyboard-only feature; the shortcut still works below sm, it just has no chip */}
           <li className="hidden sm:block"><CommandMenu items={commandItems} /></li>
-          <li><AuthMenu /></li>
+          <AuthMenu />
           <li><ThemeToggle /></li>
         </ul>
       </nav>

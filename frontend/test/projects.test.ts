@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { getProjects } from "../lib/projects.ts";
 import type { ApiEnv } from "../lib/api/client.ts";
 
-const env: ApiEnv = { baseUrl: "https://api.example", secret: "s".repeat(32) };
+const env: ApiEnv = { baseUrl: "https://api.example", secret: "s".repeat(32), viewsHashSecret: "s".repeat(32) };
 const ok = (body: unknown) => (async () => new Response(JSON.stringify(body), { status: 200 })) as typeof fetch;
 const row = (id: string, extra: Record<string, unknown> = {}) => ({ id, title: id.toUpperCase(), summary: "s", url: `https://${id}.example/`, repo: `o/${id}`, tags: ["t"], ...extra });
 

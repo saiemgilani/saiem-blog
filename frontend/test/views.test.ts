@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createViewsHandler, visitorHash, SLUG_RE } from "../lib/views.ts";
-import type { ApiEnv } from "../lib/api/client.ts";
+import { apiEnv, type ApiEnv } from "../lib/api/client.ts";
 
-const env: ApiEnv = { baseUrl: "https://api.example", secret: "s".repeat(32) };
+const env: ApiEnv = { baseUrl: "https://api.example", secret: "s".repeat(32), viewsHashSecret: "v".repeat(32) };
 const req = (ip = "203.0.113.9") => new Request("https://www.saiemgilani.com/api/views/x", { method: "POST", headers: { "x-forwarded-for": `${ip}, 10.0.0.1` } });
 const allow = { take: () => true };
 
@@ -24,9 +24,9 @@ test("POST mints a bearer, sends the visitor hash, returns the count", async () 
   assert.equal(res.headers.get("cache-control"), "no-store");
   assert.equal(api.calls[0].url, "https://api.example/v1/views/intro-to-hoopR");
   assert.match(api.calls[0].auth ?? "", /^Bearer [\w-]+\.[\w-]+\.[\w-]+$/);
-  assert.deepEqual(api.calls[0].body, { visitor: visitorHash(env.secret, "203.0.113.9") });
-  assert.match(visitorHash(env.secret, "203.0.113.9"), /^[0-9a-f]{64}$/);
-  assert.notEqual(visitorHash(env.secret, "203.0.113.9"), visitorHash(env.secret, "203.0.113.10"));
+  assert.deepEqual(api.calls[0].body, { visitor: visitorHash(env.viewsHashSecret, "203.0.113.9") });
+  assert.match(visitorHash(env.viewsHashSecret, "203.0.113.9"), /^[0-9a-f]{64}$/);
+  assert.notEqual(visitorHash(env.viewsHashSecret, "203.0.113.9"), visitorHash(env.viewsHashSecret, "203.0.113.10"));
 });
 
 test("GET never sends a body and never increments", async () => {
@@ -69,4 +69,23 @@ test("per-IP limiter answers 429", async () => {
   const h = createViewsHandler({ env, fetcher: api.fetcher, limiter: { take: () => false } });
   assert.equal((await h(req(), "x", "POST")).status, 429);
   assert.equal(api.calls.length, 0);
+});
+
+test("only known note slugs are counted; unknown slugs 404 before the limiter", async () => {
+  const isKnownSlug = (s: string) => s === "intro-to-hoopR";
+  const known = fakeApi();
+  const r1 = await createViewsHandler({ env, fetcher: known.fetcher, limiter: allow, isKnownSlug })(req(), "intro-to-hoopR", "POST");
+  assert.equal(r1.status, 200);
+  assert.equal(known.calls.length, 1);
+
+  const unknown = fakeApi();
+  const limiter = { take: () => { throw new Error("limiter must not run"); } };
+  const r2 = await createViewsHandler({ env, fetcher: unknown.fetcher, limiter, isKnownSlug })(req(), "not-a-note", "POST");
+  assert.equal(r2.status, 404);
+  assert.equal(unknown.calls.length, 0);
+});
+
+test("apiEnv sets viewsHashSecret from VIEWS_HASH_SECRET, falling back to SAIEM_API_SECRET", () => {
+  assert.equal(apiEnv({ ...process.env, API_BASE_URL: "https://x", SAIEM_API_SECRET: "s", VIEWS_HASH_SECRET: "v" })?.viewsHashSecret, "v");
+  assert.equal(apiEnv({ ...process.env, API_BASE_URL: "https://x", SAIEM_API_SECRET: "s", VIEWS_HASH_SECRET: undefined })?.viewsHashSecret, "s");
 });
