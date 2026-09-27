@@ -19,18 +19,17 @@ export default function SeriesOddsPage() {
   return (
     <EntryShell entry={entry}>
       <p>
-        The exact number sums a negative-binomial distribution: for a best-of-N series, the
-        favorite&apos;s win probability is the sum, over every k games the trailing side could
-        still take before losing four, of the chance of reaching that score and then winning the
-        decider. That closed form comes straight from the single per-game edge — no simulation
-        needed.
+        The exact number sums a negative-binomial distribution: for a best-of-N series, the first
+        side to reach (N+1)/2 wins takes it, and the formula sums the chance of getting there
+        after every possible number of losses along the way. It only knows the single per-game
+        probability — no home edge, no simulation.
       </p>
       <p>
-        The simulated number draws <code>sims</code> independent series on the server with a
-        seeded generator, using the same per-game probability, and reports the fraction won. It is
-        noisier than the exact sum and its error shrinks as <code>sims</code> grows, but it lands
-        within simulation error of the exact figure every run — two independent methods agreeing
-        is what a correct probability model looks like.
+        The simulated number runs <code>sims</code> seeded series on the server, adding{" "}
+        <code>home_edge</code> to the per-game probability only in home games (the 2-2-1-1-1
+        pattern). With no home edge the two numbers agree within simulation error. Raise it and
+        they part ways on purpose: the exact sum never sees it, so the growing gap between exact
+        and simulated is exactly what home advantage is worth.
       </p>
       <SeriesOdds example={example} />
     </EntryShell>

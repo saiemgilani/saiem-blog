@@ -15,12 +15,15 @@ export function createRunHandler(deps: RunDeps) {
     const session = await deps.auth();
     if (!session?.githubId) return json(401, { error: "sign-in" });
     if (!deps.env) return json(503, { error: "api not configured" });
+    // A same-site cookie (SameSite=Lax) rides along on a no-preflight text/plain POST from any
+    // *.saiemgilani.com subdomain; requiring JSON forces a CORS preflight for cross-origin callers.
+    if (!(req.headers.get("content-type") ?? "").startsWith("application/json")) return json(400, { error: "bad json" });
     let body: unknown;
     try { body = await req.json(); } catch { return json(400, { error: "bad json" }); }
-    let res: Response;
     try {
-      res = await apiFetch(deps.env, `/v1/lab/${slug}/runs`, { method: "POST", body, sub: session.githubId, scope: "run", timeoutMs: RUN_TIMEOUT_MS, headers: { "x-login": session.login ?? "" } }, deps.fetcher);
+      const res = await apiFetch(deps.env, `/v1/lab/${slug}/runs`, { method: "POST", body, sub: session.githubId, scope: "run", timeoutMs: RUN_TIMEOUT_MS, headers: { "x-login": session.login ?? "" } }, deps.fetcher);
+      const text = await res.text(); // inside the try: a body-read failure (reset, abort) must also become 502
+      return new Response(text, { status: res.status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
     } catch { return json(502, { error: "api" }); }
-    return new Response(await res.text(), { status: res.status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
   };
 }

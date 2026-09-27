@@ -7,14 +7,23 @@ import type { RunOutcome } from "@lib/lab/runClient";
 export type SeriesOddsParams = { p_game: number; best_of: 3 | 5 | 7; home_edge: number; sims: number };
 export type SeriesOddsResult = { exact: number; simulated: number; distribution: Record<string, number> };
 
+/** Guards a cached-row shape drift (see `ResultGuard` in `runClient.ts`) from crashing the render. */
+function isSeriesOddsResult(r: unknown): r is SeriesOddsResult {
+  if (!r || typeof r !== "object") return false;
+  const x = r as Record<string, unknown>;
+  return typeof x.exact === "number" && typeof x.simulated === "number" && typeof x.distribution === "object" && x.distribution !== null;
+}
+
 const inputClass = "w-full border border-rule bg-page px-2 py-1 font-mono text-xs text-ink outline-none";
 const buttonClass = "shrink-0 bg-brand px-2.5 py-1 text-on-brand disabled:opacity-60";
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
-const totalGames = (key: string) => key.split("-").reduce((s, n) => s + Number(n), 0);
-const sortedEntries = (d: Record<string, number>) => Object.entries(d).sort(([a], [b]) => totalGames(a) - totalGames(b) || a.localeCompare(b));
+// The API already emits `distribution` key-sorted (`sorted(ends.items())`); re-sorting by key
+// keeps that order even if a future caller doesn't guarantee it.
+const sortedEntries = (d: Record<string, number>) => Object.entries(d).sort(([a], [b]) => a.localeCompare(b));
 
 function DistributionChart({ distribution }: { distribution: Record<string, number> }) {
   const entries = sortedEntries(distribution);
+  if (entries.length === 0) return null; // an empty chart would still announce role="img" over nothing
   const max = Math.max(...entries.map(([, v]) => v), 0.0001);
   const barH = 16;
   const gap = 4;
@@ -22,7 +31,14 @@ function DistributionChart({ distribution }: { distribution: Record<string, numb
   const width = 240;
   const height = entries.length * (barH + gap);
   return (
-    <svg role="img" aria-label="series score distribution" width="100%" viewBox={`0 0 ${width} ${height}`} className="mt-3">
+    <svg
+      role="img"
+      aria-label="series score distribution"
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="mt-3 h-auto w-full max-w-[28rem]"
+    >
       {entries.map(([key, value], i) => {
         const w = Math.max((value / max) * chartW, 1);
         const y = i * (barH + gap);
@@ -69,7 +85,7 @@ function outcomeMessage(o: RunOutcome): string | null {
 }
 
 export function SeriesOdds({ example }: { example: { params: SeriesOddsParams; result: SeriesOddsResult } }) {
-  const { state, run } = useRunGate("series-odds");
+  const { state, run } = useRunGate("series-odds", isSeriesOddsResult);
   const [params, setParams] = useState<SeriesOddsParams>(example.params);
   const [busy, setBusy] = useState(false);
   const [outcome, setOutcome] = useState<RunOutcome | null>(null);
@@ -82,7 +98,10 @@ export function SeriesOdds({ example }: { example: { params: SeriesOddsParams; r
   }
 
   const live = outcome?.kind === "ok" ? outcome : null;
-  const statusText = outcome ? (live ? (live.cached ? "cached · free" : "1 unit") : outcomeMessage(outcome)) : null;
+  // Always rendered (empty when idle) so the region exists before it needs to announce anything;
+  // "running…" during a fetch (the run button carries no visible busy text of its own, since its
+  // accessible name has to stay exactly "run"), then the last outcome's text once it settles.
+  const statusText = busy ? "running…" : outcome ? (live ? (live.cached ? "cached · free" : "1 unit") : (outcomeMessage(outcome) ?? "")) : "";
 
   return (
     <div>
@@ -112,8 +131,9 @@ export function SeriesOdds({ example }: { example: { params: SeriesOddsParams; r
         </label>
         <label className="block font-mono text-[11px] text-muted">
           home edge
+          {/* API: Field(ge=0, le=0.2) -- a negative value here always 422s server-side */}
           <input
-            type="number" step={0.01} min={-0.2} max={0.2} value={params.home_edge}
+            type="number" step={0.01} min={0} max={0.2} value={params.home_edge}
             onChange={(e) => setParams({ ...params, home_edge: Number(e.target.value) })}
             className={inputClass}
           />
@@ -133,7 +153,7 @@ export function SeriesOdds({ example }: { example: { params: SeriesOddsParams; r
         )}
       </form>
       <RunGatePrompt state={state} />
-      {statusText && <p role="status" className="mt-3 font-mono text-[11px] text-muted">{statusText}</p>}
+      <p role="status" className="mt-3 font-mono text-[11px] text-muted">{statusText}</p>
       {live ? (
         <ResultView result={live.result as SeriesOddsResult} />
       ) : (

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createRunHandler } from "../lib/lab/run.ts";
 import { runOutcome } from "../lib/lab/runClient.ts";
+import { apiFetch } from "../lib/api/client.ts";
 
 const env = { baseUrl: "https://api.test", secret: "s".repeat(32), viewsHashSecret: "v" };
 const req = (body: unknown = { p_game: 0.6, best_of: 7 }) =>
@@ -58,6 +59,15 @@ test("bad slug → 404, bad JSON → 400, API throws → 502, no API env → 503
   assert.equal((await createRunHandler({ env: null, ...ok })(req(), "series-odds")).status, 503);
 });
 
+test("handler order holds under multiple true conditions: paused beats signed-out, bad slug beats auth", async () => {
+  const authCalls: number[] = [];
+  const trackedAuth = async () => { authCalls.push(1); return null; };
+  assert.equal((await createRunHandler({ env, auth: trackedAuth, paused: () => true })(req(), "series-odds")).status, 503);
+  assert.equal(authCalls.length, 0, "paused must short-circuit before auth() is ever called");
+  assert.equal((await createRunHandler({ env, auth: trackedAuth, paused: () => false })(req(), "../etc")).status, 404);
+  assert.equal(authCalls.length, 0, "a bad slug must short-circuit before auth() is ever called");
+});
+
 test("runOutcome maps API answers to UI states", () => {
   assert.deepEqual(runOutcome(200, { run_id: "r", status: "ok", result: { exact: 0.71 }, cost_units: 1, cached: false }, 5), { kind: "ok", result: { exact: 0.71 }, cached: false, costUnits: 1 });
   assert.deepEqual(runOutcome(200, { status: "timeout", result: null, cost_units: 0, cached: false, error: "timeout" }, 5), { kind: "error", message: "the run timed out — units refunded" });
@@ -67,4 +77,34 @@ test("runOutcome maps API answers to UI states", () => {
   assert.deepEqual(runOutcome(401, { error: "sign-in" }, 5), { kind: "signin" });
   assert.deepEqual(runOutcome(422, { detail: [] }, 5), { kind: "error", message: "those parameters were rejected" });
   assert.deepEqual(runOutcome(502, { error: "api" }, 5), { kind: "error", message: "the lab is unreachable right now" });
+});
+
+test("runOutcome validates a live result's shape when a guard is given; a malformed 200 body never reaches the widget as ok", () => {
+  const isResult = (r: unknown): r is { ok: true } => typeof r === "object" && r !== null && (r as Record<string, unknown>).ok === true;
+  assert.deepEqual(
+    runOutcome(200, { status: "ok", result: { ok: true }, cost_units: 1, cached: false }, 5, isResult),
+    { kind: "ok", result: { ok: true }, cached: false, costUnits: 1 },
+  );
+  assert.deepEqual(
+    runOutcome(200, { status: "ok", result: { nope: true }, cost_units: 1, cached: false }, 5, isResult),
+    { kind: "error", message: "the run returned something unexpected" },
+  );
+  assert.deepEqual(
+    runOutcome(200, { status: "ok", result: null, cost_units: 1, cached: false }, 5, isResult),
+    { kind: "error", message: "the run returned something unexpected" },
+  );
+  // No guard given (every other test above): any 200-ok body is trusted as-is -- unchanged.
+});
+
+test("apiFetch: a caller-supplied authorization header can never override the minted bearer", async () => {
+  let seenAuth: string | undefined;
+  await apiFetch(env, "/v1/x", { headers: { Authorization: "Bearer forged", "X-Login": "l" } }, async (_u, init) => {
+    const headers = init?.headers as Record<string, string>;
+    seenAuth = headers.authorization;
+    assert.equal(headers.Authorization, undefined, "the capital-A key must be folded into lowercase, not left beside it");
+    assert.equal(headers["x-login"], "l");
+    return Response.json({});
+  });
+  assert.ok(seenAuth?.startsWith("Bearer "));
+  assert.notEqual(seenAuth, "Bearer forged");
 });

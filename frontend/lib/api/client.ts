@@ -18,7 +18,12 @@ export async function apiFetch(
   fetcher: typeof fetch = fetch,
 ): Promise<Response> {
   const token = mintServiceToken({ secret: env.secret, sub: init.sub ?? "anon", scope: init.scope ?? "read" });
-  const headers: Record<string, string> = { ...(init.headers ?? {}), authorization: `Bearer ${token}` };
+  // Lowercase every caller-supplied key before adding the bearer: fetch's Headers merges
+  // case-insensitively but a mismatched-case caller key (e.g. "Authorization") would otherwise
+  // sit beside our lowercase one instead of being overridden by it.
+  const headers: Record<string, string> = {};
+  for (const [k, v] of Object.entries(init.headers ?? {})) headers[k.toLowerCase()] = v;
+  headers.authorization = `Bearer ${token}`;
   if (init.body !== undefined) headers["content-type"] = "application/json";
   return fetcher(`${env.baseUrl}${path}`, {
     method: init.method ?? "GET",
