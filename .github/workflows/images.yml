@@ -45,7 +45,11 @@ jobs:
       - name: Wait for api + web
         run: |
           for i in $(seq 1 40); do
-            if curl -fsS http://127.0.0.1:8100/health && curl -fsS -o /dev/null http://127.0.0.1:3100/ && curl -fsS -o /dev/null http://127.0.0.1:3100/notes/intro-to-hoopR && curl -fsS -o /dev/null http://127.0.0.1:3100/sw.js; then exit 0; fi
+            if curl -fsS http://127.0.0.1:8100/health && curl -fsS -o /dev/null http://127.0.0.1:3100/ && curl -fsS -o /dev/null http://127.0.0.1:3100/notes/intro-to-hoopR && curl -fsS -o /dev/null http://127.0.0.1:3100/sw.js; then
+              v() { curl -fsS -X POST -H "x-forwarded-for: $1" http://127.0.0.1:3100/api/views/intro-to-hoopR; }
+              v 203.0.113.9 | grep -q '"count":1' && v 203.0.113.9 | grep -q '"count":1' && v 203.0.113.10 | grep -q '"count":2' && exit 0
+              echo "view counter did not count as expected" >&2; docker compose -f deploy/compose.yml -f deploy/compose.dev.yml logs; exit 1
+            fi
             sleep 3
           done
           docker compose -f deploy/compose.yml -f deploy/compose.dev.yml logs
