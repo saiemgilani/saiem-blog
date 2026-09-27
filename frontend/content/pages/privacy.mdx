@@ -14,7 +14,9 @@ At [saiemgilani.com](https://www.saiemgilani.com), I do not collect contact info
 
 **View counts.** Each note shows a view count. To count a visitor once per day, the site sends its backend a keyed hash (HMAC) of the visitor's IP address, never the address itself. Those hashes are kept for the current and previous two calendar days (purged daily once older than that), then only totals remain.
 
-**Sign-in.** Sign-in with GitHub is optional and only needed to run gated lab experiments (coming later). The session cookie carries your GitHub id and login — no email, no avatar, no access token — and Auth.js sets its usual csrf/callback/session cookies for that flow. Nothing is set until you sign in.
+**Lab runs.** Running a gated lab entry needs a GitHub sign-in. We store your GitHub id and login (never your email), a per-entry daily run count, and each run's parameters and result for 90 days (`RUN_RETENTION_DAYS`), purged by a daily job; LLM entries send your messages to the model provider through Vercel AI Gateway and nothing else. Signed-out visitors see a cached example and nothing about them is stored.
+
+**Sign-in.** Sign-in with GitHub is optional and only needed to run gated lab experiments. The session cookie carries your GitHub id and login — no email, no avatar, no access token — and Auth.js sets its usual csrf/callback/session cookies for that flow. Nothing is set until you sign in.
 
 **Hosting and third parties.** The site runs on Vercel, which handles requests the way any host does, including standard request logs it keeps for operating the service. Pages also load some assets from GitHub and jsDelivr. Each of these providers has its own privacy policy. I do not sell, rent or otherwise share anything with anyone else, except as required by law.
 

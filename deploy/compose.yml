@@ -15,6 +15,11 @@ services:
       DATABASE_URL: ${DATABASE_URL:-}
       SAIEM_API_SECRET: ${SAIEM_API_SECRET:-}
       OWNER_GITHUB_ID: ${OWNER_GITHUB_ID:-}
+      LAB_DAILY_QUOTA: ${LAB_DAILY_QUOTA:-}
+      SPEND_UNITS_CAP: ${SPEND_UNITS_CAP:-}
+      LAB_RUN_TIMEOUT_S: ${LAB_RUN_TIMEOUT_S:-}
+      RUN_RETENTION_DAYS: ${RUN_RETENTION_DAYS:-}
+      LAB_LIVE_RUNS: ${LAB_LIVE_RUNS:-}
     volumes:
       # Production database access = the HOST's Postgres unix socket (spec §3): no TCP listener
       # is added for this app. Read-only is enough — connecting to a socket needs no write
