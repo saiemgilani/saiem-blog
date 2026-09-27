@@ -3,7 +3,12 @@ name = "saiem-api"
 version = "0.1.0"
 description = "Backend for saiemgilani.com (views, projects, quotas, lab runs)."
 requires-python = ">=3.12"
-dependencies = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
+dependencies = [
+    "fastapi>=0.115",
+    "psycopg-pool>=3.2",
+    "psycopg[binary]>=3.2",
+    "uvicorn[standard]>=0.30",
+]
 
 [project.scripts]
 saiem-api = "saiem_api.__main__:main"

@@ -5,6 +5,7 @@ import yaml
 from tests.compose_policy import violations
 
 COMPOSE = Path(__file__).resolve().parents[2] / "deploy" / "compose.yml"
+COMPOSE_DEV = COMPOSE.with_name("compose.dev.yml")
 
 
 def svc(**kw):
@@ -42,3 +43,10 @@ def test_the_real_compose_file_passes():
     compose = yaml.safe_load(COMPOSE.read_text())
     assert set(compose["services"]) == {"web", "api"}
     assert violations(compose) == []
+
+
+def test_the_dev_override_passes_too():
+    dev = yaml.safe_load(COMPOSE_DEV.read_text())
+    assert set(dev["services"]) == {"db", "api", "web"}
+    assert violations(dev) == []
+    assert dev["services"]["db"]["ports"] == ["127.0.0.1:5433:5432"]
