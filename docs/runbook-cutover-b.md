@@ -12,39 +12,84 @@ droplet setup, the env file, and normal container deploys.
 Only for a Vercel-side outage or a Vercel billing/account problem that takes
 `www.saiemgilani.com` down or unreachable. **Not** for a preview-deployment
 problem, a single failed build, or anything scoped to a PR — those don't
-affect production and don't need mode B.
+affect production and don't need mode B. Note the limit of this design: the
+cutover procedure itself edits Vercel DNS and the Vercel project's domains,
+so it needs Vercel's API/dashboard to be reachable even though it's aimed at
+a Vercel outage — a Vercel API/DNS outage (as opposed to a serving/billing
+one) isn't recoverable through this runbook.
 
 ## Preconditions
 
 1. `deploy/rehearse-mode-b.sh` (no `--dry-run`) has passed within the last 7
-   days — check the ledger entry's timestamp.
-2. `deploy/.env` on the droplet has every mode-B name set (the rehearsal
-   script's step (e) prints `present` for all five:
-   `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`,
-   `AI_GATEWAY_API_KEY`, `SAIEM_API_SECRET`).
+   days — check the ledger entry's timestamp. If it's older, run it now
+   before cutting over: it's read-only, takes about a minute, and needs
+   nothing from Vercel.
+2. `deploy/.env` on the droplet has the five secrets the rehearsal script's
+   step (e) checks by name (`present`): `AUTH_SECRET`, `AUTH_GITHUB_ID`,
+   `AUTH_GITHUB_SECRET`, `AI_GATEWAY_API_KEY`, `SAIEM_API_SECRET`. It also
+   needs `LAB_LIVE_RUNS` and `LAB_LLM_MODELS` set — the rehearsal script
+   does not check those two by name, confirm them by eye.
 3. A fresh `TAG` is deployed (`docs/runbook-deploy.md` §3) — mode B serves
    whatever image is currently running, so don't cut over onto a stale one.
 
 ## Cutover
 
-1. On the droplet, uncomment both commented blocks in
+1. Record the DNS you're about to change, so rollback restores the exact
+   values instead of guessing: `vercel dns ls saiemgilani.com --scope
+   saiemgilanis-projects`. Note the `www` and apex (`saiemgilani.com`)
+   entries — type, value, and TTL — and paste them into this run's ledger
+   entry.
+2. On the droplet, uncomment both commented blocks in
    `/opt/saiem-blog/deploy/caddy/saiemgilani.caddy` (the
    `www.saiemgilani.com` reverse proxy to `127.0.0.1:3100` and the apex
-   redirect block).
-2. `ssh root@161.35.59.239 'caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy'`
-3. In Vercel DNS (`vercel dns ls saiemgilani.com --scope saiemgilanis-projects`),
-   change the `www` record to an `A` record pointing at `161.35.59.239`
-   (`vercel dns rm` the existing record, then `vercel dns add`). The apex is
-   already handled by Caddy's redirect block from step 1, not by Vercel.
-4. In the Vercel project settings, remove `www.saiemgilani.com` from the
-   project's domains — otherwise Vercel keeps trying to serve it and the two
-   answers race.
-5. Verify: `curl -sSI https://www.saiemgilani.com | grep -i server` shows no
+   redirect block), then check the syntax without touching anything live:
+   `ssh root@161.35.59.239 'caddy validate --config /etc/caddy/Caddyfile'`.
+   **Don't reload yet** — see step 5.
+3. In Vercel DNS, point BOTH records at the droplet — the apex needs this
+   too, since Caddy's redirect block (step 2) only fires for traffic that
+   reaches Caddy, and today the apex resolves to Vercel, not the droplet:
+   - `www` → `A` record → `161.35.59.239` (`vercel dns rm` the existing
+     record if one is listed — today `www` has no explicit record, so there
+     may be nothing to remove — then `vercel dns add saiemgilani.com www A
+     161.35.59.239`).
+   - apex `saiemgilani.com` → `A` record → `161.35.59.239` (same
+     `rm`/`add` pattern).
+4. In the Vercel project settings, remove both `www.saiemgilani.com` and
+   `saiemgilani.com` from the project's domains — otherwise Vercel keeps
+   trying to answer for them and the two answers race.
+5. **Wait for DNS to actually propagate before reloading Caddy.** Reloading
+   while resolvers still point at Vercel makes Caddy's ACME request fail and
+   back off for 10-20 minutes. Poll until both return the droplet's IP
+   (expect roughly the TTL noted in step 1 as the lag):
+   ```sh
+   dig +short www.saiemgilani.com @1.1.1.1
+   dig +short saiemgilani.com @1.1.1.1
+   ```
+6. Now reload: `ssh root@161.35.59.239 'systemctl reload caddy'`. Watch for
+   the certificate: `ssh root@161.35.59.239 'journalctl -u caddy -f'` until
+   `certificate obtained successfully` appears for `www.saiemgilani.com`
+   (and the apex) — that's when TLS is actually ready, not just the DNS.
+7. Verify: `curl -sSI https://www.saiemgilani.com | grep -i server` shows no
    `Vercel` header, and a views count still comes back —
    `curl -fsS https://www.saiemgilani.com/api/views/intro-to-hoopR` returns
    `{"count":N}`.
 
 ## What changes in mode B
+
+> **After every `deploy/deploy.sh` run, re-apply the cutover's Caddy edit
+> before the next reload.** `deploy.sh` does `git checkout <TAG> -- deploy`,
+> which restores the *committed* snippet — both mode-B blocks commented out
+> — but does not itself reload Caddy, so the site keeps working until the
+> next reload/reboot/package upgrade silently drops `www` and the apex back
+> to mode A. Re-apply the same uncomment the rehearsal script uses, then
+> validate, then reload:
+> ```sh
+> ssh root@161.35.59.239 "sed -i -E 's/^# (www\.saiemgilani\.com \{|\treverse_proxy|\theader -Server|\}|saiemgilani\.com \{|\tredir )/\1/' /opt/saiem-blog/deploy/caddy/saiemgilani.caddy"
+> ssh root@161.35.59.239 'caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy'
+> ```
+> The durable fix — a committed `saiemgilani.modeB.caddy` variant that the
+> Caddyfile's `import` line selects instead of hand-editing the checked-out
+> snippet — is a follow-up, not implemented here.
 
 - **Rate limits are in-process limiters only** — there is no Vercel Firewall
   rule fronting the droplet. `/api/lab/data` is capped at 120 requests/min
@@ -70,18 +115,24 @@ affect production and don't need mode B.
 
 ## Rollback
 
-Every step below only touches DNS and the Vercel project — none of it
-depends on the droplet being healthy, so rollback works even if mode B was
-cut over *because* the droplet had a problem.
+None of these steps depend on the droplet being healthy — they only touch
+DNS and the Vercel project — so rollback works even if mode B was cut over
+*because* the droplet had a problem. Use the values captured in Cutover
+step 1's ledger entry; don't guess what they were.
 
-1. In Vercel DNS, change the `www` record back to a `CNAME` pointing at
-   `cname.vercel-dns.com`.
-2. Re-add `www.saiemgilani.com` to the Vercel project's domains.
+1. In Vercel DNS, restore both records to what Cutover step 1 recorded —
+   typically `www` → `CNAME` → `cname.vercel-dns.com`, and the apex
+   `saiemgilani.com` → back to Vercel's original `A` record. Remove the `A`
+   record this cutover added (`vercel dns rm <id of the record you added>`)
+   and re-add whatever was there before.
+2. Re-add both `www.saiemgilani.com` and `saiemgilani.com` to the Vercel
+   project's domains.
 3. Optionally, on the droplet, re-comment the two blocks in
    `/opt/saiem-blog/deploy/caddy/saiemgilani.caddy` and
-   `caddy validate && systemctl reload caddy` — mode A still works with them
-   left uncommented (Caddy just proxies a host nothing points at), so this
-   step is cleanup, not a requirement for rollback to take effect.
+   `ssh root@161.35.59.239 'caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy'`
+   — mode A still works with them left uncommented (Caddy just proxies
+   hosts nothing points at), so this step is cleanup, not a requirement for
+   rollback to take effect.
 
 ## Rehearsal cadence
 
@@ -89,5 +140,5 @@ Quarterly, run `deploy/rehearse-mode-b.sh --dry-run` first, read the printed
 commands, then `deploy/rehearse-mode-b.sh` for real
 (`DEPLOY_HOST=root@161.35.59.239`). It's entirely read-only: it never writes
 a view count, never reloads Caddy, and never touches DNS or Vercel — it only
-proves the cutover *would* work right now. Paste the output into the ledger
-(`ClaudeCowork/ledgers/saiem-blog/progress.md`) with the date.
+proves the cutover *would* work right now. Paste the output into this
+runbook's ledger entry with the date.

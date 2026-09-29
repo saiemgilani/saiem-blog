@@ -20,8 +20,10 @@ run() {
 # (a) Docker-TCP guard — identical to deploy.sh, first remote command.
 run "if ss -ltn | grep -Eq ':(2375|2376)\\b'; then echo 'Docker API is listening on TCP - refusing to deploy' >&2; exit 1; fi"
 
-# (b) both compose services must be running (not restarting/exited/starting).
-run "cd $DIR/deploy && if [ \"\$(docker compose ps --format '{{.State}}' | grep -xc running)\" != 2 ]; then echo 'web/api not both running' >&2; exit 1; fi"
+# (b) both compose services must be running (not restarting/exited/starting). The droplet's
+# Compose (2.17.3) rejects `docker compose ps --format '{{.State}}'` ("parsing failed"), so
+# this counts running container ids instead (R-P7-8, verified to print 2 on the box).
+run "cd $DIR/deploy && test \"\$(docker compose ps --status running -q | wc -l)\" = 2 || { echo 'web/api not both running' >&2; exit 1; }"
 
 # (c) read-only GETs only — GET /api/views/<slug> reports the count without incrementing it
 # (the route also exports POST, which does increment; never call it from here).
@@ -31,8 +33,10 @@ run "curl -fsS http://127.0.0.1:3100/ >/dev/null && curl -fsS http://127.0.0.1:3
 # Uncomment only the exact commented lines from the mode-B block in the imported snippet
 # (the www reverse_proxy + apex redirect); anything else starting with "# " stays a real
 # comment. /opt/saiem-blog/deploy/caddy/saiemgilani.caddy is the fixed import path written
-# into /etc/caddy/Caddyfile during first-time setup (docs/runbook-deploy.md §2.3).
-run "cd $DIR && sed -E 's/^# (www\.saiemgilani\.com \{|\treverse_proxy|\theader -Server|\}|saiemgilani\.com \{|\tredir )/\1/' deploy/caddy/saiemgilani.caddy > /tmp/saiemgilani.modeB.caddy && sed 's#/opt/saiem-blog/deploy/caddy/saiemgilani.caddy#/tmp/saiemgilani.modeB.caddy#' /etc/caddy/Caddyfile > /tmp/Caddyfile.modeB && caddy validate --config /tmp/Caddyfile.modeB --adapter caddyfile"
+# into /etc/caddy/Caddyfile during first-time setup (docs/runbook-deploy.md §2.3) — verified
+# live 2026-09-29. SF-1: guard before validating, so a silent no-op (snippet byte-drift, or an
+# import path that no longer matches) fails loudly instead of validating unchanged mode A.
+run "cd $DIR && sed -E 's/^# (www\.saiemgilani\.com \{|\treverse_proxy|\theader -Server|\}|saiemgilani\.com \{|\tredir )/\1/' deploy/caddy/saiemgilani.caddy > /tmp/saiemgilani.modeB.caddy && sed 's#/opt/saiem-blog/deploy/caddy/saiemgilani.caddy#/tmp/saiemgilani.modeB.caddy#' /etc/caddy/Caddyfile > /tmp/Caddyfile.modeB && grep -q '^www\.saiemgilani\.com {' /tmp/saiemgilani.modeB.caddy && grep -q '^saiemgilani\.com {' /tmp/saiemgilani.modeB.caddy && grep -q '/tmp/saiemgilani.modeB.caddy' /tmp/Caddyfile.modeB || { echo 'mode-B snippet/import not found — Caddyfile.modeB would validate mode A' >&2; exit 1; } && caddy validate --config /tmp/Caddyfile.modeB --adapter caddyfile"
 
 # (e) confirm every mode-B secret name is set in deploy/.env — never print a value, check
 # every name before exiting (don't stop at the first MISSING).

@@ -71,7 +71,17 @@ def test_rehearsal_dry_run_changes_nothing_public():
     assert "2375|2376" in lines[0], "the Docker-TCP guard must be the first remote command"
     assert any("caddy validate" in ln for ln in lines)
     assert any("3100/" in ln for ln in lines)
-    for forbidden in ("caddy reload", "systemctl", "vercel", "dns", "ufw", "docker compose up", "-X POST"):
+    assert "grep -qE" in lines[-1], "the env-presence check must never print a secret value"
+    for forbidden in (
+        "caddy reload",
+        "systemctl",
+        "vercel",
+        "dns",
+        "ufw",
+        "docker compose up",
+        "-X POST",
+        "sed -i",
+    ):
         assert not any(forbidden in ln for ln in lines), f"rehearsal must never do {forbidden!r}"
 
 
