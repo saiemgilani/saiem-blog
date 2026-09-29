@@ -154,20 +154,9 @@ trusted hop) and add a test. In mode A the real limit is the Vercel Firewall rul
 
 ## 5. Mode B cutover / rollback
 
-**Cutover** (serve the site from the droplet instead of Vercel):
-1. Uncomment both commented blocks in `deploy/caddy/saiemgilani.caddy` on the
-   droplet (the `www.saiemgilani.com` reverse proxy and the apex redirect).
-2. `ssh root@161.35.59.239 'caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy'`
-3. In Vercel DNS, change the `www` record to point at the droplet IP.
-4. In the Vercel project settings, remove `www.saiemgilani.com` from the
-   project's domains (so Vercel stops trying to serve it).
+Serving the site from the droplet instead of Vercel — trigger, preconditions, cutover, rollback, and the quarterly rehearsal cadence — is now its own runbook: **`docs/runbook-cutover-b.md`**.
 
-**Rollback** (back to Vercel):
-1. Reverse the DNS change — point `www` back at Vercel.
-2. Re-add `www.saiemgilani.com` to the Vercel project's domains.
-3. Re-comment the two blocks in `deploy/caddy/saiemgilani.caddy` and reload
-   Caddy (optional — Mode A still works with them uncommented, but keeping
-   the file matching the active mode avoids confusion later).
+`DEPLOY_HOST=root@161.35.59.239 deploy/rehearse-mode-b.sh --dry-run`
 
 ## 6. Vercel env (Production scope only)
 

@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 SCRIPT = Path(__file__).resolve().parents[2] / "deploy" / "deploy.sh"
+REHEARSAL_SCRIPT = Path(__file__).resolve().parents[2] / "deploy" / "rehearse-mode-b.sh"
 # Resolve the actual bash binary (don't just check it exists): a bare "bash" in
 # subprocess.run's argv can resolve to the WSL launcher stub in System32 instead
 # of Git Bash (Win32 CreateProcess checks system dirs before PATH), and that
@@ -53,6 +54,34 @@ def test_unsafe_values_are_refused_before_any_remote_command(override):
         capture_output=True,
         text=True,
         env={**os.environ, **override},
+    )
+    assert r.returncode == 2
+    assert "DRY:" not in r.stdout
+
+
+@pytest.mark.skipif(BASH is None, reason="needs bash")
+def test_rehearsal_dry_run_changes_nothing_public():
+    out = subprocess.run(
+        [BASH, REHEARSAL_SCRIPT.as_posix(), "--dry-run"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    lines = [ln for ln in out.splitlines() if ln.startswith("DRY:")]
+    assert "2375|2376" in lines[0], "the Docker-TCP guard must be the first remote command"
+    assert any("caddy validate" in ln for ln in lines)
+    assert any("3100/" in ln for ln in lines)
+    for forbidden in ("caddy reload", "systemctl", "vercel", "dns", "ufw", "docker compose up", "-X POST"):
+        assert not any(forbidden in ln for ln in lines), f"rehearsal must never do {forbidden!r}"
+
+
+@pytest.mark.skipif(BASH is None, reason="needs bash")
+def test_rehearsal_unsafe_host_is_refused_before_any_remote_command():
+    r = subprocess.run(
+        [BASH, REHEARSAL_SCRIPT.as_posix(), "--dry-run"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "DEPLOY_HOST": "-oProxyCommand=x"},
     )
     assert r.returncode == 2
     assert "DRY:" not in r.stdout
