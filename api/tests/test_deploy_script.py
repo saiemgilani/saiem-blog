@@ -70,8 +70,10 @@ def test_rehearsal_dry_run_changes_nothing_public():
     lines = [ln for ln in out.splitlines() if ln.startswith("DRY:")]
     assert "2375|2376" in lines[0], "the Docker-TCP guard must be the first remote command"
     assert any("caddy validate" in ln for ln in lines)
+    assert any("mktemp -d" in ln for ln in lines), "concurrent runs must not share fixed /tmp paths"
     assert any("3100/" in ln for ln in lines)
-    assert "grep -qE" in lines[-1], "the env-presence check must never print a secret value"
+    assert "grep -E" in lines[-1] and "deploy/.env" in lines[-1]
+    assert 'echo "$v"' not in lines[-1], "the env check must never print a secret's resolved value"
     for forbidden in (
         "caddy reload",
         "systemctl",
@@ -95,3 +97,46 @@ def test_rehearsal_unsafe_host_is_refused_before_any_remote_command():
     )
     assert r.returncode == 2
     assert "DRY:" not in r.stdout
+
+
+def _msys_path(p: Path) -> str:
+    # deploy/rehearse-mode-b.sh's DEPLOY_DIR guard requires a leading "/" (it's meant for a
+    # remote POSIX path); Git Bash on Windows understands "/c/Users/..." for a native path.
+    posix = p.resolve().as_posix()
+    drive, rest = posix.split(":", 1)
+    return f"/{drive.lower()}{rest}"
+
+
+@pytest.mark.skipif(BASH is None, reason="needs bash")
+def test_rehearsal_secret_check_rejects_empty_quoted_values(tmp_path):
+    # A quoted-but-empty assignment (AUTH_SECRET="") must read as MISSING, not present --
+    # a bare `grep NAME=` would wrongly match it (CodeRabbit). Extract the real (e) command
+    # from the dry-run output (with DEPLOY_DIR pointed at a fixture dir) and run it for real.
+    (tmp_path / "deploy").mkdir()
+    (tmp_path / "deploy" / ".env").write_text(
+        'AUTH_SECRET=""\n'
+        "AUTH_GITHUB_ID='abc123'\n"
+        "AUTH_GITHUB_SECRET=realvalue\n"
+        "AI_GATEWAY_API_KEY=\n"
+        'SAIEM_API_SECRET="realvalue2"\n'
+    )
+    out = subprocess.run(
+        [BASH, REHEARSAL_SCRIPT.as_posix(), "--dry-run"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={**os.environ, "DEPLOY_DIR": _msys_path(tmp_path)},
+    ).stdout
+    lines = [ln for ln in out.splitlines() if ln.startswith("DRY:")]
+    prefix = "DRY: ssh sdv-data "
+    command = lines[-1][len(prefix) :]
+    r = subprocess.run([BASH, "-c", command], capture_output=True, text=True)
+    assert r.stdout.splitlines() == [
+        "AUTH_SECRET MISSING",
+        "AUTH_GITHUB_ID present",
+        "AUTH_GITHUB_SECRET present",
+        "AI_GATEWAY_API_KEY MISSING",
+        "SAIEM_API_SECRET present",
+    ]
+    assert r.returncode == 1
+    assert "realvalue" not in r.stdout and "abc123" not in r.stdout

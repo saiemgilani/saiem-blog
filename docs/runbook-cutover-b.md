@@ -35,10 +35,14 @@ one) isn't recoverable through this runbook.
 ## Cutover
 
 1. Record the DNS you're about to change, so rollback restores the exact
-   values instead of guessing: `vercel dns ls saiemgilani.com --scope
-   saiemgilanis-projects`. Note the `www` and apex (`saiemgilani.com`)
-   entries — type, value, and TTL — and paste them into this run's ledger
-   entry.
+   values instead of guessing — **and note the exact record `name` Vercel
+   prints for the apex row.** `vercel dns ls saiemgilani.com --scope
+   saiemgilanis-projects`. Note the `www` and apex entries — type, value,
+   and TTL — and paste them into this run's ledger entry. Vercel lists the
+   apex with an **empty** `name` column, not `@`; `@` is not documented as
+   an accepted value for `vercel dns add`/`rm`. Copy whatever the listing
+   actually shows for the apex row's name (below, that's the empty string
+   `""`) rather than assuming a convention.
 2. On the droplet, uncomment both commented blocks in
    `/opt/saiem-blog/deploy/caddy/saiemgilani.caddy` (the
    `www.saiemgilani.com` reverse proxy to `127.0.0.1:3100` and the apex
@@ -47,13 +51,24 @@ one) isn't recoverable through this runbook.
    **Don't reload yet** — see step 5.
 3. In Vercel DNS, point BOTH records at the droplet — the apex needs this
    too, since Caddy's redirect block (step 2) only fires for traffic that
-   reaches Caddy, and today the apex resolves to Vercel, not the droplet:
+   reaches Caddy, and today the apex resolves to Vercel, not the droplet.
+   **Use `www` for the www record's name and `""` (empty, the exact value
+   step 1's listing showed) for the apex's name — `saiemgilani.com` is the
+   zone argument to every `vercel dns` command, never the record name, and
+   passing it as the name too creates a record for
+   `saiemgilani.com.saiemgilani.com` instead of the apex:**
    - `www` → `A` record → `161.35.59.239` (`vercel dns rm` the existing
      record if one is listed — today `www` has no explicit record, so there
      may be nothing to remove — then `vercel dns add saiemgilani.com www A
      161.35.59.239`).
-   - apex `saiemgilani.com` → `A` record → `161.35.59.239` (same
-     `rm`/`add` pattern).
+   - apex → `A` record → `161.35.59.239` (`vercel dns rm` the existing apex
+     record, then `vercel dns add saiemgilani.com "" A 161.35.59.239`).
+   Sanity-check both landed with the right name (full propagation is step
+   5, so these may still show Vercel's old answer briefly):
+   ```sh
+   dig +short saiemgilani.com
+   dig +short www.saiemgilani.com
+   ```
 4. In the Vercel project settings, remove both `www.saiemgilani.com` and
    `saiemgilani.com` from the project's domains — otherwise Vercel keeps
    trying to answer for them and the two answers race.
@@ -121,10 +136,16 @@ DNS and the Vercel project — so rollback works even if mode B was cut over
 step 1's ledger entry; don't guess what they were.
 
 1. In Vercel DNS, restore both records to what Cutover step 1 recorded —
-   typically `www` → `CNAME` → `cname.vercel-dns.com`, and the apex
-   `saiemgilani.com` → back to Vercel's original `A` record. Remove the `A`
-   record this cutover added (`vercel dns rm <id of the record you added>`)
-   and re-add whatever was there before.
+   typically `www` → `CNAME` → `cname.vercel-dns.com`, and the apex → back
+   to Vercel's original `A` record. Remove the `A` record this cutover
+   added (`vercel dns rm <id of the record you added>`) and re-add whatever
+   was there before — same record-name rule as Cutover step 3: `www` for
+   the www record, `""` (empty, exactly as step 1's listing showed) for the
+   apex, never `saiemgilani.com` itself as the name. Confirm:
+   ```sh
+   dig +short saiemgilani.com
+   dig +short www.saiemgilani.com
+   ```
 2. Re-add both `www.saiemgilani.com` and `saiemgilani.com` to the Vercel
    project's domains.
 3. Optionally, on the droplet, re-comment the two blocks in
@@ -140,5 +161,10 @@ Quarterly, run `deploy/rehearse-mode-b.sh --dry-run` first, read the printed
 commands, then `deploy/rehearse-mode-b.sh` for real
 (`DEPLOY_HOST=root@161.35.59.239`). It's entirely read-only: it never writes
 a view count, never reloads Caddy, and never touches DNS or Vercel — it only
-proves the cutover *would* work right now. Paste the output into this
-runbook's ledger entry with the date.
+proves the cutover *would* work right now. Each real run builds its mode-B
+Caddyfile under a fresh `mktemp -d`-created directory (never a fixed `/tmp`
+name, so two rehearsals never clobber each other) and removes it when done;
+the printed `mode-B config validated from /tmp/modeB.XXXXXX` line is the
+evidence a specific run passed, not the path itself, which won't exist
+afterward. Paste the full output into this runbook's ledger entry with the
+date.

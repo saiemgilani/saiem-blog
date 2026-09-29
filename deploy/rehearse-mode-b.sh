@@ -29,15 +29,19 @@ run "cd $DIR/deploy && test \"\$(docker compose ps --status running -q | wc -l)\
 # (the route also exports POST, which does increment; never call it from here).
 run "curl -fsS http://127.0.0.1:3100/ >/dev/null && curl -fsS http://127.0.0.1:3100/notes/intro-to-hoopR >/dev/null && body=\$(curl -fsS http://127.0.0.1:3100/api/views/intro-to-hoopR) && echo \"\$body\" | grep -Eq '\"count\":[0-9]+' || { echo \"views count check failed: \$body\" >&2; exit 1; }"
 
-# (d) build a mode-B Caddyfile in /tmp and validate it — never `caddy reload` / `systemctl`.
-# Uncomment only the exact commented lines from the mode-B block in the imported snippet
+# (d) build a mode-B Caddyfile under a per-run temp dir and validate it — never `caddy reload`
+# / `systemctl`. A fixed /tmp path let two concurrent rehearsals clobber each other's files
+# mid-validation (Sourcery); mktemp -d + a trap cleans up on both the success and guard-failure
+# paths. Uncomment only the exact commented lines from the mode-B block in the imported snippet
 # (the www reverse_proxy + apex redirect); anything else starting with "# " stays a real
 # comment. /opt/saiem-blog/deploy/caddy/saiemgilani.caddy is the fixed import path written
 # into /etc/caddy/Caddyfile during first-time setup (docs/runbook-deploy.md §2.3) — verified
 # live 2026-09-29. SF-1: guard before validating, so a silent no-op (snippet byte-drift, or an
 # import path that no longer matches) fails loudly instead of validating unchanged mode A.
-run "cd $DIR && sed -E 's/^# (www\.saiemgilani\.com \{|\treverse_proxy|\theader -Server|\}|saiemgilani\.com \{|\tredir )/\1/' deploy/caddy/saiemgilani.caddy > /tmp/saiemgilani.modeB.caddy && sed 's#/opt/saiem-blog/deploy/caddy/saiemgilani.caddy#/tmp/saiemgilani.modeB.caddy#' /etc/caddy/Caddyfile > /tmp/Caddyfile.modeB && grep -q '^www\.saiemgilani\.com {' /tmp/saiemgilani.modeB.caddy && grep -q '^saiemgilani\.com {' /tmp/saiemgilani.modeB.caddy && grep -q '/tmp/saiemgilani.modeB.caddy' /tmp/Caddyfile.modeB || { echo 'mode-B snippet/import not found — Caddyfile.modeB would validate mode A' >&2; exit 1; } && caddy validate --config /tmp/Caddyfile.modeB --adapter caddyfile"
+run "cd $DIR && d=\$(mktemp -d /tmp/modeB.XXXXXX) && trap 'rm -rf \"\$d\"' EXIT && sed -E 's/^# (www\.saiemgilani\.com \{|\treverse_proxy|\theader -Server|\}|saiemgilani\.com \{|\tredir )/\1/' deploy/caddy/saiemgilani.caddy > \"\$d/saiemgilani.modeB.caddy\" && sed 's#/opt/saiem-blog/deploy/caddy/saiemgilani.caddy#'\"\$d\"'/saiemgilani.modeB.caddy#' /etc/caddy/Caddyfile > \"\$d/Caddyfile.modeB\" && grep -q '^www\.saiemgilani\.com {' \"\$d/saiemgilani.modeB.caddy\" && grep -q '^saiemgilani\.com {' \"\$d/saiemgilani.modeB.caddy\" && grep -q \"\$d/saiemgilani.modeB.caddy\" \"\$d/Caddyfile.modeB\" || { echo 'mode-B snippet/import not found — Caddyfile.modeB would validate mode A' >&2; exit 1; } && caddy validate --config \"\$d/Caddyfile.modeB\" --adapter caddyfile && echo \"mode-B config validated from \$d\""
 
-# (e) confirm every mode-B secret name is set in deploy/.env — never print a value, check
-# every name before exiting (don't stop at the first MISSING).
-run "cd $DIR && miss=0; for n in AUTH_SECRET AUTH_GITHUB_ID AUTH_GITHUB_SECRET AI_GATEWAY_API_KEY SAIEM_API_SECRET; do if grep -qE \"^\${n}=.+\" deploy/.env; then echo \"\$n present\"; else echo \"\$n MISSING\"; miss=1; fi; done; exit \$miss"
+# (e) confirm every mode-B secret has a non-empty resolved VALUE in deploy/.env, not just a bare
+# assignment — `NAME=""` matches a plain `grep NAME=` and would wrongly report present
+# (CodeRabbit). Take the last matching assignment (later wins), strip one surrounding pair of
+# quotes if present, then check non-empty. Never echo the value itself.
+run "cd $DIR && miss=0; for n in AUTH_SECRET AUTH_GITHUB_ID AUTH_GITHUB_SECRET AI_GATEWAY_API_KEY SAIEM_API_SECRET; do line=\$(grep -E \"^\${n}=\" deploy/.env | tail -n1); v=\"\${line#*=}\"; case \"\$v\" in \\\"*\\\") v=\"\${v#\\\"}\"; v=\"\${v%\\\"}\" ;; \'*\') v=\"\${v#\'}\"; v=\"\${v%\'}\" ;; esac; if [ -n \"\$v\" ]; then echo \"\$n present\"; else echo \"\$n MISSING\"; miss=1; fi; done; exit \$miss"
