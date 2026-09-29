@@ -19,3 +19,16 @@ jobs:
           node-version: 22
       - run: node --test scripts/check-dead-domains.test.mjs
       - run: node scripts/check-dead-domains.mjs
+
+  scripts:
+    # the verdict rules are the part of the evidence that can be wrong silently
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test scripts/lighthouse-verdicts.test.mjs
+        working-directory: frontend
