@@ -101,10 +101,14 @@ def test_rehearsal_unsafe_host_is_refused_before_any_remote_command():
 
 def _msys_path(p: Path) -> str:
     # deploy/rehearse-mode-b.sh's DEPLOY_DIR guard requires a leading "/" (it's meant for a
-    # remote POSIX path); Git Bash on Windows understands "/c/Users/..." for a native path.
-    posix = p.resolve().as_posix()
-    drive, rest = posix.split(":", 1)
-    return f"/{drive.lower()}{rest}"
+    # remote POSIX path). On Windows, Git Bash understands "/c/Users/..." for a native path,
+    # so convert "C:\..." accordingly; on Linux/macOS tmp_path is already a POSIX path with no
+    # drive, so pass it through unchanged (resolve().as_posix() has no ":" to split on there).
+    p = p.resolve()
+    if p.drive:
+        drive, rest = p.as_posix().split(":", 1)
+        return f"/{drive.lower()}{rest}"
+    return p.as_posix()
 
 
 @pytest.mark.skipif(BASH is None, reason="needs bash")
