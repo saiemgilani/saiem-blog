@@ -54,6 +54,10 @@ services:
       AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
       LAB_LIVE_RUNS: ${LAB_LIVE_RUNS:-}
       LAB_LLM_MODELS: ${LAB_LLM_MODELS:-}
+      # optional: VIEWS_HASH_SECRET falls back to SAIEM_API_SECRET (client.ts); LAB_DATA_RATE_PER_MIN
+      # falls back to 120 (lab/data/route.ts) -- empty is safe for both, so ${VAR:-} is fine unset.
+      VIEWS_HASH_SECRET: ${VIEWS_HASH_SECRET:-}
+      LAB_DATA_RATE_PER_MIN: ${LAB_DATA_RATE_PER_MIN:-}
     ports:
       - "127.0.0.1:3100:3000"
     volumes:

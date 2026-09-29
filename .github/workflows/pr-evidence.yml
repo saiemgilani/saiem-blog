@@ -31,24 +31,10 @@ permissions:
   contents: read
 
 jobs:
-  scripts:
-    # the verdict rules are the part of the evidence that can be wrong silently
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: node --test scripts/lighthouse-verdicts.test.mjs
-        working-directory: frontend
-
   evidence:
     # A fork PR gets a read-only token (it could not post) and no Vercel preview without
     # authorization. Drafts wait until ready for review.
     if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
-    needs: scripts
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

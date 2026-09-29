@@ -72,3 +72,8 @@ Colors follow the theme: red on cream in light, gold on near-black in dark.
 `npm run visual-check` renders every public route through the 4-way matrix — light
 and dark, desktop and mobile — and is the mechanical check that the rules above hold
 in practice (contrast, seal count, motion) rather than just in the token file.
+
+## Status
+
+Shipped 2026-09-29 — phases P0–P7 complete; the /lab wiring map ships as hybrid
+(index default, map behind the toggle; D10 ruled 2026-09-27).
