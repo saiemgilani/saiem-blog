@@ -1,78 +1,95 @@
 ---
 slug: about
 title: About Me
-date: 2023-04-06
+date: 2026-09-29
 published: true
-excerpt: "About me"
+excerpt: "Saiem Gilani — machine learning engineer, and the person behind the SportsDataverse family of open sports data packages."
 image: "https://avatars.githubusercontent.com/u/25425933?v=4"
 ---
 
-Hello, I'm Saiem! ML Engineer, CV
-I gave a presentation on the projects below at the [Carnegie Mellon Sports Analytics Conference](https://www.stat.cmu.edu/cmsac/conference/2021/). The paper I wrote for the conference was selected as the winner for the Data and Software contribution, Open Track for their reproducible research competition.
+Hello, I'm Saiem. I work as a machine learning engineer, computer vision by trade, and I have spent most of my
+evenings since 2020 making public sports data easier to get at. That work grew into the
+[SportsDataverse](https://sportsdataverse.org "The home page of the SportsDataverse Organization"): a set of R,
+Python and JavaScript packages that share the same ideas about tidy data, the same release pipeline, and, where it
+matters, the same models.
 
-The conference materials can be found here:
-  - [Slides](https://saiemgilani.github.io/The_SportsDataverse_Initiative/)
-  - [Repository](https://github.com/saiemgilani/The_SportsDataverse_Initiative)
-  - [Paper](https://www.stat.cmu.edu/cmsac/conference/2021/assets/pdf/SaiemGilani.pdf)
+## What I'm building now
 
-I'm working on:
+- **The packages.** Fourteen public libraries carry my name in their metadata; the list is below and on the
+  [work page](/work), and each one has a [note](/notes) written from its own description. In 2026 the R side
+  finished a long CRAN campaign — cfbfastR, hoopR, wehoop, fastRhockey, baseballr, oddsapiR and cfbseedR are all
+  on CRAN — and the Python package was rebuilt end to end on polars.
+- **The data.** Every `load_*()` function reads from automated release repositories
+  ([sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data) and its per-sport siblings): play
+  by play, box scores, schedules, rosters and, increasingly, fitted models — expected points, win probability,
+  shot quality, expected goals — with the training code committed beside the data.
+- **[Game on Paper](https://gameonpaper.com/cfb "Game on Paper: live analytics for the modern age").** Live
+  college football analytics, built on the JavaScript package and the same models.
+- **This site's [lab](/lab).** Small, runnable ideas: querying a release file from the browser with DuckDB, a series
+  odds calculator that runs on the server, and a metered question-and-answer over the lab's own data sources.
 
-Honestly, so many sports data projects that should have only taken me a couple weeks.
-  - [sportsdataverse node.js source](https://github.com/sportsdataverse/sportsdataverse-js) ([Docs](https://js.sportsdataverse.org/))
-  - [sportsdataverse-py source](https://github.com/sportsdataverse/sportsdataverse-py) ([Docs](https://py.sportsdataverse.org/), [PyPI](https://pypi.org/project/sportsdataverse/))
-  - [cfbfastR source](https://github.com/sportsdataverse/cfbfastR) ([Docs](https://cfbfastR.sportsdataverse.org/), [Data](https://github.com/sportsdataverse/cfbfastR-data))
-  - [hoopR source](https://github.com/sportsdataverse/hoopR) ([Docs](https://hoopR.sportsdataverse.org/), [Data](https://github.com/sportsdataverse/hoopR-data))
-  - [wehoop source](https://github.com/sportsdataverse/wehoop) ([Docs](https://wehoop.sportsdataverse.org/), [Data](https://github.com/sportsdataverse/wehoop-data))
-  - [recruitR source](https://github.com/sportsdataverse/recruitR) ([Docs](https://recruitR.sportsdataverse.org/))
-  - [usfootballR source](https://github.com/sportsdataverse/usfootballR) ([Docs](https://usfootballR.sportsdataverse.org/))
-  - [@sportsdataverse/nhl](https://github.com/saiemgilani/sportsdataverse-nhl)
+## Talks and writing
 
+I presented the SportsDataverse at the
+[Carnegie Mellon Sports Analytics Conference](https://www.stat.cmu.edu/cmsac/conference/2021/) in 2021. The paper
+won the Data and Software contribution in the reproducible research competition's open track.
 
-  Projects I contribute to:
-  - [baseballr source](https://github.com/billpetti/baseballr) ([Docs](https://billpetti.github.io/baseballr/))
-  - [fastRhockey source](https://github.com/sportsdataverse/fastRhockey) ([Docs](https://fastRhockey.sportsdataverse.org/))
-  - [ncaascrapR source](https://github.com/ehess/ncaascrapR) ([Docs](https://ehess.github.io/ncaascrapR/))
+- [Slides](https://saiemgilani.github.io/The_SportsDataverse_Initiative/)
+- [Repository](https://github.com/saiemgilani/The_SportsDataverse_Initiative)
+- [Paper](https://www.stat.cmu.edu/cmsac/conference/2021/assets/pdf/SaiemGilani.pdf)
 
+The notes on this site pick up where that paper left off, one package at a time.
 
-They generally fall under the umbrella of the concept of the [SportsDataverse](https://sportsdataverse.org/ "The home page of the SportsDataverse Organization"). The general goal is to make sports data significantly more open and accessible, streamlining the process of gathering public data for research.
+## R packages
 
-I have highlighted some of services we have been working on in this README. If you would like to help us in this endeavor, please feel encouraged to reach out.
+Author and maintainer unless noted.
 
-[![Twitter Follow](https://img.shields.io/twitter/follow/sportsdataverse?color=blue&label=%40sportsdataverse&logo=twitter&style=for-the-badge)](https://twitter.com/sportsdataverse)
-[![Twitter Follow](https://img.shields.io/twitter/follow/cfbfastR?color=blue&label=%40cfbfastR&logo=twitter&style=for-the-badge)](https://twitter.com/cfbfastR)
-[![Twitter Follow](https://img.shields.io/twitter/follow/saiemgilani?color=blue&label=%40saiemgilani&logo=twitter&style=for-the-badge)](https://twitter.com/saiemgilani)
-[![LinkedIn Follow](https://img.shields.io/badge/LinkedIn-saiem--gilani-white?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0B66C2)](https://www.linkedin.com/in/saiem-gilani/)
-[![GitHub Follow](https://img.shields.io/github/followers/saiemgilani?color=eee&logo=Github&style=for-the-badge)](https://github.com/saiemgilani)
+- [cfbfastR](https://cfbfastR.sportsdataverse.org/) — college football play by play, EPA and win probability
+  ([source](https://github.com/sportsdataverse/cfbfastR), [data](https://github.com/sportsdataverse/cfbfastR-data))
+- [hoopR](https://hoopR.sportsdataverse.org/) — men's basketball: ESPN, the NBA Stats API and KenPom
+  ([source](https://github.com/sportsdataverse/hoopR), [data](https://github.com/sportsdataverse/hoopR-data))
+- [wehoop](https://wehoop.sportsdataverse.org/) — women's basketball: ESPN and the WNBA Stats API
+  ([source](https://github.com/sportsdataverse/wehoop), [data](https://github.com/sportsdataverse/wehoop-data))
+- [fastRhockey](https://fastRhockey.sportsdataverse.org/) — NHL, PWHL and the HockeyTech leagues
+  ([source](https://github.com/sportsdataverse/fastRhockey), [data](https://github.com/sportsdataverse/fastRhockey-data))
+- [baseballr](https://billpetti.github.io/baseballr/) — Bill Petti's baseball package; I maintain it
+  ([source](https://github.com/BillPetti/baseballr), [data](https://github.com/sportsdataverse/baseballr-data))
+- [oddsapiR](https://oddsapir.sportsdataverse.org/) — sports odds from The Odds API
+  ([source](https://github.com/sportsdataverse/oddsapiR))
+- [cfbseedR](https://cfbseedR.sportsdataverse.org/) — college football season simulation and playoff seeding
+  ([source](https://github.com/sportsdataverse/cfbseedR))
+- [cfb4th](https://cfb4th.sportsdataverse.org/) — fourth-down decisions ([source](https://github.com/sportsdataverse/cfb4th))
+- [cfbplotR](https://cfbplotr.sportsdataverse.org/) and [sdvplotR](https://sdvplotr.sportsdataverse.org/) — logos, colors
+  and themes for ggplot2, gt and reactable ([cfbplotR source](https://github.com/sportsdataverse/cfbplotR),
+  [sdvplotR source](https://github.com/sportsdataverse/sdvplotR))
+- [recruitR](https://recruitr.sportsdataverse.org/) — college recruiting rankings ([source](https://github.com/sportsdataverse/recruitR))
+- [usfootballR](https://usfootballr.sportsdataverse.org/) — MLS and NWSL from ESPN ([source](https://github.com/sportsdataverse/usfootballR))
+- [sportsdataverse](https://r.sportsdataverse.org/) — the meta-package that installs and loads the family
+  ([source](https://github.com/sportsdataverse/sportsdataverse-R)), and
+  [sportsdataversedata](https://github.com/sportsdataverse/sportsdataverse-data), the release plumbing behind the loaders
 
-##  [SportsDataverse.org](https://sportsdataverse.org/ "The home page of the SportsDataverse Organization")
+## Python
 
-##  [GameOnPaper.com](https://gameonpaper.com/cfb "Game on Paper: Live analytics for the modern age")
+- [sportsdataverse](https://py.sportsdataverse.org/) — ESPN across every league, the NBA and WNBA stats APIs, NHL,
+  MLB and Statcast, HockeyTech, stats.ncaa.org, plus the loaders and models the R packages ship
+  ([source](https://github.com/sportsdataverse/sportsdataverse-py), [PyPI](https://pypi.org/project/sportsdataverse/))
 
-<a href='https://gameonpaper.com/cfb/game/401013131'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/gameonpaper_screenshot.png' height="139" /></a>
+## Node.js
 
-## Node.js modules
+- [sportsdataverse](https://js.sportsdataverse.org/) — the module behind Game on Paper: ESPN, 247Sports and NCAA
+  endpoints ([source](https://github.com/sportsdataverse/sportsdataverse-js),
+  [npm](https://www.npmjs.com/package/sportsdataverse))
 
-<a href='https://www.npmjs.com/package/sportsdataverse'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/sdv-js.png'  width="103.6" height="120" /></a>
+## Projects I contribute to
 
-[![npm](https://img.shields.io/npm/v/sportsdataverse?style=for-the-badge)](https://js.sportsdataverse.org/)  [![npm](https://img.shields.io/npm/dm/sportsdataverse?style=for-the-badge)](https://www.npmjs.com/package/sportsdataverse)
-<a href='https://www.npmjs.com/package/sportsdataverse'>[![NPM](https://nodei.co/npm/sportsdataverse.png)](https://npmjs.org/package/sportsdataverse) </a>
+- [ncaascrapR](https://ehess.github.io/ncaascrapR/) — Eric Hess's NCAA scraper ([source](https://github.com/ehess/ncaascrapR))
+- The course packages for the FSU Sports Analytics Club live in the SportsDataverse org too
+  ([fsu-sac](https://github.com/sportsdataverse/fsu-sac), [fsu-sac-2025](https://github.com/sportsdataverse/fsu-sac-2025)).
 
-[**Documentation**](https://js.sportsdataverse.org/)
+The general goal has not changed since 2020: make sports data significantly more open and accessible, and take the
+gathering out of the way of the research. If you want to help, reach out.
 
-## Python Packages
+## Find me
 
-<a href='https://pypi.org/project/sportsdataverse/'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/sdv-py-logo.png' width="103.6" height="120" /></a>
-
-[![PyPI](https://img.shields.io/pypi/v/sportsdataverse?label=sportsdataverse&logo=python&style=for-the-badge)](https://pypi.org/project/sportsdataverse/) <a href='https://pypi.org/project/sportsdataverse/'><img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/sportsdataverse?style=for-the-badge" /></a>
-
-[**Documentation**](https://py.sportsdataverse.org/)
-
-## R Packages
-
-<a href='http://cfbfastR.sportsdataverse.org'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/cfbfastR.png' width="103.6" height="120" /></a>
-<a href='http://hoopR.sportsdataverse.org'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/hoopR-logo.png' width="103.6" height="120" /></a>
-<a href='http://wehoop.sportsdataverse.org'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/wehoop.png' width="103.6" height="120" /></a>
-<a href='http://fastRhockey.sportsdataverse.org'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/fastRhockey-logo.png' width="103.6" height="120" /></a>
-<a href='http://recruitR.sportsdataverse.org'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/recruitR.png' width="103.6" height="120" /></a>
-<a href='http://usfootballR.sportsdataverse.org'><img src='https://raw.githubusercontent.com/saiemgilani/saiemgilani/main/usfootballR-logo.png' width="103.6" height="120" /></a>
-
+- [GitHub](https://github.com/saiemgilani) · [X](https://x.com/saiemgilani) · [LinkedIn](https://www.linkedin.com/in/saiem-gilani/)
+- SportsDataverse on [X](https://x.com/SportsDataverse) · [Join the list](https://sportsdataverse.org/join)
