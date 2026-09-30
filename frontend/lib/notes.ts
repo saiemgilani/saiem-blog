@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 
-export type NoteMeta = { slug: string; title: string; date: string | null; excerpt: string; readingMinutes: number };
+export type NoteMeta = { slug: string; title: string; date: string | null; excerpt: string; readingMinutes: number; order: number | null };
 export type Note = NoteMeta & { source: string };
 
 const WORDS_PER_MINUTE = 220;
@@ -30,6 +30,8 @@ export function readNote(slug: string, dir: string = notesDir()): Note | null {
     date: isoDay(data.date),
     excerpt: typeof data.excerpt === "string" ? data.excerpt : "",
     readingMinutes: Math.max(1, Math.round(words / WORDS_PER_MINUTE)),
+    // Optional hand-set position: ordered notes lead the list (ascending), the rest follow newest-first.
+    order: typeof data.order === "number" && Number.isFinite(data.order) ? data.order : null,
     source: content,
   };
 }
@@ -42,5 +44,5 @@ export function listNotes(dir: string = notesDir()): NoteMeta[] {
     .filter((n): n is Note => n !== null)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring drops `source` from the rest
     .map(({ source: _source, ...meta }) => meta)
-    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "") || a.slug.localeCompare(b.slug));
+    .sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (b.date ?? "").localeCompare(a.date ?? "") || a.slug.localeCompare(b.slug));
 }

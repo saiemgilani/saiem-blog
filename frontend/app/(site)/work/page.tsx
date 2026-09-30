@@ -4,7 +4,7 @@ import { getEcosystemStats, getSdvPackages, type SdvPackage } from "@lib/sdvOrg"
 import { pageMetadata } from "@lib/metadata";
 import { apiEnv } from "@lib/api/client";
 import { getProjects } from "@lib/projects";
-import { isContribution } from "@content/work/contributions";
+import { contributionRank, isContribution } from "@content/work/contributions";
 
 export const metadata: Metadata = { title: "Work", ...pageMetadata("/work") };
 export const revalidate = 3600;
@@ -12,7 +12,7 @@ export const revalidate = 3600;
 export default async function Work() {
   const [{ packages: all, live }, stats, projects] = await Promise.all([getSdvPackages(fetch, fallback as SdvPackage[]), getEcosystemStats(), getProjects(apiEnv())]);
   // The org API lists every SportsDataverse package, community ones included; this page is about mine.
-  const packages = all.filter(isContribution);
+  const packages = all.filter(isContribution).sort((a, b) => contributionRank(a) - contributionRank(b));
   return (
     <section className="py-12">
       <h1 className="font-display text-4xl">Work</h1>

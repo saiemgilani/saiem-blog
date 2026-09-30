@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { CONTRIBUTIONS, isContribution } from "../content/work/contributions.ts";
+import { CONTRIBUTIONS, contributionRank, isContribution } from "../content/work/contributions.ts";
 
 type Row = { title: string; repoType: string };
 const fallback = JSON.parse(readFileSync(new URL("../content/fallback/sdv-packages.json", import.meta.url), "utf8")) as Row[];
@@ -24,4 +24,11 @@ test("the filter keeps his packages and drops community ones", () => {
   assert.equal(isContribution({ title: "sportyR", repoType: "R" }), false);
   assert.equal(isContribution({ title: "hoopR", repoType: "Python" }), false);
   assert.ok(isContribution({ title: "baseballr", repoType: "R" }), "on CRAN with him as maintainer — listed even though the repo is not in the org");
+});
+
+test("display order: Python, Node.js, then the R packages in the owner's sequence", () => {
+  const order = [...fallback].filter(isContribution).sort((a, b) => contributionRank(a) - contributionRank(b)).map((p) => `${p.title}/${p.repoType}`);
+  assert.deepEqual(order.slice(0, 5), ["sportsdataverse/Python", "sportsdataverse/Node.js", "hoopR/R", "wehoop/R", "cfbfastR/R"]);
+  assert.equal(order.at(-1), "sportsdataverse/R");
+  assert.equal(contributionRank({ title: "nwslR", repoType: "R" }), Infinity);
 });
