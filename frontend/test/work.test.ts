@@ -23,5 +23,5 @@ test("the filter keeps his packages and drops community ones", () => {
   assert.equal(isContribution({ title: "nwslR", repoType: "R" }), false);
   assert.equal(isContribution({ title: "sportyR", repoType: "R" }), false);
   assert.equal(isContribution({ title: "hoopR", repoType: "Python" }), false);
-  assert.equal(isContribution({ title: "baseballr", repoType: "R" }), false, "maintained under another account — not listed");
+  assert.ok(isContribution({ title: "baseballr", repoType: "R" }), "on CRAN with him as maintainer — listed even though the repo is not in the org");
 });
