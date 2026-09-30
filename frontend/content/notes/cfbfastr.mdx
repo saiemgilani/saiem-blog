@@ -1,0 +1,28 @@
+---
+title: 'cfbfastR: Access College Football Play by Play Data'
+date: '2021-04-02'
+tags: ['r', 'sportsdataverse', 'college-football', 'espn', 'collegefootballdata']
+excerpt: 'A utility to quickly obtain clean and tidy college football data.'
+---
+
+**cfbfastR** is an R package. A utility to quickly obtain clean and tidy college football data. Serves as a wrapper around the https://collegefootballdata.com/ API and provides functions to access live play by play and box score data from ESPN https://www.espn.com when available. It provides users the capability to access a plethora of endpoints, and supplement that data with additional information (Expected Points Added/Win Probability added).
+
+Where most of my play-by-play modeling work has lived since 2021: EPA and win probability for college football, era-aware rule handling, and the `load_cfb_*()` loaders that read straight from the release repo.
+
+## Install
+
+```r
+install.packages("cfbfastR")
+pak::pak("sportsdataverse/cfbfastR")
+```
+
+On CRAN (v3.0.0); the second line installs the development version.
+
+## Links
+
+- [Documentation](https://cfbfastR.sportsdataverse.org/)
+- [Source on GitHub](https://github.com/sportsdataverse/cfbfastR)
+- [CRAN](https://CRAN.R-project.org/package=cfbfastR)
+- [cfbfastR-data](https://github.com/sportsdataverse/cfbfastR-data) — the release repo the loaders read from
+
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

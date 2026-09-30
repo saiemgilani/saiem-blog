@@ -1,0 +1,24 @@
+---
+title: 'sportsdataversedata: sportsdataverse data storage functions'
+date: '2023-03-04'
+tags: ['r', 'sportsdataverse', 'data-releases', 'github-releases']
+excerpt: 'This repository holds automated data releases for sportsdataverse projects and helper functions for managing the uploads.'
+---
+
+**sportsdataversedata** is an R package. This repository holds automated data releases for sportsdataverse projects and helper functions for managing the uploads.
+
+The release plumbing behind every `load_*()` function: publish a data frame to a GitHub release in several formats, read it back, and keep the timestamps honest. Ported to Python in sportsdataverse-py as `sportsdataverse.release`.
+
+## Install
+
+```r
+pak::pak("sportsdataverse/sportsdataverse-data")
+```
+
+Not on CRAN — install from GitHub with pak (or remotes).
+
+## Links
+
+- [Source on GitHub](https://github.com/sportsdataverse/sportsdataverse-data)
+
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

@@ -1,0 +1,25 @@
+---
+title: 'sdvplotR: Sports Team Logo Plots in ''ggplot2'', ''gt'' and ''reactable'''
+date: '2022-08-22'
+tags: ['r', 'sportsdataverse', 'ggplot2', 'visualization', 'logos']
+excerpt: 'A unified set of functions to visualize sports data across the National Football League, National Basketball Association, Women''s National Basketball Association, Major League Baseball, National Hockey League, and colleg'
+---
+
+**sdvplotR** is an R package. A unified set of functions to visualize sports data across the National Football League, National Basketball Association, Women's National Basketball Association, Major League Baseball, National Hockey League, and college football and basketball in 'ggplot2' plots, 'gt' tables and 'reactable' tables. Team logos, wordmarks and player headshots can be drawn as plot layers, as axis text and inside table cells, and team color scales map team identifiers to their official colors. Team abbreviations used by different data providers, including historical abbreviations of relocated franchises, are cleaned to one canonical key per sport. Built on 'ggpath' following the conventions of 'nflplotR' and designed to work with the companion 'SportsDataverse' data packages. Also includes the 'gtUtils' table themes, color legends, cut lines, significance notation, outlier flags and cropping and saving helpers for 'gt' tables.
+
+The plotting layer the sport-specific packages were each half-building on their own, pulled into one place: logos, colors and themes that know every SportsDataverse league.
+
+## Install
+
+```r
+pak::pak("sportsdataverse/sdvplotR")
+```
+
+Not on CRAN — install from GitHub with pak (or remotes).
+
+## Links
+
+- [Documentation](https://sdvplotr.sportsdataverse.org/)
+- [Source on GitHub](https://github.com/sportsdataverse/sdvplotR)
+
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
