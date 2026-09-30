@@ -28,4 +28,5 @@ test("binRows: 5-attempt floor, attempts desc, feet from the hoop, shrunk pct", 
   assert.deepEqual([rows[1].xFt, rows[1].yFt], [0, 0]);
   assert.deepEqual([rows[0].xFt, rows[0].yFt], [10, 20]);
   assert.ok(Math.abs(rows[1].shrunk - (7 + 12.5) / 35) < 1e-12);
+  assert.equal(binRows([{ px: 250, py: 417.5, attempts: 1, makes: 1 }, { px: 150, py: 317.5, attempts: 4, makes: 4 }], 0.5, 25, 1).length, 2, "floor 1 keeps thin bins");
 });

@@ -45,6 +45,7 @@ export function ShotChart() {
   const reqKey = `${team}|${player}`;
   const [loaded, setLoaded] = useState<{ key: string; shots: Shot[] | null; error: string | null }>({ key: "", shots: null, error: null });
   const [tip, setTip] = useState<Tip | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const [reading, setReading] = useState("");
   const [pickerError, setPickerError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -87,7 +88,7 @@ export function ShotChart() {
     const prior = shots.reduce((a, s) => a + s.m, 0) / shots.length;
     const hb = hexbin<Shot>().radius(HEX_R).x((s) => toSvg(s.x, s.y)[0]).y((s) => toSvg(s.x, s.y)[1]);
     const bins = hb(shots);
-    const rows = binRows(bins.map((b) => ({ px: b.x, py: b.y, attempts: b.length, makes: b.reduce((a, s) => a + s.m, 0) })), prior, K);
+    const rows = binRows(bins.map((b) => ({ px: b.x, py: b.y, attempts: b.length, makes: b.reduce((a, s) => a + s.m, 0) })), prior, K, 1);
     return { prior, hb, bins, rows };
   }, [shots]);
 
@@ -121,6 +122,7 @@ export function ShotChart() {
   }, [binned]);
 
   const prior = binned ? binned.prior : null;
+  const rowsShown = binned ? (showAll ? binned.rows : binned.rows.filter((r) => r.attempts >= 5)) : [];
   const sel = "border border-rule bg-page px-2 py-1 font-mono text-xs text-ink";
   return (
     <div className="not-prose my-6 border border-rule bg-card">
@@ -156,11 +158,12 @@ export function ShotChart() {
       {binned && (
         <details className="border-t border-rule px-3 py-2 font-mono text-[11px] text-muted">
           <summary className="cursor-pointer">Bin table</summary>
+          <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />show all bins (1 or more attempts)</label>
           <div className="mt-2 max-h-72 overflow-auto">
             <table className="w-full">
-              <caption className="pb-1 text-left">Hexagons with 5 or more attempts: {binned.rows.length} of {binned.bins.length} shown, most attempts first. x and y are feet from the hoop.</caption>
+              <caption className="pb-1 text-left">Hexagons with {showAll ? 1 : 5} or more attempts: {rowsShown.length} of {binned.bins.length} shown, most attempts first. x and y are feet from the hoop.</caption>
               <thead><tr>{["x (ft)", "y (ft)", "attempts", "makes", "FG%", "shrunk FG%"].map((h) => <th key={h} scope="col" className="sticky top-0 bg-card px-2 py-1 text-left">{h}</th>)}</tr></thead>
-              <tbody>{binned.rows.map((r, i) => (
+              <tbody>{rowsShown.map((r, i) => (
                 <tr key={i} className="border-t border-rule"><td className="px-2 py-0.5">{r.xFt}</td><td className="px-2 py-0.5">{r.yFt}</td><td className="px-2 py-0.5">{r.attempts}</td><td className="px-2 py-0.5">{r.makes}</td><td className="px-2 py-0.5">{(r.pct * 100).toFixed(1)}</td><td className="px-2 py-0.5">{(r.shrunk * 100).toFixed(1)}</td></tr>
               ))}</tbody>
             </table>
