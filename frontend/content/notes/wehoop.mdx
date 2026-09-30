@@ -2,28 +2,119 @@
 title: 'wehoop: Access Women''s Basketball Play by Play Data'
 date: '2021-02-26'
 tags: ['r', 'sportsdataverse', 'womens-basketball', 'wnba', 'ncaa', 'espn']
-excerpt: 'A utility for working with women''s basketball data.'
+excerpt: 'An R package for WNBA and NCAA women''s basketball: ESPN, the WNBA Stats API, Fox, NCAA.com and Her Hoop Stats, plus multi-season loaders.'
 order: 3
 ---
 
-**wehoop** is an R package. A utility for working with women's basketball data. A scraping and aggregating interface for the WNBA Stats API https://stats.wnba.com/ and ESPN's https://www.espn.com women's college basketball and WNBA statistics. It provides users with the capability to access the game play-by-plays, box scores, standings and results to analyze the data for themselves.
+wehoop is an R package for women's basketball data: the WNBA and NCAA Division I women's college basketball. It wraps ESPN's women's college basketball and WNBA endpoints, the official WNBA Stats API, Fox Sports' Bifrost feed, NCAA.com, Basketball-Reference's WNBA pages, and (for subscribers) Her Hoop Stats. It also loads pre-built, multi-season files from the data release repo so you rarely need to hit a live endpoint game by game. It is the women's-game sibling of hoopR, and it's part of the SportsDataverse.
 
-The women's-game sibling of hoopR: ESPN and WNBA Stats API access, plus the same win-probability columns the men's data carries.
-
-## Install
+## Installation
 
 ```r
 install.packages("wehoop")
+```
+
+wehoop 3.0.0 is on CRAN. If a CRAN release hasn't caught up to what's documented here, install the development version from GitHub:
+
+```r
+if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")
 pak::pak("sportsdataverse/wehoop")
 ```
 
-On CRAN (v3.0.0); the second line installs the development version.
+Almost everything in wehoop is a free, unauthenticated scrape or public API call. The one exception is the `hhs_*` family, which wraps Her Hoop Stats, a subscription site. Those functions read your own login from the `HERHOOPSTATS_EMAIL` and `HERHOOPSTATS_PW` environment variables. Set them with `usethis::edit_r_environ()` and restart R; wehoop never asks for the values directly.
+
+## Getting started
+
+```r
+library(wehoop)
+
+wbb_pbp <- load_wbb_pbp(seasons = 2024)
+wnba_team_box <- load_wnba_team_box(seasons = 2024)
+today <- espn_wnba_scoreboard()
+```
+
+`load_wbb_pbp()` returns one row per play, with score, clock, period and shot coordinates when ESPN has them. `load_wnba_team_box()` returns one row per team per game. `espn_wnba_scoreboard()` hits ESPN live and returns the day's slate of games with status and scores, which is the usual way to find a `game_id` to feed into the per-game ESPN wrappers.
+
+Loading every season of play-by-play at once is the heaviest single call in the package: expect something on the order of 7 million rows and 1-2 GB of memory for the full WNBA-plus-WBB history. If that's more than your machine wants to hold, restrict `seasons` to a smaller range, for example `seasons = 2023:most_recent_wbb_season()`.
+
+## What's in the box
+
+- ESPN women's college basketball game data (`espn_wbb_pbp`, `espn_wbb_team_box`, `espn_wbb_player_box`, `espn_wbb_game_all`) and the WNBA equivalents (`espn_wnba_pbp`, `espn_wnba_team_box`, `espn_wnba_game_all`) — per-game play-by-play and box scores.
+- ESPN team and athlete detail (`espn_wbb_team_roster`, `espn_wbb_player_gamelog`, `espn_wnba_team_schedule`, `espn_wnba_player_stats`) — single-team pages and per-athlete overview, gamelog, splits and career stats.
+- ESPN event-level enrichments and catalogs (`espn_wbb_game_odds`, `espn_wbb_game_probabilities`, `espn_wnba_standings`, `espn_wnba_rankings`) — odds, win probability, officials and broadcasts per game, plus league-wide standings, rankings and venue/coach catalogs. The WNBA side adds draft, free-agency and transaction endpoints (`espn_wnba_draft`, `espn_wnba_freeagents`, `espn_wnba_transactions`) that have no college-basketball analogue.
+- WNBA Stats API box scores and dashboards (`wnba_leaguedashplayerstats`, `wnba_boxscoretraditionalv3`, `wnba_boxscoreadvancedv3`) — league dashboards and box score variants across traditional, advanced, misc, scoring, usage and player-tracking.
+- WNBA Stats API depth (`wnba_playerdashboardbyclutch`, `wnba_draftcombinestats`, `wnba_leaguehustlestatsplayer`, `wnba_referee_assignments`) — clutch/splits dashboards, draft combine results, hustle stats, and officiating crew assignments.
+- Fox Sports (`fox_wbb_boxscore`, `fox_wnba_standings`, `fox_wbb_odds`) — read-only Bifrost wrappers for box scores, odds, rosters, standings and league leaders.
+- Crosswalks (`wnba_team_crosswalk`, `wbb_team_crosswalk`, `wnba_player_crosswalk`, `wbb_schedule_crosswalk`) — live builders that link ESPN, Fox, the Stats API and Bart Torvik team/game/player identities, all keyed on `espn_team_id` (or `espn_game_id` for schedules).
+- NCAA (`ncaa_wbb_teams`, `ncaa_wbb_NET_rankings`) — team reference and NET rankings scraped from NCAA.com.
+- Basketball-Reference (`bref_wnba_*`) — scraped WNBA reference-site stats.
+- Her Hoop Stats (`hhs_*`) — subscription-gated advanced WNBA and college metrics; needs your own login (see Installation).
+- Bundled data (`parameter_descriptions`) — a reference table of the parameter values the other functions accept.
+
+There are two cookbook vignettes (`wbb-cookbook`, `wnba-cookbook`) with worked recipes for each league, an `espn-endpoints` vignette mapping which ESPN host backs which function, and a `parameter-descriptions` vignette documenting every parameter value the endpoints accept — all worth a look once you're past the basics here.
+
+## Loading full seasons
+
+The `load_*()` family reads pre-built parquet and RDS files from the data release repo instead of scraping live, which is why they return millions of rows in seconds. WNBA loaders (`load_wnba_pbp`, `load_wnba_team_box`, `load_wnba_player_box`, `load_wnba_schedule`, `load_wnba_rosters`, `load_wnba_player_stats`, `load_wnba_standings`, `load_wnba_draft`, `load_wnba_shots`, `load_wnba_game_rosters`, `load_wnba_officials`) cover the WNBA back to 2002; the women's college equivalents (`load_wbb_pbp`, `load_wbb_team_box`, `load_wbb_player_box`, `load_wbb_schedule`, `load_wbb_rosters`, `load_wbb_shots`, and so on) start at the 2004 season, which is as far back as ESPN's own women's college play-by-play goes. There's a second, separate loader family for the WNBA Stats API side (`load_wnba_stats_pbp`, `load_wnba_stats_player_game_logs`, `load_wnba_stats_lineups`, `load_wnba_stats_possessions`, ...), and a third for the NCAA women's play-by-play engine sdv-py builds (`load_ncaa_wbb_pbp`, `load_ncaa_wbb_lineups`, `load_ncaa_wbb_possessions`, `load_ncaa_wbb_rapm`). Conference and division membership by season comes from `load_wbb_groups()` / `load_wnba_groups()` and their companions `load_wbb_group_seasons()`, `load_wbb_group_aliases()` and `load_wbb_team_group_seasons()` (with `wnba` equivalents), and model-output datasets (player impact, player value, ratings) load via `load_wnba_player_impact()`, `load_wbb_player_value()` and `load_wbb_ratings()`.
+
+`update_wbb_db()` and `update_wnba_db()` build or refresh a local SQLite database from these releases, so a scheduled job can keep a season current without re-downloading everything: pass `force_rebuild = TRUE` to rebuild from scratch, or a vector of seasons to only replace those, which matters mid-season since ESPN edits its underlying data during the week.
+
+## A worked example
+
+```r
+library(wehoop)
+library(dplyr)
+
+wbb_pbp <- load_wbb_pbp(seasons = 2024)
+
+three_attempts <- wbb_pbp %>%
+  filter(
+    shooting_play == TRUE,
+    score_value == 3
+  ) %>%
+  count(season, team_id, name = "three_attempts") %>%
+  arrange(desc(three_attempts))
+
+head(three_attempts, 10)
+```
+
+`load_wbb_pbp()` pulls the whole 2024 season of women's college play-by-play, filtering to three-point attempts (`score_value == 3` and `shooting_play == TRUE`) and counting them by team, then sorting to see who shot the most threes that season.
+
+From there, a natural follow-up is late-game situations. The same `wbb_pbp` frame carries `period_number`, `clock_minutes` and `clock_seconds`, so isolating clutch shots is a second filter on the same data:
+
+```r
+clutch_shots <- wbb_pbp %>%
+  filter(
+    period_number == 4,
+    clock_minutes == 0,
+    clock_seconds <= 5,
+    scoring_play == TRUE
+  )
+```
+
+That pulls every shot that fell with five seconds or less left in regulation, using `scoring_play` (not `type_text`) to identify makes — ESPN's own `type_text` labels both made and missed free throws `"MadeFreeThrow"`, so `scoring_play` is the reliable filter for "did this actually go in."
+
+## Good to know
+
+- The `pregame_home_prob` and `home_win_prob` columns ride along in `load_wbb_pbp()` output: pre-game and play-by-play win probability for the home team.
+- `espn_wbb_pbp()`, `espn_wbb_team_box()`, `espn_wbb_player_box()` and `espn_wbb_game_rosters()` are aliases of the same underlying `espn_wbb_game_all(game_id)` call, which returns all three tables (Plays, Team, Player) in one request; hitting the single-purpose wrapper still makes one network call.
+- Crosswalk builders now raise an error rather than return a quiet all-NA column if any one of their sources (ESPN, Fox, Torvik, or the conference reference) fails, so a bad crosswalk can't slip through silently. Bart Torvik's women's coverage only starts in the 2021 season; earlier seasons get `NA` for that source.
+- `wbb_team_crosswalk()`'s Fox-sourced `fox_section` reflects the conference Fox lists a team under for the following season, not the current one, so it can legitimately disagree with `espn_conference`.
+- ESPN's WNBA and WBB CDN endpoints (`wnba_live_pbp()`, `wnba_live_boxscore()`, `wnba_schedule()`, `wnba_todays_scoreboard()`) need a full Chrome-style header set and work over HTTP/2; a bare HTTP/1.1 request can come back blocked or as an HTML page instead of JSON.
+- Her Hoop Stats access depends on an active personal subscription; wehoop doesn't provide one.
+- `bart_wbb_ratings()` covers Bart Torvik's women's ratings back to the 2021 season; a couple of those early seasons used to come back empty because a header-fixing warning from the CSV reader was treated as fatal, which is now fixed.
+- There's a printable wehoop cheat sheet (PDF) linked from the documentation site, one of a set covering every SportsDataverse package.
+- `wnba_live_pbp()`, `wnba_live_boxscore()`, `wnba_schedule()` and `wnba_todays_scoreboard()` share one CDN header set with hoopR's NBA CDN wrappers; on a day with no games, the scoreboard now returns an empty result instead of erroring on an unnest step.
+
+## Related
+
+The men's-game sibling is [hoopR](/notes/intro-to-hoopR), which shares the same ESPN/`load_*` conventions but points at the NBA and men's college basketball instead. Other SportsDataverse R packages: [cfbfastR](/notes/cfbfastr), [baseballr](/notes/baseballr), [fastRhockey](/notes/fastrhockey), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python sibling covering the same sources is [sportsdataverse-py](/notes/sportsdataverse-py). Play-by-play, box scores, schedules and the model-output datasets referenced above live in the [wehoop-data](https://github.com/sportsdataverse/wehoop-data) release repo.
 
 ## Links
 
 - [Documentation](https://wehoop.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/wehoop)
 - [CRAN](https://CRAN.R-project.org/package=wehoop)
-- [wehoop-data](https://github.com/sportsdataverse/wehoop-data) — play-by-play, box scores and schedules back to 2002
+- [wehoop-data](https://github.com/sportsdataverse/wehoop-data) — play-by-play, box scores, schedules and model outputs
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

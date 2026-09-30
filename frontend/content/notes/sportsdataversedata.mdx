@@ -2,24 +2,88 @@
 title: 'sportsdataversedata: sportsdataverse data storage functions'
 date: '2023-03-04'
 tags: ['r', 'sportsdataverse', 'data-releases', 'github-releases']
-excerpt: 'This repository holds automated data releases for sportsdataverse projects and helper functions for managing the uploads.'
+excerpt: 'The GitHub-release plumbing every load_*() function reads from: multi-format uploads, a timestamp contract, and gh CLI helpers.'
 order: 16
 ---
 
-**sportsdataversedata** is an R package. This repository holds automated data releases for sportsdataverse projects and helper functions for managing the uploads.
+sportsdataversedata is both a repository and an R package. As a repository it is the release store for the SportsDataverse: every processed dataset any `load_*()` function reads (play-by-play, schedules, rosters, and the rest) is published here as a tagged GitHub release. As a package it is the plumbing that writes those releases — save a data frame in the right formats, attach the metadata that lets a reader know when it was last refreshed, and upload it. It is not something most users install directly; it is what the producer side of every SportsDataverse `*-data` pipeline depends on. It sits underneath the rest of the R family, closer to infrastructure than to analysis.
 
-The release plumbing behind every `load_*()` function: publish a data frame to a GitHub release in several formats, read it back, and keep the timestamps honest. Ported to Python in sportsdataverse-py as `sportsdataverse.release`.
+Each dataset is produced by a pair of pipelines: a `*-raw` repository scrapes a source on a schedule, then dispatches to a `*-data` repository that cleans the result and calls into this package to publish it. wehoop-wnba-raw feeding wehoop-wnba-data is one example of the pair; cfbfastR-raw feeding cfbfastR-data is another. sportsdataversedata is the shared endpoint every one of those `*-data` repositories writes to.
 
-## Install
+## Installation
+
+sportsdataversedata is not on CRAN. Install the development version from GitHub with pak:
 
 ```r
 pak::pak("sportsdataverse/sportsdataverse-data")
 ```
 
-Not on CRAN — install from GitHub with pak (or remotes).
+Uploading needs a GitHub token with permission to write releases on the target repository. `sportsdataverse_save()` defaults its `.token` argument to `gh::gh_token()`, so the usual `gh` package / `GITHUB_PAT` environment variable setup covers it; the `gh_cli_*` helpers instead shell out to the `gh` CLI directly and expect it to already be authenticated (`gh_cli_available()` checks that it's on the `PATH` and working).
+
+## Getting started
+
+```r
+library(sportsdataversedata)
+
+sportsdataverse_save(
+  data_frame = my_df,
+  file_name = "espn_cfb_pbp_2024",
+  sportsdataverse_type = "cfb play-by-play",
+  release_tag = "cfb_pbp",
+  pkg_function = "cfbfastR::load_cfb_pbp"
+)
+```
+
+`sportsdataverse_save()` attaches `sportsdataverse_type` and a timestamp as attributes on `data_frame`, writes it to a temporary directory in every format listed in `file_types`, and uploads the results to `release_tag` on the target `repo`. Nothing is returned to the console beyond the upload result; the release itself is what changes.
+
+## What's in the box
+
+Nine exported names, split between the upload/save pair and the `gh` CLI wrappers underneath them:
+
+- `sportsdataverse_save(data_frame, file_name, sportsdataverse_type, release_tag, pkg_function, .token = gh::gh_token(), file_types = c("rds", "csv", "parquet"), repo = "sportsdataverse/sportsdataverse-data")` — the main entry point: tags a data frame with type and timestamp metadata, writes it out in each of `file_types` (any of `"rds"`, `"csv"`, `"parquet"`, `"qs"`, `"csv.gz"`), and uploads every file to `release_tag`.
+- `sportsdataverse_upload(...)` — the lower-level upload step `sportsdataverse_save()` calls internally, for uploading pre-written files (`files`, `tag`, `pkg_function`, `repo`, `overwrite = TRUE`) without the save/format step.
+- `gh_cli_available()` — checks whether the `gh` CLI is installed and on `PATH`; the other `gh_cli_*` functions depend on it.
+- `gh_cli_release_upload(files, tag, ..., repo = "sportsdataverse/sportsdataverse-data", overwrite = TRUE)` — uploads local files to a release tag via `gh release upload`, skipping any file path that doesn't exist rather than erroring outright.
+- `gh_cli_release_tags(repo = "sportsdataverse/sportsdataverse-data")` — lists every release tag in a repository via `gh release list`.
+- `gh_cli_release_assets(tag, ..., repo = "sportsdataverse/sportsdataverse-data")` — lists the assets attached to one release tag via `gh release view`.
+- `gh_cli_rate_limits(verbose = TRUE)` — reports the current GitHub API rate limit via `gh api rate_limit`, with the reset time parsed to a readable timestamp.
+- `.invoke_cli_command()` / `.cli_parse_json()` — internal helpers that run a `gh` CLI command and parse its JSON output; exported so other SportsDataverse pipelines can reuse them directly instead of duplicating the shell-out logic.
+
+A second worked example, reading a release's assets back rather than writing them:
+
+```r
+library(sportsdataversedata)
+
+gh_cli_available()
+
+tags <- gh_cli_release_tags(repo = "sportsdataverse/sportsdataverse-data")
+head(tags)
+
+assets <- gh_cli_release_assets(tag = "cfb_pbp", repo = "sportsdataverse/sportsdataverse-data")
+assets
+```
+
+`gh_cli_available()` returns a logical, so it's a safe first call to guard a script that shells out to `gh`. `gh_cli_release_tags()` returns every release tag the repository has, and `gh_cli_release_assets()` returns the asset listing for one of them — the same information a `load_*()` function's URL-building logic reads to find the current file for a given season or dataset.
+
+## Good to know
+
+- **The timestamp contract.** Every `sportsdataverse_save()` / `sportsdataverse_upload()` call writes a `timestamp.json` (and a plain-text `timestamp.txt`) alongside the data assets, generated right before the upload begins rather than after, so it reflects when the release was actually pushed. Downstream, a release's "last updated" badge reads that `timestamp.json` live; a release with data assets but no `timestamp.json` predates the timestamp being added, and shows its GitHub release date instead. A release tag with no data assets at all means that dataset's pipeline hasn't produced anything yet.
+- **Formats.** `sportsdataverse_save()` defaults to `rds`, `csv` and `parquet`; pass `file_types` explicitly to add `qs` or `csv.gz`, or to narrow the set.
+- **Repo default.** Every function defaults `repo` to `"sportsdataverse/sportsdataverse-data"`, but accepts any `owner/repo` string, so the same helpers back other SportsDataverse release repositories too.
+- **Automation, not analysis.** The repository's own README is mostly a live status dashboard — per-league scrape-and-process badges and a full release-by-release "last updated" listing — for maintainers checking whether a pipeline has gone stale, not a data catalog to browse for finding a dataset by hand.
+- **Python port.** `sportsdataverse.release` in sportsdataverse-py is a port of this same plumbing — a GitHub-release publish/download layer plus a pure-Python byte-parity RDS writer — so a Python pipeline can write releases this package can read back in R, and vice versa.
+- **Rate limits.** `gh_cli_rate_limits(verbose = TRUE)` reports the GitHub API's current rate limit and parses the reset time into a readable timestamp — worth checking before a large batch upload, since every `gh_cli_release_upload()` call spends part of that budget.
+- **Missing files are skipped, not fatal.** `gh_cli_release_upload()` checks `file.exists()` on every path first; if some are missing it warns and uploads the files that do exist rather than aborting the whole call.
+- **License.** The repository is licensed CC BY 4.0, not the MIT license most SportsDataverse code packages use — the data itself carries an attribution requirement separate from the code that produces it.
+
+## Related
+
+sportsdataversedata is the release store behind every SportsDataverse `load_*()` function in [cfbfastR](/notes/cfbfastr), [hoopR](/notes/intro-to-hoopR), [wehoop](/notes/wehoop), [baseballr](/notes/baseballr) and [fastRhockey](/notes/fastrhockey), and it is installed alongside those by [sportsdataverse (R)](/notes/sportsdataverse-r). The same release-store role exists in Python as `sportsdataverse.release`, part of [sportsdataverse-py](/notes/sportsdataverse-py).
 
 ## Links
 
 - [Source on GitHub](https://github.com/sportsdataverse/sportsdataverse-data)
+- [Releases](https://github.com/sportsdataverse/sportsdataverse-data/releases)
+- [sportsdataverse-py release module](/notes/sportsdataverse-py)
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

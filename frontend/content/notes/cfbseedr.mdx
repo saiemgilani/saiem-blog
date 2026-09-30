@@ -2,27 +2,126 @@
 title: 'cfbseedR: Simulate and Evaluate College Football Seasons'
 date: '2026-07-03'
 tags: ['r', 'sportsdataverse', 'college-football', 'simulation', 'playoff']
-excerpt: 'Simulate college football seasons and compute standings, conference ranks, conference champions, and College Football Playoff (CFP) seeds.'
+excerpt: 'An R package that simulates college football seasons week by week and computes standings, conference champions and CFP seeds.'
 order: 5
 ---
 
-**cfbseedR** is an R package. Simulate college football seasons and compute standings, conference ranks, conference champions, and College Football Playoff (CFP) seeds. Implements the official season-scoped championship-game tiebreaker procedure of each Football Bowl Subdivision (FBS) conference and the CFP's season-keyed automatic-qualifier policies, including the 2026 formats. Seasons are simulated week by week with a pluggable results generator, and external tiebreaker inputs such as committee rankings or analytics composites can be supplied. Adapts the approach of the 'nflseedR' package by Sebastian Carl and Lee Sharpe to college football semantics.
+cfbseedR is an R package for simulating college football seasons and computing standings, conference ranks, conference champions and College Football Playoff (CFP) seeds. It implements the official season-scoped championship-game tiebreaker procedure for each FBS conference and the CFP's season-keyed automatic-qualifier policies, including the 2026 format. Seasons simulate week by week through a pluggable results generator, so you can supply your own win-probability model or feed in external tiebreaker inputs like committee rankings or an analytics composite. It is the newest package in the family, and it adapts nflseedR's approach (conferences, independents, championship games, bracket seeding) to college football semantics. It sits alongside cfbfastR, which supplies the schedule data it consumes.
 
-The newest of the bunch: season simulation and playoff seeding for college football, adapting nflseedR's approach to conferences, independents, championship games and the 12-team bracket.
+## Installation
 
-## Install
+cfbseedR is on CRAN.
 
 ```r
 install.packages("cfbseedR")
+```
+
+For the development version:
+
+```r
 pak::pak("sportsdataverse/cfbseedR")
 ```
 
-On CRAN (v0.2.0); the second line installs the development version.
+It needs no API key. Everything in the getting-started article runs offline against a bundled toy season; real schedule data comes from cfbfastR, which does need its own `CFBD_API_KEY` (see the cfbfastR note).
+
+## Getting started
+
+```r
+library(cfbseedR)
+
+games <- cfb_games_example
+teams <- cfb_teams_example
+
+standings <- cfb_standings(games, teams, verbosity = "NONE")
+```
+
+`cfb_games_example` and `cfb_teams_example` are a bundled 9-team toy season (two 4-team conferences plus one independent), useful for trying the package without a network call. `cfb_standings()` takes a games frame (columns `sim`/`season`, `game_type`, `week`, `home_team`, `away_team`, `result`) and a teams frame (`team`, `conference`), and returns one row per team with overall and conference records, conference rank (via the tiebreaker cascade) and a conference-champion flag.
+
+## What's in the box
+
+cfbseedR exports 7 functions, grouped by what they do.
+
+- **Standings and seeding** — `cfb_standings()` computes records, conference ranks and champions from a games frame; `cfb_playoff_seeds()` takes a standings frame (plus an optional committee rankings frame) and returns CFP seeds.
+- **Season simulation** — `cfb_simulations()` runs the week-by-week Monte Carlo simulation; `cfbseedR_compute_results()` is the default ELO-based results generator it calls, and can be swapped for your own; `simulations_verify_fct()` checks that a custom results function honors the contract before you spend simulation time on it.
+- **Data preparation** — `cfb_games_from_schedule()` maps a `cfbfastR::load_cfb_schedules()` frame into the games schema `cfb_standings()` and `cfb_simulations()` expect.
+- **Presentation** — a `summary()` method for the `cfbseedR_simulation` object `cfb_simulations()` returns, and `fmt_pct_special()` for formatting percentages in tables.
+- **Example data** — `cfb_games_example` and `cfb_teams_example`, the bundled toy season used throughout the documentation.
+
+## A worked example
+
+```r
+library(cfbseedR)
+
+games <- cfb_games_example
+teams <- cfb_teams_example
+
+# Leave weeks 3+ unplayed so the simulator has something to fill in
+games$result[games$week >= 3] <- NA
+
+set.seed(42)
+sim <- cfb_simulations(games, teams, simulations = 50, playoff_seeds = 4)
+sim$overall
+
+rankings <- data.frame(team = c("B1", "I1", "A1", "A3"), rank = 1:4)
+standings <- cfb_standings(games, teams, verbosity = "NONE")
+seeded <- cfb_playoff_seeds(standings, rankings = rankings, playoff_seeds = 4)
+seeded[!is.na(seeded$seed), c("team", "conference", "conf_champ", "seed")]
+```
+
+`cfb_simulations()` fills in the `NA` results week by week using `compute_results` (the ELO-based `cfbseedR_compute_results()` by default), then computes standings, champions and seeds for every simulated season. The returned `cfbseedR_simulation` list carries `overall` (one row per team with win totals and seeding probabilities across all simulations), plus per-simulation `standings`, the simulated `games`, `team_wins`, a per-matchup `game_summary`, and the `sim_params` used. `cfb_playoff_seeds()` on its own implements CFP straight seeding: the field is the best-ranked teams with the five highest-ranked conference champions guaranteed a spot, seeded strictly in ranking order; pass a `rankings` frame (`team`, `rank`) for a committee-style ordering, or omit it for the documented fallback (win percentage, then strength of victory, strength of schedule, point differential).
+
+## Writing your own results generator
+
+`cfb_simulations()` calls `compute_results(teams, games, week_num, ...)` once per remaining week, and the contract is identical to nflseedR's: return `list(teams = teams, games = games)`, fill `result` for exactly the games where `week == week_num & is.na(result)`, and never touch any other result, add or drop rows or columns, or produce a tie outside the regular season. `simulations_verify_fct()` checks a candidate function against that contract before you spend simulation time on it.
+
+```r
+home_field_rules <- function(teams, games, week_num, ...) {
+  fill <- games$week == week_num & is.na(games$result)
+  games$result[fill] <- 3
+  list(teams = teams, games = games)
+}
+
+simulations_verify_fct(home_field_rules)
+
+sim <- cfb_simulations(games, teams, compute_results = home_field_rules,
+                        simulations = 10, playoff_seeds = 4)
+```
+
+That is a deliberately trivial generator (every missing result becomes a 3-point home win, which is always postseason-safe since 3 is never a tie), but it shows the shape: swap in your own win-probability model and `cfb_simulations()` drives the rest — standings, champions, seeds — off whatever results it returns.
+
+## Tiebreakers are per conference, not generic
+
+The tiebreaker cascade isn't one formula applied everywhere. cfbseedR registers each conference's actual published championship-game procedure as a season-scoped rule set, and the cascades genuinely differ: the SEC goes head-to-head, then common opponents, then a descent step, then opponents' win percentage, then a capped-margin score before a coin-flip draw; the Big Ten swaps in an analytics ranking ahead of the draw; the ACC (2026+) starts from a candidate pool of teams tied on either wins or losses and leans on an external SportSource rating; the Mountain West goes straight to a metrics composite before head-to-head. Conferences without a registered procedure fall back to a documented generic cascade. Because the rules are season-scoped, you can ask whether a past outcome would still hold under a later season's version of the rules, or feed `tiebreaker_data` with your own composite ranking for a conference that leans on one.
+
+## Good to know
+
+- Conference championship games (`game_type == "CONF_CHAMP"`) count toward the overall record and decide the conference champion, but not toward the conference record or rank.
+- `sov` (strength of victory) and `sos` (strength of schedule) are conference-scoped: computed over regular-season conference games only, with `sov` over conference victories and `sos` over conference opponents. Independents get `0.0` for both.
+- `cfb_simulations()` and `cfb_standings()` both take `tiebreaker_depth` (the ladder `"SOS"`, `"PRE-SOV"`, `"POINTS"`, `"RANDOM"`) and `autobid` (currently `"2026"` or `"2025"`, since the CFP's automatic-qualifier rules are season-keyed and change year to year).
+- `cfb_simulations()` supports `chunks` for parallelizing simulation batches (it imports `future`/`furrr`) and `sim_include` to choose whether simulated output covers the regular season only (`"REG"`) or the postseason bracket too (`"POST"`, the default).
+- The architecture — the standings engine, the tiebreaking cascade, the week-loop simulator with a pluggable `compute_results` contract, and the ELO default generator — is nflseedR's design, re-derived here for college football by its original authors Sebastian Carl and Lee Sharpe, credited as package authors. If you use the season-simulation methodology, cite nflseedR alongside cfbseedR.
+- `cfb_playoff_seeds()` and `cfb_simulations()` both accept `autobid` so you can compare how a season resolves under the current 5+7 straight-seeding format versus a prior season's automatic-qualifier policy without re-deriving the rules yourself.
+
+## Related
+
+- [cfbfastR](/notes/cfbfastr) — college football play-by-play, schedules and rosters; feeds `cfb_games_from_schedule()`
+- [cfb4th](/notes/cfb4th) — fourth-down decision modeling
+- [cfbplotR](/notes/cfbplotr) — team logos and plotting helpers for ggplot2
+- [recruitR](/notes/recruitr) — recruiting data
+- [sportsdataverse-R](/notes/sportsdataverse-r) — the R meta-package
+- [sportsdataverse-py](/notes/sportsdataverse-py) — the Python mirror, whose `cfb_standings` shares this package's tiebreaker rulings
+- nflseedR — the NFL package this one adapts
 
 ## Links
 
 - [Documentation](https://cfbseedR.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/cfbseedR)
 - [CRAN](https://CRAN.R-project.org/package=cfbseedR)
+
+```
+Saiem Gilani (2026). cfbseedR: The SportsDataverse's R Package to Simulate
+and Evaluate College Football Seasons.
+https://cfbseedR.sportsdataverse.org/
+```
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

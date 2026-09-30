@@ -2,28 +2,122 @@
 title: 'baseballr: Acquiring and Analyzing Baseball Data'
 date: '2016-01-04'
 tags: ['r', 'sportsdataverse', 'baseball', 'mlb', 'statcast', 'ncaa']
-excerpt: 'Utilities for acquiring and analyzing baseball data from Baseball Reference, FanGraphs, the NCAA and the MLB Stats API.'
+excerpt: 'An R package for MLB, Statcast, FanGraphs, Baseball Reference and NCAA baseball data, plus wOBA, FIP and other metric helpers.'
 order: 6
 ---
 
-**baseballr** is an R package. Provides numerous utilities for acquiring and analyzing baseball data from online sources such as 'Baseball Reference' https://www.baseball-reference.com/, 'FanGraphs' https://www.fangraphs.com/, and the 'MLB Stats' API https://www.mlb.com/.
+baseballr is an R package for baseball data and analysis. It pulls from the MLB Stats API, Baseball Savant (Statcast), FanGraphs, Baseball-Reference, ESPN (MLB and NCAA college baseball), Fox Sports, the NCAA stats site, Spotrac, the Chadwick Bureau player register, and Retrosheet event files, and it ships metric helpers like wOBA and FIP on top. Bill Petti wrote it; I maintain it and brought it onto CRAN alongside the rest of the SportsDataverse family. It's the baseball entry in that family, and it's part of the SportsDataverse.
 
-Bill Petti's package is the one most R baseball people learned on. I took over maintenance and brought it onto CRAN alongside the rest of the family.
-
-## Install
+## Installation
 
 ```r
 install.packages("baseballr")
+```
+
+For the development version from GitHub:
+
+```r
+if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")
 pak::pak("BillPetti/baseballr")
 ```
 
-On CRAN (v2.0.0); the second line installs the development version.
+There's also an experimental development branch for functions still being worked on:
+
+```r
+if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+devtools::install_github("BillPetti/baseballr", ref = "development_branch")
+```
+
+No API key is required. Every source baseballr wraps — the MLB Stats API, Baseball Savant, FanGraphs, Baseball-Reference, ESPN, Fox, NCAA.com and Retrosheet — is public.
+
+## Getting started
+
+```r
+library(baseballr)
+library(dplyr)
+
+standings <- bref_standings_on_date("2015-08-01", "NL East", from = FALSE)
+game_pks <- mlb_game_pks(date = "2024-06-15")
+pbp <- mlb_pbp(game_pk = game_pks$game_pk[1])
+```
+
+`bref_standings_on_date()` returns one row per team with wins, losses, run differential and games back as of that date, scraped from Baseball-Reference. `mlb_game_pks()` returns the MLB Stats API's `game_pk` identifiers for every game on a date, which you then feed into `mlb_pbp()` for pitch-by-pitch data — one row per event, with count, base state and pitch/hit detail depending on the season.
+
+## What's in the box
+
+- MLB Stats API game and player data (`mlb_pbp`, `mlb_schedule`, `mlb_game_pks`, `mlb_probables`, `mlb_batting_orders`, `mlb_people`) — pitch-by-pitch and game-level data, plus per-player lookups.
+- MLB Stats API teams, standings and league reference (`mlb_teams`, `mlb_rosters`, `mlb_standings`, `mlb_league`, `mlb_draft`, `mlb_awards`) — team rosters, standings, league/conference/division structure, the amateur draft, and awards, plus a Types and Codes group of lookup tables for the API's internal enums (positions, pitch types, situation codes, and so on).
+- Baseball Savant / Statcast (`statcast_search`, `statcast_search_minors`, `statcast_search_wbc`, `statcast_pitch_colors`) — pitch-level Statcast data by date range and player, with dedicated routes for minor-league and World Baseball Classic games, plus Savant helpers (`process_statcast_payload`, `code_barrel`, `linear_weights_savant`) for cleaning and deriving fields from the raw export.
+- FanGraphs (`fg_bat_leaders`, `fg_pitch_leaders`, `fg_team_batter`, `fg_projections`) — batting and pitching leaderboards, team-level stats, game logs (including MiLB), park factors and Steamer/ZiPS/ATC/THE BAT projections.
+- Baseball Reference (`bref_daily_batter`, `bref_daily_pitcher`, `bref_team_results`, `bref_standings_on_date`) — scraped daily and seasonal stats plus standings as of a given date.
+- ESPN MLB (`espn_mlb_scoreboard`, `espn_mlb_pbp`, `espn_mlb_team_box`, `espn_mlb_player_box`, `espn_mlb_game_probables`, `espn_mlb_betting`) — over 100 wrappers across game data, reference data (athletes, coaches, franchises, draft), and athlete-level overview/gamelog/splits.
+- ESPN college baseball (`espn_college_baseball_scoreboard`, `espn_college_baseball_pbp`, `espn_college_baseball_game_all`, `most_recent_college_baseball_season`) — 70 functions, a thin twin of the ESPN MLB family over the same league-parameterized helpers, so return shapes match.
+- Fox Sports (`fox_mlb_team_roster`, `fox_mlb_standings`, `fox_mlb_odds`, `fox_mlb_league_leaders`) — read-only Bifrost wrappers; Fox doesn't expose MLB play-by-play or boxscore, so those are intentionally absent.
+- NCAA baseball (`ncaa_pbp`, `ncaa_roster`, `ncaa_schedule_info`, `ncaa_team_player_stats`, `ncaa_lineups`, `ncaa_park_factor`) — scrapers for stats.ncaa.org's college baseball data.
+- Retrosheet and Chadwick (`retrosheet_data`, `chadwick_player_lu`, `playerid_lookup`, `playername_lookup`) — Retrosheet event-file acquisition and parsing, and the Chadwick Bureau's cross-source player id register.
+- Spotrac (`sptrc_*`) — scraped MLB contract data.
+- Metrics (`woba_plus`, `fip_plus`, `team_consistency`, `run_expectancy_code`) — takes a data frame from the acquisition functions above and adds wOBA, wOBA on contact, FIP, and team-level run-scoring/prevention consistency.
+- Visualizations (`ggspraychart`, `ggpitchzone`) — spray charts from batted-ball data and pitch-location plots from the catcher's perspective, both in Statcast's own color palette.
+- Legacy (`daily_batter_bref`, `daily_pitcher_bref`, `fg_bat_leaders`, `get_draft_mlb`) — older function names kept working after the naming convention changed; new code should reach for their current-name equivalents instead.
+
+There are four vignettes worth reading once you're past the basics: `baseballr` (getting started), `using_statcast_pitch_data`, `plotting_statcast`, and `ncaa_scraping`.
+
+## Loading full seasons
+
+baseballr's `load_*()` family is narrower than the men's-basketball or football sister packages: there's no full-history MLB play-by-play loader, since `mlb_pbp()` is fast enough per-game that a bulk file isn't needed. What it does ship: eleven pre-computed MLB model datasets from the data release repo — `load_mlb_expected_stats()`, `load_mlb_expected_hr()`, `load_mlb_stuff_plus()`, `load_mlb_command_plus()`, `load_mlb_xera()`, `load_mlb_oaa()`, `load_mlb_catcher_framing()`, `load_mlb_batter_projection()`, `load_mlb_re24_matrix()`, `load_mlb_we_table()` and `load_mlb_wpa()`. Reference tables come from `load_mlb_park_dimensions()` (fence distances, capacity, turf, roof and elevation by season, 2001 on) and the league/division/conference lineage loaders `load_mlb_groups()` / `load_mlb_group_seasons()` / `load_mlb_group_aliases()` / `load_mlb_team_group_seasons()` (MLB, 1901 on) with `load_ncaa_baseball_groups()` and its siblings for college (2010 on). NCAA baseball gets its own play-by-play and schedule loaders too: `load_ncaa_baseball_pbp()`, `load_ncaa_baseball_schedule()`, `load_ncaa_baseball_teams()` and `load_ncaa_baseball_season_ids()`. `load_umpire_ids()` and `load_game_info_sup()` round out the reference set. There's no `update_*_db()` helper in baseballr; use `retrosheet_data()`'s own directory/caching arguments for a local event-file store instead.
+
+## A worked example
+
+```r
+library(baseballr)
+library(dplyr)
+
+batting <- bref_daily_batter("2015-08-01", "2015-10-03")
+
+woba_leaders <- batting %>%
+  filter(PA > 200) %>%
+  woba_plus() %>%
+  arrange(desc(wOBA)) %>%
+  select(Name, Team, season, PA, wOBA, wOBA_CON)
+
+head(woba_leaders, 10)
+```
+
+`bref_daily_batter()` pulls every hitter's Baseball-Reference stat line across the date range, `woba_plus()` adds wOBA and wOBA-on-contact columns, and the pipeline filters to hitters with at least 200 plate appearances before sorting to find the best stretch-run performers.
+
+Pitchers work the same way, through `fip_plus()` instead of `woba_plus()`:
+
+```r
+pitching <- bref_daily_pitcher("2015-04-05", "2015-04-30") %>%
+  fip_plus() %>%
+  select(season, Name, IP, ERA, SO, uBB, HBP, HR, FIP, wOBA_against, wOBA_CON_against) %>%
+  arrange(desc(IP))
+
+head(pitching, 10)
+```
+
+That adds FIP and opponent wOBA columns to the same kind of Baseball-Reference daily pull, this time for pitchers, sorted by innings pitched. Swap either source for `statcast_search(start_date, end_date, playerid, player_type = "batter")` if you want pitch-level Statcast detail instead of the Baseball-Reference daily aggregate.
+
+## Good to know
+
+- `statcast_search()` no longer renames Savant's CSV columns by position; it trusts Savant's own header row. That closes a recurring failure class where Savant inserted a new column mid-export and every downstream value silently shifted by one position — a genuinely new column now just arrives under its own name.
+- `bref_standings_on_date()`, `bref_daily_batter()`, `bref_daily_pitcher()` and `bref_team_results()` retry on HTTP 429 from Baseball-Reference with exponential backoff; a rate limit used to come back as a misleading "no data available" instead of retrying.
+- The NCAA family (`ncaa_pbp`, `ncaa_roster`, `ncaa_teams`, `ncaa_schedule_info`) can hit an Akamai bot-detection wall on stats.ncaa.org that blocks plain HTTP requests outright. baseballr falls back to a stealth headless-Chrome fetch via the optional `chromote` package when that happens; install `chromote` plus a local Chrome if you plan to scrape NCAA data regularly.
+- `mlb_standings(league_id = c(103, 104))` accepts a vector for both leagues at once, as documented, after an `httr2` query-building bug that broke multi-value `league_id` was fixed.
+- `bref_standings_on_date()` works back to 1994, when both major leagues split into three divisions; earlier eras use different section layouts on Baseball-Reference and the function adapts, but ask for a division that didn't exist for that date and it errors rather than guessing.
+- `mlb_pbp(add_base_state = TRUE)` reconstructs pre-pitch baserunner state from the feed's own runner-movement records rather than the API's end-of-plate-appearance fields, which matters for extra-innings automatic-runner games.
+- `mlb_pbp()` works for pre-2010 games too: older feeds don't carry the field it used to join play events to at-bats by, so it now ties them by position instead. Modern-game output is unchanged.
+- There's a printable baseballr cheat sheet (PDF) linked from the documentation site, one of a set covering every SportsDataverse package.
+
+## Related
+
+Other SportsDataverse R packages: [hoopR](/notes/intro-to-hoopR), [wehoop](/notes/wehoop), [cfbfastR](/notes/cfbfastr), [fastRhockey](/notes/fastrhockey), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python sibling for the same sources is [sportsdataverse-py](/notes/sportsdataverse-py). Pre-computed model datasets and NCAA baseball history live in the [baseballr-data](https://github.com/sportsdataverse/baseballr-data) release repo.
 
 ## Links
 
 - [Documentation](https://billpetti.github.io/baseballr/)
 - [Source on GitHub](https://github.com/BillPetti/baseballr)
 - [CRAN](https://CRAN.R-project.org/package=baseballr)
-- [baseballr-data](https://github.com/sportsdataverse/baseballr-data) — released MLB and college baseball data
+- [baseballr-data](https://github.com/sportsdataverse/baseballr-data) — released MLB model outputs and college baseball data
 
-My role: maintainer (Bill Petti created it). Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
+My role: maintainer; Bill Petti created it. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

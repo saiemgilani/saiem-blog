@@ -2,25 +2,123 @@
 title: 'cfbplotR: CFB Logo Plots in ''ggplot2'''
 date: '2021-09-08'
 tags: ['r', 'sportsdataverse', 'college-football', 'ggplot2', 'visualization']
-excerpt: 'A set of functions to visualize College Football analysis in ''ggplot2''.'
+excerpt: 'Team logos, wordmarks, headshots and colors as ggplot2 geoms, scales and gt table helpers for college football.'
 order: 12
 ---
 
-**cfbplotR** is an R package. A set of functions to visualize College Football analysis in 'ggplot2'.
+cfbplotR draws college football team logos, wordmarks and player headshots inside ggplot2 charts and gt tables, and maps team identifiers to their official colors. It wraps ESPN's team image assets and the school-name conventions cfbfastR uses, so it is built to sit next to cfbfastR rather than to fetch data on its own: you pull the numbers with cfbfastR, then plot them with cfbplotR. It is the college-football member of the SportsDataverse plotting family, and the pattern it established was later generalized across every SportsDataverse league by sdvplotR.
 
-Team logos, colors and headshots as ggplot2 geoms and scales, so a college football chart looks like one without a manual asset hunt.
+## Installation
 
-## Install
+cfbplotR is not on CRAN. Install the development version from GitHub with pak:
 
 ```r
 pak::pak("sportsdataverse/cfbplotR")
 ```
 
-Not on CRAN — install from GitHub with pak (or remotes).
+It has no API key or environment variable of its own. If you pair it with cfbfastR to pull the underlying data, set `CFBD_API_KEY` for that package separately (`usethis::edit_r_environ()`).
+
+## Getting started
+
+```r
+library(cfbplotR)
+library(ggplot2)
+
+team <- valid_team_names()[1:32]
+df <- data.frame(
+  a     = rep(1:8, 4),
+  b     = sort(rep(1:4, 8), decreasing = TRUE),
+  teams = team
+)
+
+ggplot(df, aes(x = a, y = b)) +
+  geom_cfb_logos(aes(team = teams), width = 0.075) +
+  theme_void()
+```
+
+`valid_team_names()` returns a character vector of team abbreviations cfbplotR recognizes. `geom_cfb_logos()` maps a `team` aesthetic straight to that team's logo image, sized by `width` in ggplot's normalized plot units, with no manual image lookup.
+
+## What's in the box
+
+- **Logos, wordmarks and headshots** — `geom_cfb_logos()`, `geom_cfb_headshots()`, `geom_cfb_wordmarks()` draw team or player images as plot layers, backed by the `GeomCFBlogo`/`GeomCFBheads` ggproto objects.
+- **Theme elements** — `element_cfb_logo()`, `element_cfb_wordmark()`, `element_cfb_headshot()` replace axis tick text with images, for use inside `theme(axis.text.x = ...)`.
+- **Scales and axes** — `scale_color_cfb()` / `scale_fill_cfb()` (and the `scale_colour_cfb()` spelling) map a team column to official colors; `scale_x_cfb()` / `scale_y_cfb()` and their `_headshots` variants turn an axis into team logos.
+- **gt table helpers** — `gt_fmt_cfb_logo()`, `gt_fmt_cfb_wordmark()`, `gt_fmt_cfb_headshot()` embed images inside gt table cells; `gt_cfb_cols_label()` builds logo column headers; `gt_merge_stack_team_color()` stacks two columns and colors the block by team.
+- **Team utilities** — `valid_team_names(division = ...)` lists recognized abbreviations by division (FBS, P5, G5, FCS, DII, DIII, Conference, hoopR, Other); `clean_school_names()` and `clean_team_abbrs()` standardize incoming names for joins; `cfb_team_factor()` orders a team column as a factor; `add_athlete_id_col()` looks up ESPN athlete ids; `.cfbplotR_clear_cache()` empties the local image cache.
+- **Premade plots** — `cfb_team_tiers()` builds a complete tier-list chart from a data frame of teams and tier numbers.
+- **Plot titles and preview** — `ggtitle_image()` puts an image next to a ggplot2 title; `ggpreview()` renders a plot at its exact save dimensions before you write it to disk.
+- **Re-exported from ggpath** — `geom_from_path()`, `element_path()`, `element_raster()`, `geom_mean_lines()`, `geom_median_lines()` are the generic image-geom primitives cfbplotR is built on.
+
+## A worked example
+
+```r
+library(cfbplotR)
+library(ggplot2)
+library(gt)
+
+df2 <- data.frame(
+  team  = c("Alabama", "Georgia", "Ohio State", "Michigan"),
+  score = c(42, 38, 35, 30)
+)
+
+ggplot(df2, aes(x = team, y = score)) +
+  geom_col(aes(fill = team), show.legend = FALSE) +
+  scale_fill_cfb() +
+  scale_x_cfb(labels = "logo") +
+  theme_minimal() +
+  theme(axis.text.x = element_cfb_logo(size = 1))
+
+df2 |>
+  gt() |>
+  gt_fmt_cfb_logo(columns = "team")
+```
+
+The bar chart fills each column in the team's own color, via `scale_fill_cfb()`, and swaps the x-axis text for team logos via `scale_x_cfb()` plus `element_cfb_logo()`. The gt table repeats the same four teams with the school name column rendered as an inline logo instead of text.
+
+A `cfb_team_tiers()` chart is a second common pattern — hand it a data frame of teams grouped into tiers and it returns a complete tier-list plot rather than a layer you build up yourself:
+
+```r
+tiers <- data.frame(
+  tier_no = c(1, 1, 2, 2, 3),
+  team    = c("Georgia", "Michigan", "Alabama", "Ohio State", "Texas")
+)
+
+cfb_team_tiers(
+  tiers,
+  title = "2024 CFB Power Tiers",
+  subtitle = "created with the #cfbplotR Tiermaker"
+)
+```
+
+`tier_no` is the tier number starting at 1 (best), `team` must be one of `valid_team_names()`, and the function lays out logos in rows by tier without any further ggplot2 code.
+
+## Good to know
+
+- `cfb_team_tiers()` expects a `tier_no` column (the tier number, starting at 1) and a `team` column drawn from `valid_team_names()`; add a `tier_rank` column to control order within a tier, or set `presort = TRUE` to sort alphabetically instead.
+- `clean_school_names()` defaults to `keep_non_matches = TRUE`, so a name it cannot map is left untouched rather than becoming `NA` — pass `FALSE` if you want unmatched schools flagged.
+- `add_athlete_id_col()` looks up the current season's roster from cfbfastR-data; it no longer aborts if that season's file has not published yet.
+- Image lookups are cached locally; `.cfbplotR_clear_cache()` clears that cache if a team's logo asset changes upstream.
+- As of the 0.1.0 rebuild, cfbplotR sits on the `ggpath` backend (the same foundation nflplotR and nbaplotR use) for image resolution, caching and colorization, and requires `ggplot2 (>= 4.0.0)`.
+- `geom_mean_lines()` and `geom_median_lines()` are re-exported from ggpath and take `x0`/`y0` aesthetics (a vertical line at `x0`, a horizontal one at `y0`), not the package's older `v_var`/`h_var` names.
+- `scale_color_cfb()` (and `scale_fill_cfb()`) accept an `alt_colors` argument for teams whose primary color reads poorly against a plot background — pass the team names you want to render in their alternate color instead of the default.
+
+## Related
+
+cfbplotR is the college-football plotting package; [cfbfastR](/notes/cfbfastr) is the companion data source. [sdvplotR](/notes/sdvplotr) generalizes this same geom/scale/gt pattern across the NFL, NBA, WNBA, MLB, NHL and college basketball too. See also [cfb4th](/notes/cfb4th) for fourth-down decision models and [cfbseedR](/notes/cfbseedr) for the CFB Playoff bracket, both of which chart naturally with cfbplotR. Data comes from the [cfbfastR-data](https://github.com/sportsdataverse/cfbfastR-data) release repository via cfbfastR.
 
 ## Links
 
-- [Documentation](https://cfbplotr.sportsdataverse.org/)
+- [Documentation](https://cfbplotR.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/cfbplotR)
+- [Package tutorial](https://cfbplotR.sportsdataverse.org/articles/tutorial.html)
+
+```bibtex
+@misc{lee_carl_gilani_cfbplotR,
+  author = {Lee, Jared and Gilani, Saiem and Carl, Sebastian},
+  title = {cfbplotR: The SportsDataverse's R Package for College Football Plotting.},
+  url = {https://cfbplotR.sportsdataverse.org},
+  year = {2026}
+}
+```
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
