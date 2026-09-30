@@ -1,0 +1,42 @@
+---
+title: 'Blazing the Nets, rebuilt on d3 v7'
+date: '2026-09-30'
+tags: ['d3', 'nextjs', 'nba']
+excerpt: 'A 2021 shot-chart site that carried 1.7 GB of JSON in git, rebuilt to read release parquet files at request time, and what the reviews caught on the way.'
+---
+
+In 2021 I built [Blazing the Nets](https://github.com/saiemgilani/blazing-the-nets), a shooting dashboard for the Brooklyn Nets. On 2026-09-30 I rebuilt it. This is what the old one was, what changed, and the mistakes the review rounds found before anyone saw them.
+
+## The 2021 site
+
+It was a Create React App project on React 17 with Material-UI 4, styled-components, Firebase Hosting and d3 v6. The data was 1.7 GB of JSON scraped from stats.nba.com, committed under `public/data/`, for the 2015-16 to 2020-21 seasons. Each player and team page composed a hex shot chart on a court, a shooting signature (FG% against distance, with a gradient showing the difference from the league), two distance bar charts and two left/right charts. The repository's last push was 2021-04-24.
+
+## What changed
+
+The scraper, the committed data and Firebase are gone. The shot files now come from the public `sportsdataverse-data` releases, which the nightly `hoopR-nba-stats-data` producer refreshes. One season of shots, 2025-26, is a 4.24 MB parquet file of 233,632 rows. The site reads it by byte range, only the columns it needs, with hyparquet at request time; in my measurement the download took 1.2 to 1.4 seconds and decoding 13 columns took 230 to 290 ms. At most four decoded seasons stay in an in-memory LRU. It is Next 16 with the App Router and incremental static regeneration, so there is no ETL, no cron and no database.
+
+The charts are plain d3 v7. React owns state and layout; d3 owns scales, hexbins and drawing. Each chart is a function of the form `render(svg, data, opts) → cleanup`, so a redraw never leaves the previous chart's nodes behind.
+
+## The coordinate frame
+
+The shot locations are the legacy stats.nba.com frame: tenths of a foot, hoop at the origin, y toward half court. The baseline is at y = -52.5, and the corner three meets the arc at 89.48 tenths. During review I had written "about 92" for that junction. That was the older convention, where the baseline is at -47.5; the reviewer checked it against the real files and the frame above is the right one. The court module is the only place that turns those numbers into pixels, and it is tested against known points. The same review round also found that shot distance needed rounding.
+
+## Two bugs the reviews caught
+
+The first was in the rolling windows. They were ordered by `game_id`, which is not date order: for the Nets in 2025-26 the two orderings differed at 77 of 82 positions. The fix takes game dates from the player game logs. The second was that a team-filtered attempt count was being shown next to league-wide season stats: Bridges in 2022-23 had 503 Nets attempts against 1,267 season field-goal attempts. Those numbers are now labelled season totals across teams.
+
+The season rollover needed a rule too. A new season file appears in October with preseason rows, and the stats file may lag it. The site treats a season as current only when its shots file has regular-season rows for all 30 teams and its stats file exists. Until then it stays on the previous season.
+
+## The colour decisions
+
+The 2021 scale was red for below league and green for above. That is not colour-blind safe, so the new one is RdBu with red above the league rate, blue below, and the direction stated in words on every legend. Hexagon colour uses the percentage shrunk toward the league rate with 25 pseudo-attempts, so a 1-for-1 hexagon reads as average, while tooltips keep the raw counts. In dark mode the centre of the scale is a neutral grey near the card background, and hexagons get a thin stroke so the neutral ones stay visible.
+
+## New views, and what I did not take
+
+I added views modelled on three sites by Peter Beshai: Buckets (rank lists, team splits, a game selector with a rolling line chart and a range slider), Scattershot (a league scatter of shooting against scoring) and Shotline (rolling-window leaderboards). The dense roster table is modelled on databallr, which is a separate project and not his. I studied each site's behaviour and wrote the code myself. No code, logos or brand assets were taken, and the site is not affiliated with any of them.
+
+## What is left
+
+The domain still serves the 2021 build from Firebase, and moving it is a DNS change I have not made yet. Seasons before 2016 are in the files but the pages do not offer them yet.
+
+You can try the same idea in [lab № 004](/lab/shot-chart-from-a-release), which draws one hexbin chart from the 2026 file in your browser.
