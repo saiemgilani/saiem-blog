@@ -6,20 +6,121 @@ excerpt: 'Node.js client which retrieves sports data from the ESPN API as well a
 order: 10
 ---
 
-**sportsdataverse (Node.js)** is a Node.js package. The Node.js module that powers Game on Paper: ESPN, 247Sports and NCAA endpoints with a small, promise-based surface.
+`sportsdataverse` is the SportsDataverse's Node.js client. It is a cross-league ESPN client plus a set of native (non-ESPN) live APIs, all behind one tidy parser layer: 116 generated ESPN endpoint wrappers across 29 leagues, and 532 flat-API wrappers across 15 families, the native league APIs (MLB Stats, Statcast, NHL api-web/EDGE/stats-rest/records, NFL.com Shield) merged onto their league namespace, plus cross-sport providers (The Odds API, 247Sports, CBS Sports, Fox Sports, Yahoo Sports, HockeyTech, BartTorvik) on their own namespaces. It is the Node.js sister to sportsdataverse-py and the R package family (hoopR, wehoop, cfbfastR, fastRhockey), and it also preserves the original hand-written scrapers the package shipped before the codegen rewrite, so old calling code keeps working alongside the generated surface.
 
-Node.js client which retrieves sports data from the ESPN API as well as from the NCAA website, with support for NBA, NFL, NHL, MLB, WNBA, men's and women's college basketball, and college football.
-
-## Install
+## Installation
 
 ```bash
 npm install sportsdataverse
 ```
 
+The package is ESM-only (no CommonJS build) and ships TypeScript declarations. It needs Node 20.18.1 or newer, per the `engines` field in `package.json`.
+
+Most of the surface needs no credentials, ESPN, CBS, HockeyTech, and BartTorvik are keyless. Two providers do need a key:
+
+- The Odds API wrappers on `sdv.odds` take an `apiKey` query parameter, or read `ODDS_API_KEY` if you set that convention yourself in your calling code.
+- 247Sports and Yahoo Sports wrappers take a caller-supplied `headers` object (JWT-style auth), there is no environment-variable convention baked in for those.
+- NFL.com's Shield API mints its bearer token automatically, no credentials needed.
+- HockeyTech and BartTorvik need no auth at all, HockeyTech's keys are per-league and public (shipped in each site's own JS), and the package ships them baked in.
+
+## Getting started
+
+```js
+import sdv from "sportsdataverse";
+
+// Today's NBA scoreboard, raw ESPN JSON
+const board = await sdv.nba.espnNbaScoreboard({});
+
+// A single game summary, parsed into tidy rows
+const game = await sdv.nba.espnNbaSummary({ event_id: 401584793, parsed: true });
+
+// A team's roster
+const roster = await sdv.nfl.espnNflTeamRoster({ team_id: 12 });
+```
+
+Every wrapper returns the raw ESPN payload by default. Pass `parsed: true` and it runs through a registered parser instead, coming back as a flat array of snake_cased row objects, the Node analog of sportsdataverse-py's `return_parsed=True`. The one exception is the summary endpoint: parsed, it returns an object of named sub-frames (`boxscore_player`, `plays`, `winprobability` and so on) unless you pass `section` to pick one, so the `game` value above is an object, not an array. The cross-league ESPN methods follow one naming rule, `espn` plus the league plus the endpoint in camelCase (`espnNbaScoreboard`), and each one also has a snake_case alias (`espn_nba_scoreboard`) for parity with the Python and R packages. Parameters accept snake_case or camelCase keys interchangeably, so a `team_id` key and a `teamId` key do the same thing.
+
+Switching sports from there is a one-token change, since every league gets the same method shapes:
+
+```js
+await sdv.nfl.espnNflScoreboard({ week: 1, season_type: 2 });
+await sdv.nhl.espnNhlScoreboard({});
+await sdv.wnba.espnWnbaStandings({ season: 2024 });
+```
+
+## What's in the box
+
+- **ESPN cross-league wrappers** — one core wrapped once per URL family (Site v2, Core v2, Web v3) and exposed on every league as both the camelCase and snake_case name: `espnNbaScoreboard` / `espn_nba_scoreboard`, `espnCfbRankings`, `espnNflTeamSchedule`, `espnWnbaStandings`. Multi-league sports like soccer and cricket take an extra `league` slug argument, e.g. `espnSoccerScoreboard` called on `sdv.soccer` with `league` set to `"eng.1"` for the Premier League.
+- **Native league APIs, merged onto their league namespace** — `sdv.mlb.mlbSchedule` and `sdv.mlb.mlbStatcastSearch` for MLB Stats and Baseball Savant, `sdv.nhl.nhlApiWebPbp` for the modern NHL game feed, `sdv.nfl.nflApiWeeklyGameDetails` for NFL.com's Shield API.
+- **Cross-sport providers, standalone namespaces** — `sdv.odds.oddsApiSports` (The Odds API), `sdv.recruiting.*` (247Sports, superseding the old 247 scrapers), `sdv.cbs.*` (CBS Sports), `sdv.fox.fox_scoreboard` and the rest of the Fox Sports Bifrost family, `sdv.hockeytech.*` (PWHL plus AHL/OHL/WHL/QMJHL), `sdv.torvik.*` (BartTorvik T-Rank, men's college basketball analytics).
+- **Legacy hand-written scrapers, preserved unchanged** — the original per-league methods like `sdv.nba.getPlayByPlay(id)` and `sdv.nba.getBoxScore(id)` still work, merged onto the same namespace as the generated wrappers rather than being deprecated out from under existing callers.
+- **Browser-safe parser layer** — the `sportsdataverse/parsers` subpath export exposes just the parsing code with no Node-only HTTP dependencies, for running a parser client-side against a payload you already fetched:
+
+  ```js
+  import { parseEndpoint } from "sportsdataverse/parsers";
+  const rows = parseEndpoint("espn", "scoreboard", rawPayload);
+  ```
+- **Introspection** — importing the named exports `LEAGUES` and `WRAPPERS` alongside the default export gives you the full league list (`LEAGUES` mapped to each entry's `prefix`) and the generated wrapper definitions (`WRAPPERS`), plus `Object.keys(sdv.nba)` to list every method on a namespace.
+
+Endpoints carry a scope, `universal` (every league), `ncaa` (college), `football` (NFL/CFB/UFL), or `mlb`, so each league namespace only gets the wrappers that actually apply to it rather than every method existing everywhere.
+
+## A worked example
+
+```js
+import sdv from "sportsdataverse";
+
+const scoreboard = await sdv.cfb.espnCfbScoreboard({ week: 1, parsed: true });
+const gameIds = scoreboard.map((row) => row.id ?? row.event_id).filter(Boolean);
+
+const summaries = await Promise.all(
+  gameIds.slice(0, 5).map((id) =>
+    sdv.cfb.espnCfbSummary({ event_id: id, parsed: true, section: "boxscore_team" })
+  )
+);
+
+console.log(`Pulled team box scores for ${summaries.length} games`);
+```
+
+`espnCfbScoreboard` with `parsed: true` comes back as one tidy row per scheduled game. Pulling the event id out of each row and fanning out `espnCfbSummary` calls with `section: "boxscore_team"` gets you the team-level box score sub-frame for each game, since the summary endpoint is a dispatcher that can return one section instead of the full payload. Because every wrapper returns a promise, fanning a week's worth of game ids out through `Promise.all` is the normal way to pull a batch rather than looping with `await` one call at a time.
+
+## Good to know
+
+- The package is ESM-only, there is no `require()` entry point, `import` is the only way in.
+- The library is codegen-driven: `tools/codegen/generate.mjs` reads YAML under `tools/codegen/endpoints/` and generates the wrapper tables, docs reference, and playground metadata. `npm run codegen:check` is the drift gate that fails CI if generated output is stale, generated files are never hand-edited directly.
+- The endpoint YAML for the provider families traces back to an OpenAPI 3.x spec in the `sdv-swagger` collection, `tools/codegen/from-openapi.mjs` turns that spec into a YAML skeleton, which is what made adding the non-ESPN providers mostly mechanical.
+- A family that needs non-JSON bodies or custom request shaping, HockeyTech's JSONP envelopes, BartTorvik's browser-UA CSV/JSON, supplies its own getter runtime rather than using the shared JSON getter.
+- The test suite (`npm test`, Mocha) runs entirely offline against fixtures, no network calls during `npm test`.
+- The summary/box-score dispatcher endpoints (`espnNbaSummary`, `espnCfbSummary`, and their siblings) accept an optional `section` parameter to return one sub-frame instead of the full payload, useful when you only need one piece of a large response.
+- Each ESPN league is composed from an explicit, documented set of `export const` wrappers under `src/generated/espn/`, rather than being built at runtime from the YAML, the runtime builder is kept only as a fallback for a league that is somehow missing its written module.
+- Type declarations ship with the package (`dist/index.d.ts`), so editor autocomplete on every `sdv` namespace method works without a separate `@types` package. `npm run docs` builds the TypeDoc API reference from the same source.
+
+## Related
+
+Sibling packages across the ecosystem cover the same sources in R and Python:
+
+- [sportsdataverse (Python)](/notes/sportsdataverse-py) — the Python sister package, same cross-league ESPN idea, different runtime
+- [sportsdataverse (R)](/notes/sportsdataverse-r) — the R package family this client mirrors in naming
+- [hoopR](/notes/intro-to-hoopR) — men's basketball, R
+- [oddsapiR](/notes/oddsapir) — the R sibling for The Odds API, which `sdv.odds` also wraps here
+- No separate data-release repo backs this package, it is a live-API client throughout, it fetches on every call rather than reading pre-built parquet the way the R and Python `load_*` functions do
+
+The docs site groups the reference by sport with a dedicated Providers group for the cross-sport families, and the Guides section ships live, editable RunCell code cells next to the prose so you can try a call before copying it into your own project.
+
+## Data and automation
+
+- Package checks: [![CI](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/ci.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/ci.yml) [![npm publish](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/npm-publish.yml) [![npm](https://img.shields.io/npm/v/sportsdataverse)](https://www.npmjs.com/package/sportsdataverse)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/sportsdataverse-js.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
+
 ## Links
 
 - [Documentation](https://js.sportsdataverse.org/)
+- [Guides](https://js.sportsdataverse.org/docs/guides/)
+- [Reference](https://js.sportsdataverse.org/docs/reference/)
+- [Playground](https://js.sportsdataverse.org/playground)
 - [Source on GitHub](https://github.com/sportsdataverse/sportsdataverse-js)
 - [npm](https://www.npmjs.com/package/sportsdataverse)
+- [TypeDoc API reference](https://js.sportsdataverse.org/docs/api/)
+- [Changelog](https://js.sportsdataverse.org/CHANGELOG)
 
-My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) ecosystem.

@@ -2,25 +2,119 @@
 title: 'sportsdataverse (R): Easily Install and Load the ''SportsDataverse'''
 date: '2021-08-30'
 tags: ['r', 'sportsdataverse', 'meta-package']
-excerpt: 'The ''sportsdataverse'' is a set of sports data packages that work in harmony because they share common data representations and ''API'' design.'
+excerpt: 'One install and one library() call loads the whole R side of the SportsDataverse, plus helpers to check versions and keep it updated.'
 order: 15
 ---
 
-**sportsdataverse (R)** is an R package. The 'sportsdataverse' is a set of sports data packages that work in harmony because they share common data representations and 'API' design. This package is designed to make it easy to install and load multiple 'sportsdataverse' packages in a single step. Learn more about the 'sportsdataverse' at https://sportsdataverse.org.
+sportsdataverse is the meta-package for the R side of the SportsDataverse, in the same spirit as the tidyverse meta-package: it does not fetch any sports data itself; it installs and loads the core R packages in one step, and adds a few housekeeping functions for checking which of them are current and updating the ones that are not. It is for anyone who wants the whole R family in a fresh session without remembering seven separate `library()` calls, and for anyone helping someone else debug a version problem across the ecosystem. It sits above every other R package in the SportsDataverse rather than beside them.
 
-The tidyverse-style meta-package: one install and one `library()` call for the whole R family.
+## Installation
 
-## Install
+sportsdataverse is not on CRAN. The package README still shows an `install.packages("sportsdataverse")` line, but that instruction is stale; install it from GitHub with pak:
 
 ```r
 pak::pak("sportsdataverse/sportsdataverse-R")
 ```
 
-Not on CRAN — install from GitHub with pak (or remotes).
+Or with remotes, if you prefer:
+
+```r
+remotes::install_github("sportsdataverse/sportsdataverse-R")
+```
+
+It has no API key or environment variable of its own — the packages it loads each have their own (`CFBD_API_KEY` for cfbfastR, `ODDS_API_KEY` for oddsapiR, and so on), set separately per package.
+
+## Getting started
+
+```r
+library(sportsdataverse)
+
+sportsdataverse_packages()
+
+sportsdataverse_sitrep()
+```
+
+`library(sportsdataverse)` attaches every core package in one call. `sportsdataverse_packages(include_self = TRUE)` returns the names of every package in the family (pass `include_self = FALSE` to leave `sportsdataverse` itself out of the list). `sportsdataverse_sitrep()` prints a situation report: the R and RStudio versions in use, and the installed version of every sportsdataverse package, so a maintainer can see at a glance what someone else is running.
+
+A typical first session on a new machine is: install sportsdataverse itself, load it, then let `sportsdataverse_update()` tell you if any of the packages it just attached are already behind their latest release.
+
+## What's in the box
+
+sportsdataverse exports seven names, all housekeeping rather than data access:
+
+- `sportsdataverse_packages(include_self = TRUE)` — list every package name in the family.
+- `sportsdataverse_deps(recursive = TRUE, pkg_list = get_core_functions(), repos = getOption("repos"))` — a data frame with one row per dependency and columns `package`, `cran`, `local` and `behind`, showing which installed versions lag the CRAN release.
+- `sportsdataverse_update(recursive = FALSE, repos = getOption("repos"), devel = FALSE)` — checks every sportsdataverse package (and, with `recursive = TRUE`, their dependencies too) and prints the install command needed to bring anything out of date current. `devel = TRUE` points the check at the SportsDataverse r-universe instead of CRAN, for prebuilt development binaries without going through GitHub.
+- `sportsdataverse_sitrep()` — the version report described above, meant for bug reports and support threads.
+- `get_core_functions()` — the underlying vector of CRAN package names the other helpers iterate over.
+- `sportsdataverse_logo()` — prints the package's ASCII/unicode logo to the console; has an S3 `print` method, so it can also be assigned and printed later.
+- `%>%` — the magrittr pipe, re-exported so scripts using this package don't need to attach magrittr separately.
+
+Every function here does one of four things: list the family, report a version, print an update command, or print the logo. There is no data-fetching surface at all — that is what the seven attached packages are for.
+
+## A worked example
+
+```r
+library(sportsdataverse)
+
+# see everything the family covers
+pkgs <- sportsdataverse_packages()
+pkgs
+
+# check which of them (and their dependencies) are behind CRAN
+deps <- sportsdataverse_deps(recursive = TRUE)
+deps[deps$behind, ]
+
+# print the install commands for anything out of date
+sportsdataverse_update()
+```
+
+`sportsdataverse_packages()` returns a character vector of package names. `sportsdataverse_deps()` returns a data frame with one row per package and columns `package`, `cran` (the current CRAN version), `local` (the version you have installed) and `behind` (a logical flag), which you can filter on its `behind` column to see exactly which packages, core or transitive, are lagging their CRAN release. `sportsdataverse_update()` does not install anything itself — it reports the commands you would run, so nothing changes in your library without you asking for it explicitly.
+
+```r
+# see the raw command sportsdataverse_update() would run, without running it
+sportsdataverse_logo()
+```
+
+`sportsdataverse_logo()` is a small console print of the package's own unicode logo — a quick way to confirm the package attached correctly, and a common first line in a bug report alongside `sportsdataverse_sitrep()`.
+
+## Good to know
+
+- `library(sportsdataverse)` attaches baseballr, cfbfastR, fastRhockey, hoopR, oddsapiR, sportyR and wehoop. Other ecosystem packages — cfbplotR, sdvplotR, cfb4th, recruitR, softballR, mlbplotR and the like — are available but not auto-loaded; install and attach those separately.
+- The DESCRIPTION `Imports` versions are pinned to each package's current CRAN release (`baseballr >= 1.6.0`, `cfbfastR >= 2.0.0`, `fastRhockey >= 0.4.0`, `hoopR >= 3.0.0`, `oddsapiR >= 0.0.3`, `sportyR >= 2.2.3`, `wehoop >= 2.1.0`), so an old sportsdataverse install can pull in a version floor that is out of date — run `sportsdataverse_update()` after a fresh install.
+- Version 0.3.0 trimmed the package's own dependencies to mirror the nflverse meta-package model: it now imports only `cli`, `crayon`, `magrittr`, `rlang` and `rstudioapi` alongside the core family, having dropped `dplyr`, `purrr` and `tibble` from earlier releases when `sportsdataverse_deps()` and `sportsdataverse_update()` were rewritten in base R.
+- `worldfootballR` was dropped from the roster after its upstream repository was archived; `chessR`, `hockeyR` and `toRvik` were removed earlier for the same reason.
+- Requires R version 4.1.0 or later.
+- `sportsdataverse_deps()` defaults `pkg_list` to `get_core_functions()`, the same core roster `sportsdataverse_packages()` returns, so a plain `sportsdataverse_deps()` call checks the whole family; pass a narrower `pkg_list` to check just one or two packages instead.
+- None of the four housekeeping functions install anything by themselves except in the sense that `library(sportsdataverse)` loads what is already installed — `sportsdataverse_update()` only prints the commands, so upgrading a package is still a deliberate, separate step.
+- Not every core package lives under the `sportsdataverse` GitHub org: `baseballr`'s source repository is `BillPetti/baseballr`, its original author's account, while the other six (cfbfastR, fastRhockey, hoopR, oddsapiR, sportyR, wehoop) are under `sportsdataverse/`. The version checks themselves compare against each package's CRAN release, not its GitHub source, so this only matters if you go looking for the repository directly.
+
+## Related
+
+sportsdataverse (R) is the umbrella over the whole R family: [cfbfastR](/notes/cfbfastr) (college football), [hoopR](/notes/intro-to-hoopR) (men's and NBA basketball), [wehoop](/notes/wehoop) (women's and WNBA basketball), [baseballr](/notes/baseballr) (MLB and college baseball), [fastRhockey](/notes/fastrhockey) (NHL and PWHL) and [oddsapiR](/notes/oddsapir) (sportsbook odds). It does not attach [cfbplotR](/notes/cfbplotr), [sdvplotR](/notes/sdvplotr), [cfb4th](/notes/cfb4th) or [recruitR](/notes/recruitr), which are separate installs. The data those packages load comes from [sportsdataversedata](/notes/sportsdataversedata), and the same catalog concept exists for other languages as [sportsdataverse-py](/notes/sportsdataverse-py) and [sportsdataverse.js](/notes/sportsdataverse-js).
+
+There is no equivalent single-install meta-package on the Python or Node.js side today; a Python or JS project attaches sportsdataverse-py or sportsdataverse.js directly, since each already covers its language's whole surface in one package rather than splitting by sport the way the R ecosystem grew.
+
+## Data and automation
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/pkgdown.yaml)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/sportsdataverse-R.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
 - [Documentation](https://r.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/sportsdataverse-R)
+
+```bibtex
+@misc{saiemgilani2021sdv,
+  author = {Gilani, Saiem},
+  title = {sportsdataverse: The Set of R Packages for Sports Data.},
+  url = {https://r.sportsdataverse.org},
+  year = {2026}
+}
+```
+
+There is also a printable sportsdataverse-R cheat sheet, one of the set covering every SportsDataverse package.
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

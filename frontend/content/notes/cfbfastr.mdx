@@ -2,28 +2,139 @@
 title: 'cfbfastR: Access College Football Play by Play Data'
 date: '2021-04-02'
 tags: ['r', 'sportsdataverse', 'college-football', 'espn', 'collegefootballdata']
-excerpt: 'A utility to quickly obtain clean and tidy college football data.'
+excerpt: 'An R package wrapping the CollegeFootballData API and ESPN to deliver tidy college football play-by-play with EPA and win probability.'
 order: 4
 ---
 
-**cfbfastR** is an R package. A utility to quickly obtain clean and tidy college football data. Serves as a wrapper around the https://collegefootballdata.com/ API and provides functions to access live play by play and box score data from ESPN https://www.espn.com when available. It provides users the capability to access a plethora of endpoints, and supplement that data with additional information (Expected Points Added/Win Probability added).
+cfbfastR is an R package for college football data. It wraps the CollegeFootballData (CFBD) API, pulls play-by-play and box scores from ESPN, and reads pre-built season files from the sportsdataverse-data GitHub releases. It is the package where my play-by-play modeling work for college football lives: expected points added (EPA), win probability, completion percentage over expected, and the fourth-down and field-goal decision surfaces sit on top of it. Within the SportsDataverse it is the college football counterpart to hoopR and wehoop for basketball.
 
-Where most of my play-by-play modeling work has lived since 2021: EPA and win probability for college football, era-aware rule handling, and the `load_cfb_*()` loaders that read straight from the release repo.
+## Installation
 
-## Install
+cfbfastR is on CRAN.
 
 ```r
 install.packages("cfbfastR")
+```
+
+For the development version:
+
+```r
 pak::pak("sportsdataverse/cfbfastR")
 ```
 
-On CRAN (v3.0.0); the second line installs the development version.
+Most of the `cfbd_*()` functions need a free CollegeFootballData API key. Register at collegefootballdata.com/key, then save it as the `CFBD_API_KEY` environment variable. For a key that persists across sessions, open your `.Renviron` file with `usethis::edit_r_environ()` and add a line:
+
+```r
+CFBD_API_KEY=YOUR-API-KEY-HERE
+```
+
+Restart R after saving. For a one-off session you can instead set it directly:
+
+```r
+Sys.setenv(CFBD_API_KEY = "YOUR-API-KEY-HERE")
+```
+
+Functions that read from the cfbfastR-data release repo (`load_cfb_pbp()` and the rest of the `load_*()` family) need no key at all: no API key, no scraping, one function call per dataset.
+
+## Getting started
+
+```r
+library(cfbfastR)
+
+pbp <- load_cfb_pbp(2023)
+schedules <- load_cfb_schedules(2023)
+teams <- load_cfb_teams()
+```
+
+`load_cfb_pbp()` returns one row per play with the classic cfbfastR EPA/WPA column set: game, drive and play ids, offense/defense (`pos_team`/`def_pos_team`), play type and description, yardage, and the EPA/WPA/CPOE columns described below. `load_cfb_schedules()` returns one row per game with season, week, teams and final score; `load_cfb_teams()` returns team metadata (school, conference, colors, logos).
+
+## What's in the box
+
+The package groups its 267 exported functions into three data sources, distinguished by their name prefix.
+
+- **`load_cfb_*()` / `load_espn_cfb_*()` / `load_ncaa_mfb_*()`** — full-season loaders that read pre-built files from the sportsdataverse-data GitHub releases. No API key required. See "Loading full seasons" below.
+- **`cfbd_*()`** — the CollegeFootballData API wrapper, the bulk of the package. Representative families: the `cfbd_game_*()` functions such as `cfbd_game_info()` and `cfbd_game_team_stats()` (schedules and results), `cfbd_plays()` and the `cfbd_play_stats_*()` functions (single-game and filtered play queries), `cfbd_drives()`, the `cfbd_team_*()` functions such as `cfbd_team_info()` and `cfbd_team_roster()`, the `cfbd_player_*()` functions such as `cfbd_player_info()` and `cfbd_player_usage()`, the `cfbd_stats_*()` functions such as `cfbd_stats_season_team()`, the `cfbd_metrics_ppa_*()` functions such as `cfbd_metrics_ppa_teams()` (predicted points added), the `cfbd_ratings_*()` functions such as `cfbd_ratings_sp()` and `cfbd_rankings()`, the `cfbd_draft_*()` functions such as `cfbd_draft_picks()`, `cfbd_betting_lines()`, the `cfbd_recruiting_*()` functions such as `cfbd_recruiting_player()`, `cfbd_coaches()`, `cfbd_conferences()`, `cfbd_venues()`, and the 2025-onward charting families `cfbd_passing_plays()`/`cfbd_passing_players_season()` and `cfbd_rushing_plays()`/`cfbd_rushing_teams_season()`. `cfbd_pbp_data()` is the one that attaches the EPA/WPA model output to a season's plays directly from the API, without going through the release repo.
+- **`espn_cfb_*()`** — read-only ESPN wrappers: `espn_cfb_pbp()` and the `espn_cfb_game_*()` functions such as `espn_cfb_game_drives()` and `espn_cfb_game_predictor()`, `espn_cfb_scoreboard()`, `espn_cfb_schedule()`, `espn_cfb_team()`/`espn_cfb_teams()`, `espn_cfb_player()`/`espn_cfb_players()`, `espn_cfb_rankings()`, `espn_cfb_standings()`, plus rating families `espn_ratings_fpi()` (ESPN's FPI) and `espn_metrics_wp()` (ESPN's win probability).
+- **`fox_cfb_*()`** — read-only wrappers around Fox Sports' Bifrost API (play-by-play, box score, odds, roster, team stats, game log, standings, statistical leaders).
+- **`yahoo_cfb_*()`** — read-only wrappers around Yahoo Sports' stats graph and editorial feed (player/team season stats, legacy leaders, scoreboard, boxscore).
+- **`calculate_*()` model calculators** (development version only; added in 3.0.0.9000, not in CRAN 3.0.0) — `calculate_expected_points()`, `calculate_win_probability()`, `calculate_epa()`, `calculate_wpa()`, `calculate_completion_probability()`, `calculate_xpass()`, `calculate_field_goal_probability()`, `calculate_two_point_probability()`, `calculate_fourth_down()` and `calculate_qbr()`. Each scores a data frame you hand it, whether that's real play-by-play or a single hand-built row, against the model cfbfastR already ships. `cfb_model_card()` inspects a model's published feature list.
+- **`cfbd_key()` / `has_cfbd_key()` / `cfbd_api_key_info()`** — API key lookup and inspection helpers.
+- **`update_cfb_db()`** — builds or refreshes a local SQLite (or other DBI-backed) database of play-by-play, with a `force_rebuild` argument to redo specific seasons instead of the whole table.
+- **Model and pbp helpers** — `create_epa()`, `create_wpa_naive()`, `create_qbr()`, `epa_fg_probs()`, plus `helpers_pbp` documenting the internal parsing helpers.
+
+## Loading full seasons
+
+The `load_*()` functions pull pre-built files from the [sportsdataverse-data GitHub releases](https://github.com/sportsdataverse/sportsdataverse-data/releases), built and refreshed by the [cfbfastR-data](https://github.com/sportsdataverse/cfbfastR-data) producer repo, and cover four families:
+
+- **Classic** — `load_cfb_pbp()`, `load_cfb_schedules()`, `load_cfb_rosters()`, `load_cfb_teams()`. The original cfbfastR EPA/WPA play-by-play, FBS, from 2014 onward.
+- **ESPN** — 27 `load_espn_cfb_*()` functions: pbp, schedules, team/player box scores, drives, game rosters, linescores, betting, play participants, FPI power index, percentiles, passing/rushing/receiving EPA splits, team summaries, model pbp, and eleven `adv_*` advanced-stat datasets. Deeper history, mostly from 2004 onward.
+- **Ratings and recruiting** — `load_cfb_ratings()`, `load_cfb_ratings_weekly()`, `load_cfb_fpi_weekly()`, `load_cfb_team_summaries_weekly()`, `load_cfb_team_talent()`, `load_cfb_recruits()`, `load_cfb_recruiting_proj()`, `load_cfb_returning_production()`, and the `load_cfb_*_crosswalk()` id crosswalks between ESPN, Fox and Yahoo ids. Coverage varies by dataset, generally from 2002 onward.
+- **NCAA** — 10 `load_ncaa_mfb_*()` functions reading stats.ncaa.org: pbp (both native and reshaped to cfbfastR pbp conventions via `load_ncaa_mfb_pbp_cfbfastr()`), drives, linescore, officials, player/team stats, rosters, schedule, teams. Covers FCS and lower divisions that ESPN misses, from 2013 onward.
+
+All loaders accept either a single season or a vector of seasons, and most accept `seasons = TRUE` to pull everything published. They also take an optional `dbConnection` and `tablename` to write straight into a database instead of returning a tibble in memory — that plumbing is what `update_cfb_db()` uses under the hood to build or refresh a persistent SQLite play-by-play table, with a `force_rebuild` argument (logical, or a vector of seasons) to redo only part of it.
+
+If you already have real schedule data and want it in cfbseedR's engine format instead, that's a separate package: see the "Related" section below.
+
+## A worked example
+
+```r
+library(cfbfastR)
+library(dplyr)
+
+pbp <- load_cfb_pbp(2023)
+
+top_epa_plays <- pbp %>%
+  filter(!is.na(EPA), rush == 1 | pass == 1) %>%
+  group_by(pos_team) %>%
+  summarize(
+    plays = n(),
+    epa_per_play = mean(EPA),
+    success_rate = mean(epa_success)
+  ) %>%
+  arrange(desc(epa_per_play))
+
+top_epa_plays
+```
+
+This loads a full season of play-by-play from the release repo, filters to designed rush and pass plays, and summarizes EPA per play and success rate (the `epa_success` flag, EPA greater than zero) by offense. The result is one row per team ranked by average EPA per play — the standard first cut for "which offenses were actually good this year" that most of my CFB modeling work starts from.
+
+## Good to know
+
+- The CFBD API requires a free key as of April 2021; loaders that read from the release repo do not need one.
+- The `cfbd_passing_*()` and `cfbd_rushing_*()` charting-detail functions (play-by-play direction and location splits, e.g. `cfbd_passing_players_season()`, `cfbd_rushing_plays()`) only have data from the 2025 season onward — earlier seasons return an empty frame rather than an error.
+- The classic `load_cfb_pbp()` EPA/WPA column set starts in 2014; for deeper history use `load_espn_cfb_pbp()` (2004+) or the NCAA loaders (2013+, including FCS).
+- The package went through a model generation change: the CRAN release (3.0.0) and the development build (3.0.0.9000) can produce different EPA/WPA for the same play, which is why the development version carries a four-component version number — check `packageVersion("cfbfastR")` before mixing outputs from the two.
+- In the development version, each shipped model (EP, WP, CP, and the rest) publishes a card declaring its exact feature list and, where relevant, an era cutpoint; the `calculate_*()` functions validate against that card rather than a hardcoded copy of the feature list, so a mismatch fails loudly instead of scoring silently wrong columns.
+- Function name prefixes tell you the source: `cfbd_` is the CFBD API, `espn_cfb_` is ESPN, `fox_cfb_` is Fox, `yahoo_cfb_` is Yahoo, and anything with `cfb_` or `_cfb` in a `load_` function reads from the sportsdataverse-data releases.
+
+## Related
+
+- [cfbseedR](/notes/cfbseedr) — season simulation and CFP seeding, built to consume `load_cfb_schedules()` output via `cfbseedR::cfb_games_from_schedule()`
+- [cfb4th](/notes/cfb4th) — fourth-down decision modeling, built on cfbfastR's play data
+- [cfbplotR](/notes/cfbplotr) — team logos and plotting helpers for ggplot2
+- [recruitR](/notes/recruitr) — recruiting data
+- [sportsdataverse-R](/notes/sportsdataverse-r) — the R meta-package
+- [sportsdataverse-py](/notes/sportsdataverse-py) — the Python mirror
+- [cfbfastR-data](https://github.com/sportsdataverse/cfbfastR-data) — the producer repo that builds the release files
+
+## Data and automation
+
+The `load_*()` functions read GitHub release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases). Those assets are built and refreshed by scheduled workflows in the producer repos below; the badges are live, so a red one means the most recent scheduled run failed.
+
+- [cfbfastR-data](https://github.com/sportsdataverse/cfbfastR-data) — the CFBD-backed play-by-play, schedule, roster and team files. [![daily update](https://github.com/sportsdataverse/cfbfastR-data/actions/workflows/daily_cfb.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-data/actions/workflows/daily_cfb.yml) [![annual rosters](https://github.com/sportsdataverse/cfbfastR-data/actions/workflows/update_rosters.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-data/actions/workflows/update_rosters.yml)
+- [cfbfastR-cfb-data](https://github.com/sportsdataverse/cfbfastR-cfb-data) — ESPN-based enriched play-by-play, the EPA/WP model pipeline, ratings, FPI and recruiting projections. [![daily update](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/daily_cfb.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/daily_cfb.yml) [![model pipeline](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_model_pipeline.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_model_pipeline.yml) [![ratings](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_ratings_cron.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_ratings_cron.yml) [![FPI weekly](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_fpi_weekly.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_fpi_weekly.yml) [![recruiting projections](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_recruiting_proj_cron.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_recruiting_proj_cron.yml) [![ESPN snapshots](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/espn_daily_snapshots.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/espn_daily_snapshots.yml)
+- [cfbfastR-cfb-raw](https://github.com/sportsdataverse/cfbfastR-cfb-raw) — the per-game raw ESPN JSON the enriched files are rebuilt from. [![raw scrape](https://github.com/sportsdataverse/cfbfastR-cfb-raw/actions/workflows/scrape_cfb_raw.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-raw/actions/workflows/scrape_cfb_raw.yml)
+- [ncaa-mfb-football-data](https://github.com/sportsdataverse/ncaa-mfb-football-data) — stats.ncaa.org football play-by-play and box scores. [![daily update](https://github.com/sportsdataverse/ncaa-mfb-football-data/actions/workflows/daily_ncaa_mfb_data.yml/badge.svg)](https://github.com/sportsdataverse/ncaa-mfb-football-data/actions/workflows/daily_ncaa_mfb_data.yml)
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/cfbfastR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/cfbfastR/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/cfbfastR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/cfbfastR/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/cfbfastR)](https://CRAN.R-project.org/package=cfbfastR)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/cfbfastR.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
 - [Documentation](https://cfbfastR.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/cfbfastR)
 - [CRAN](https://CRAN.R-project.org/package=cfbfastR)
-- [cfbfastR-data](https://github.com/sportsdataverse/cfbfastR-data) — the release repo the loaders read from
+- [sportsdataverse-data releases](https://github.com/sportsdataverse/sportsdataverse-data/releases) — the release assets the loaders read
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

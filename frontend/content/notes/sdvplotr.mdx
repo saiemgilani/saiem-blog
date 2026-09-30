@@ -2,25 +2,139 @@
 title: 'sdvplotR: Sports Team Logo Plots in ''ggplot2'', ''gt'' and ''reactable'''
 date: '2022-08-22'
 tags: ['r', 'sportsdataverse', 'ggplot2', 'visualization', 'logos']
-excerpt: 'Logos, colors and themes for sports plots in ggplot2, gt and reactable — NFL, NBA, WNBA, MLB, NHL and college sports in one set of functions.'
+excerpt: 'One sport argument, eight leagues: team logos, colors and gt/reactable themes for NFL, NBA, WNBA, MLB, NHL and college sports.'
 order: 9
 ---
 
-**sdvplotR** is an R package. A unified set of functions to visualize sports data across the National Football League, National Basketball Association, Women's National Basketball Association, Major League Baseball, National Hockey League, and college football and basketball in 'ggplot2' plots, 'gt' tables and 'reactable' tables. Team logos, wordmarks and player headshots can be drawn as plot layers, as axis text and inside table cells, and team color scales map team identifiers to their official colors. Team abbreviations used by different data providers, including historical abbreviations of relocated franchises, are cleaned to one canonical key per sport. Built on 'ggpath' following the conventions of 'nflplotR' and designed to work with the companion 'SportsDataverse' data packages. Also includes the 'gtUtils' table themes, color legends, cut lines, significance notation, outlier flags and cropping and saving helpers for 'gt' tables.
+sdvplotR plots team logos, wordmarks, player headshots and official colors across eight leagues — NFL, NBA, WNBA, MLB, NHL, college football, and men's and women's college basketball — inside ggplot2 plots, gt tables and reactable tables. Every function takes a `sport` argument, so the same call shape works whether you are plotting an NFL box score or an NCAA tournament bracket. It is built on ggpath and unifies the approach established by nflplotR, cfbplotR, nbaplotR and mlbplotR behind that one argument, and it is designed to sit next to the companion SportsDataverse data packages rather than fetch data itself. It is the general-purpose plotting layer of the SportsDataverse.
 
-The plotting layer the sport-specific packages were each half-building on their own, pulled into one place: logos, colors and themes that know every SportsDataverse league.
+## Installation
 
-## Install
+sdvplotR is not on CRAN yet. Install the development version from GitHub with pak:
 
 ```r
 pak::pak("sportsdataverse/sdvplotR")
 ```
 
-Not on CRAN — install from GitHub with pak (or remotes).
+Or from the SportsDataverse r-universe for a prebuilt binary:
+
+```r
+install.packages("sdvplotR", repos = c("https://sportsdataverse.r-universe.dev", "https://cloud.r-project.org"))
+```
+
+It has no API key of its own. It only needs a data frame with a team identifier column; pair it with cfbfastR, hoopR, wehoop, baseballr or fastRhockey for the numbers.
+
+## Getting started
+
+```r
+library(sdvplotR)
+library(ggplot2)
+
+df <- data.frame(
+  a     = rep(1:8, 4),
+  b     = sort(rep(1:4, 8), decreasing = TRUE),
+  teams = valid_team_names("nfl")
+)
+
+ggplot(df, aes(x = a, y = b)) +
+  geom_sdv_logos(aes(team = teams), sport = "nfl", width = 0.075) +
+  theme_void()
+```
+
+`valid_team_names(sport)` returns the abbreviations sdvplotR recognizes for one of `supported_sports()` ("nfl", "nba", "wnba", "mlb", "nhl", "cfb", "mbb", "wbb"). `geom_sdv_logos()` maps a `team` aesthetic to that team's logo image for the given `sport`; team keys are cleaned automatically, so full names, alternate provider abbreviations and historical abbreviations of relocated franchises (`"OAK"` to `"LV"`, `"SEA"` to `"OKC"`) all resolve to the same team.
+
+## What's in the box
+
+- **Logos, wordmarks and headshots** — `geom_sdv_logos()`, `geom_sdv_wordmarks()`, `geom_sdv_headshots()` draw images as plot layers; every one takes `sport`.
+- **Theme elements and scales** — `element_sdv_logo()` (and the wordmark/headshot variants) swap axis tick text for images; `scale_color_sdv()` / `scale_fill_sdv()` map a team column to official colors; `scale_x_sdv()` / `scale_y_sdv()` turn an axis into logos.
+- **gt table helpers** — `gt_sdv_logos()`, `gt_sdv_wordmarks()`, `gt_sdv_headshots()` embed images in gt cells; `gt_sdv_cols_label()` builds logo column headers; `gt_merge_stack_team_color()` stacks two columns colored by team.
+- **SportsDataverse table themes** — `gt_theme_sdv()` (light or `style = "dark"`) is the house gt theme; `gt_theme_sdv_team()` dresses a table in one team's own colors.
+- **gt table themes (ported from gtUtils)** — eighteen editorial and broadcast-style themes, among them `gt_theme_kenpom()`, `gt_theme_savant()`, `gt_theme_athletic()` and `gt_theme_ncaa()`, plus `pal_midnight()` for a matching palette.
+- **gt table annotations** — `gt_538_caption()`, `gt_cutline()`, `gt_marginalia()`, `gt_watermark()` and `gt_social_tag()` add captions, cut lines and social branding.
+- **gt table coloring** — `gt_color_pills()`, `gt_percentile_bar()`, `gt_color_ranks()`, `gt_highlight_cells()` and `gt_legend_continuous()` / `gt_legend_discrete()` color cells and draw matching legends.
+- **gt table formatting** — `gt_delta()`, `gt_fmt_rank()`, `gt_fmt_tally()`, `gt_significance()` and `gt_tiers()` format deltas, ranks, tallies and significance notation.
+- **gt table layout and saving** — `gt_grid()`, `gt_snake()` and `gt_stack_tables()` arrange several tables into one graphic; `gt_save_crop()` and `gt_social_crop()` save and crop a table for publication.
+- **reactable table helpers** — `reactable_sdv_logos()`, `reactable_sdv_headshots()` and `reactable_sdv_wordmarks()` render images as reactable cells; `reactable_sdv_team_color_bar()` and `reactable_sdv_team_color_bg()` color cells by team; `reactable_sdv_cols_label()` builds the matching headers.
+- **Team utilities** — `supported_sports()` lists the eight sport keys; `valid_team_names()` and `team_reference()` expose the reference table (ESPN ids, colors, conference/division) per team; `clean_team_abbrs()` and `resolve_historical_abbr()` clean and map provider abbreviations; `sdv_team_colors()` and `sdv_color_palette()` return raw color values; `sdv_team_factor()` orders a team column; `sdvplotR_clear_cache()` empties the image cache.
+- **Premade plots and titles** — `sdv_team_tiers()` builds a full tier-list chart; `ggtitle_image()` adds an image next to a ggplot2 title.
+- **Re-exported from ggpath** — `geom_from_path()`, `element_path()`, `geom_mean_lines()` and friends, the generic image-geom primitives underneath every sdvplotR function.
+- **Deprecated** — the former gtUtils function names are kept working under `sdvplotR-deprecated`, for code ported straight from that package.
+
+## A worked example
+
+```r
+library(sdvplotR)
+library(ggplot2)
+library(gt)
+
+df2 <- data.frame(
+  team  = c("KC", "BUF", "SF", "DAL"),
+  score = c(42, 38, 35, 30)
+)
+
+ggplot(df2, aes(x = team, y = score)) +
+  geom_col(aes(fill = team), show.legend = FALSE) +
+  scale_fill_sdv(sport = "nfl") +
+  theme_minimal() +
+  theme(axis.text.x = element_sdv_logo(sport = "nfl", size = 1))
+
+data.frame(team = c("KC", "BUF", "SF"), wins = c(13, 12, 11)) |>
+  gt() |>
+  gt_sdv_logos(columns = "team", sport = "nfl") |>
+  gt_theme_sdv()
+```
+
+The bar chart colors each column in the team's own color via `scale_fill_sdv(sport = "nfl")`, and swaps the x-axis text for logos via `element_sdv_logo()`. The gt table repeats three of the same teams with the team column rendered as inline logos, in the house `gt_theme_sdv()` look.
+
+A reactable table follows the same team-first pattern as the gt helpers:
+
+```r
+library(reactable)
+
+df3 <- data.frame(team = c("KC", "BUF", "SF"), wins = c(13, 12, 11))
+
+reactable(
+  df3,
+  columns = list(
+    team = reactable::colDef(cell = reactable_sdv_logos(sport = "nfl"), html = TRUE),
+    wins = reactable::colDef(style = reactable_sdv_team_color_bar(df3, "team", sport = "nfl"))
+  )
+)
+```
+
+`reactable_sdv_logos()` returns a cell renderer that swaps team abbreviations for logo images; `reactable_sdv_team_color_bar()` returns a `style` function that draws a bar in the row's team color behind the `wins` value, so the two columns read as one branded table rather than a plain reactable grid.
+
+## Good to know
+
+- Every function's `sport` argument is one of `supported_sports()`; passing anything else errors rather than silently returning nothing.
+- Team keys are cleaned before lookup, so a plot built from ESPN abbreviations, a different provider's abbreviations, or a relocated franchise's old abbreviation all resolve to the same logo and color.
+- `variant = "dark"` in the table helpers switches to a dark-mode logo variant, for tables rendered on a dark background.
+- The gtUtils toolkit (themes, legends, cut lines, outlier flags, `gt_save_crop()` / `gt_social_crop()`) is folded in directly rather than left as a separate dependency, credited to Andrew Weatherman as its original author.
+- The reference data covers every current franchise in the five pro leagues plus all FBS/FCS football programs and Division I basketball programs; NFL rows additionally carry nflverse wordmarks.
+
+## Related
+
+sdvplotR generalizes [cfbplotR](/notes/cfbplotr), the college-football-only plotting package that came first, across every SportsDataverse league behind one `sport` argument. It is designed to work with [cfbfastR](/notes/cfbfastr), [hoopR](/notes/intro-to-hoopR), [wehoop](/notes/wehoop), [baseballr](/notes/baseballr) and [fastRhockey](/notes/fastrhockey) for the underlying data, and with the [sportsdataverse (R)](/notes/sportsdataverse-r) meta-package for installing the whole family at once.
+
+## Data and automation
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/sdvplotR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/sdvplotR/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/sdvplotR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/sdvplotR/actions/workflows/pkgdown.yaml) [![test coverage](https://github.com/sportsdataverse/sdvplotR/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/sportsdataverse/sdvplotR/actions/workflows/test-coverage.yaml) [![headshot map refresh](https://github.com/sportsdataverse/sdvplotR/actions/workflows/update-headshot-map.yaml/badge.svg)](https://github.com/sportsdataverse/sdvplotR/actions/workflows/update-headshot-map.yaml)
+- Cheat sheets for the rest of the family are at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets); this package does not have one.
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
-- [Documentation](https://sdvplotr.sportsdataverse.org/)
+- [Documentation](https://sdvplotR.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/sdvplotR)
+- [Getting started vignette](https://sdvplotR.sportsdataverse.org/articles/getting-started.html)
+
+```bibtex
+@misc{gilani_carl_lee_kay_weatherman_sdvplotR,
+  author = {Gilani, Saiem and Carl, Sebastian and Lee, Jared and Kay, Camden and Weatherman, Andrew},
+  title = {sdvplotR: The SportsDataverse's R Package for Multi-League Sports Plotting.},
+  url = {https://sdvplotR.sportsdataverse.org},
+  year = {2026}
+}
+```
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

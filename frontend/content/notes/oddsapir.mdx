@@ -2,27 +2,143 @@
 title: 'oddsapiR: Access Live Sports Odds from the Odds API'
 date: '2022-03-29'
 tags: ['r', 'sportsdataverse', 'odds', 'betting', 'the-odds-api']
-excerpt: 'A utility to quickly obtain clean and tidy sports odds from The Odds API https://the-odds-api.com.'
+excerpt: 'A tidy R client for The Odds API: sports discovery, live and historical odds, scores, and per-request usage-quota tracking.'
 order: 8
 ---
 
-**oddsapiR** is an R package. A utility to quickly obtain clean and tidy sports odds from The Odds API https://the-odds-api.com. Provides wrappers for every version 4 endpoint -- featured-market and single-event odds (including player props and alternate lines), historical odds snapshots, scores, events, participants, and usage-quota reporting -- returning tidy tibbles ready for analysis.
+oddsapiR is an R package that wraps [The Odds API](https://the-odds-api.com), the service that aggregates lines from 60-plus bookmakers worldwide. It covers the full version 4 surface: which sports and events are live, featured-market odds, single-event odds (including player props and alternate lines), historical snapshots going back to mid-2020, scores, participants, and how much of your quota you have left. Every function returns a tidy tibble. It's the package I point at whenever a model needs a market line to be measured against, so it sits next to cfbfastR, hoopR and the rest of the SportsDataverse family rather than off on its own.
 
-A thin, tidy wrapper for The Odds API. It exists because every model eventually needs a market to be measured against.
-
-## Install
+## Installation
 
 ```r
 install.packages("oddsapiR")
+```
+
+oddsapiR is on CRAN at version 1.0.1. For the development version:
+
+```r
 pak::pak("sportsdataverse/oddsapiR")
 ```
 
-On CRAN (v1.0.1); the second line installs the development version.
+You need a free API key from [the-odds-api.com](https://the-odds-api.com) before any function will return data. Store it as the `ODDS_API_KEY` environment variable. For a key that persists across sessions, open your `.Renviron` with `usethis::edit_r_environ()`, add a line reading `ODDS_API_KEY = XXXX-YOUR-API-KEY-HERE-XXXXX` (no quotes), save, and restart R. For a one-off session, `Sys.setenv(ODDS_API_KEY = "XXXX-YOUR-API-KEY-HERE-XXXXX")` works too. Three helpers let you check the state of the key at any point: `toa_key()` returns the raw string (or `NA` if unset), `has_toa_key()` returns `TRUE`/`FALSE`, and `check_toa_key()` stops with a clear message if nothing is set.
+
+## Getting started
+
+```r
+library(oddsapiR)
+
+# Which sports does the API currently cover?
+sports <- toa_sports(all_sports = TRUE)
+
+# Upcoming and live NBA games (no odds, free call)
+events <- toa_sports_events(sport_key = "basketball_nba")
+
+# Moneyline odds for those games from US books
+odds <- toa_sports_odds(
+  sport_key = "basketball_nba",
+  regions = "us",
+  markets = "h2h"
+)
+```
+
+`toa_sports()` returns one row per sport with the `key` you'll pass as `sport_key` everywhere else, plus `group`, `title`, `active` and `has_outrights`. `toa_sports_events()` returns one row per upcoming or in-play game -- `id`, `sport_key`, `commence_time`, `home_team`, `away_team` -- and that `id` becomes the `event_id` argument for the single-event functions. `toa_sports_odds()` is long-format: one row per event times bookmaker times market outcome, so pulling three markets across two regions comes back as several rows per game, not one.
+
+## How oddsapiR talks to the API
+
+Every `toa_*()` function goes through the same small internal HTTP stack. One internal helper builds an `httr2` request with a standard user agent and a three-try retry policy on transient failures; a second wraps that and parses the body with `jsonlite::fromJSON()` -- this is what every odds, events and scores function uses; a third wraps the same request but only reads the `x-requests-remaining`/`x-requests-used` headers, which is what `toa_requests()` uses to check your quota without paying for a data call. The API key travels as the `apiKey` query parameter on every request, resolved through `toa_key()`.
+
+## What's in the box
+
+- **Sports & Events** -- `toa_sports()` lists covered sports (free); `toa_sports_events()` lists upcoming/in-play events for a sport (free); `toa_sports_participants()` lists the teams or individual competitors used as a whitelist; `toa_sports_scores()` returns live and recently completed scores.
+- **Current Odds & Markets** -- `toa_sports_odds()` pulls featured-market odds (moneyline, spreads, totals, outrights) across every event for a sport; `toa_event_odds()` pulls the full market depth for one event, including player props and alternate lines; `toa_event_markets()` lists which market keys are currently available for an event before you spend quota asking for odds on all of them.
+- **Historical Odds & Events** -- `toa_sports_odds_history()`, `toa_sports_events_history()` and `toa_event_odds_history()` are the historical twins of the current-state functions. Each takes a `date` timestamp and returns the snapshot closest to (and not after) that time, with `timestamp`/`previous_timestamp`/`next_timestamp` columns for paging through the archive. Available on paid plans.
+- **Account & Usage** -- `toa_quota()` reads the usage-quota headers cached from your most recent call, with no network round trip; `toa_requests()` hits the free `/v4/sports` endpoint specifically to fetch a fresh quota reading; `toa_key()` / `has_toa_key()` / `check_toa_key()` manage the API key.
+
+For player props and alternate lines on a single game, use `toa_event_markets()` to see what's currently posted before spending quota on `toa_event_odds()`:
+
+```r
+game_markets <- toa_event_markets(
+  sport_key = "basketball_nba",
+  event_id = "48db9c3293a52baab881d95d38f37a98",
+  regions = "us"
+)
+
+player_points <- toa_event_odds(
+  sport_key = "basketball_nba",
+  event_id = "48db9c3293a52baab881d95d38f37a98",
+  regions = "us",
+  markets = "player_points"
+)
+```
+
+`toa_event_markets()` returns one row per bookmaker market key actually available for that event -- no odds, just what's on offer. `toa_event_odds()` with `markets = "player_points"` adds an `outcomes_description` column carrying the player's name alongside the usual outcome/price columns.
+
+## A worked example
+
+```r
+library(oddsapiR)
+library(dplyr)
+
+# Check the key and starting budget before spending anything
+check_toa_key()
+toa_requests()
+
+# Pull moneyline odds for the NBA from US books
+nba_h2h <- toa_sports_odds(
+  sport_key = "basketball_nba",
+  regions = "us",
+  markets = "h2h",
+  odds_format = "decimal"
+)
+
+# Best price for each team across every bookmaker
+best_lines <- nba_h2h %>%
+  group_by(home_team, away_team, outcomes_name) %>%
+  slice_max(outcomes_price, n = 1) %>%
+  select(home_team, away_team, outcomes_name, bookmaker, outcomes_price)
+
+best_lines
+
+# How much that cost
+toa_quota()
+```
+
+`nba_h2h` comes back with one row per event/bookmaker/outcome combination -- `id`, `sport_key`, `commence_time`, `home_team`, `away_team`, `bookmaker`, `market_key`, `outcomes_name`, `outcomes_price` and, for point-based markets, `outcomes_point`. Grouping by event and outcome and taking the max price finds the best line available at each book. The final `toa_quota()` call shows the credits that request consumed, read from the response headers without hitting the API again.
+
+## Good to know
+
+- Every response from The Odds API carries three headers: `x-requests-remaining`, `x-requests-used` and `x-requests-last`. oddsapiR caches these after each call and attaches them as attributes on the returned tibble (`oddsapiR_requests_remaining`, etc.), so quota information travels with the data and prints automatically when you print an `oddsapiR_data` object.
+- Quota cost scales with what you ask for. `toa_sports_odds()` and `toa_event_odds()` cost markets times regions; the historical odds endpoint applies a 10x multiplier on top of that, while the historical event-list and single-event-history endpoints charge the standard rate. `toa_sports()`, `toa_sports_events()` and `toa_sports_events_history()` (when empty) are free.
+- `regions` and `markets` both accept comma-separated lists (`"us,uk"`, `"h2h,spreads,totals"`), and each additional value multiplies the quota cost.
+- Historical featured-market odds reach back to June 2020 on paid plans; historical odds for additional markets (props, alternate lines) are available from 2023-05-03 onward at 5-minute intervals.
+- `toa_event_odds()` and `toa_event_odds_history()` distinguish an API error (bad key, say) from an event that genuinely has no bookmaker odds posted yet -- don't assume an empty result always means "no odds available."
+- `bookmakers` (a comma-separated list of bookmaker slugs, e.g. `"draftkings,fanduel"`) is accepted alongside `regions` on the event-level functions; when both are supplied, `bookmakers` takes precedence.
+- `odds_format` is `"decimal"` (default) or `"american"`; `date_format` is `"iso"` (default) or `"unix"` and applies to every timestamp column in the response.
+- CRAN 1.0.1 is a check-only fix release: it corrects a printing bug where a response missing its usage-quota headers (which happens on error responses) crashed the print method for the returned object, and it makes sure a bad API key surfaces as the API's own error message rather than being reported as an event with no odds.
+
+## Related
+
+Part of the same betting-and-college-sports corner of the SportsDataverse as [recruitR](/notes/recruitr) and [cfbfastR](/notes/cfbfastr). If you're pairing odds with play-by-play or box scores, see [hoopR](/notes/intro-to-hoopR), [wehoop](/notes/wehoop) and [fastRhockey](/notes/fastrhockey). The historical archive this package wraps lives entirely on The Odds API's servers -- there's no companion SportsDataverse data repo to mirror it.
+
+## Data and automation
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/oddsapiR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/oddsapiR/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/oddsapiR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/oddsapiR/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/oddsapiR)](https://CRAN.R-project.org/package=oddsapiR)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/oddsapiR.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
-- [Documentation](https://oddsapir.sportsdataverse.org/)
-- [Source on GitHub](https://github.com/sportsdataverse/oddsapiR)
+- [Documentation](https://oddsapiR.sportsdataverse.org/)
+- [Source](https://github.com/sportsdataverse/oddsapiR)
 - [CRAN](https://CRAN.R-project.org/package=oddsapiR)
 
-My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
+```
+@misc{gilani_2022_oddsapiR,
+  author = {Gilani, Saiem},
+  title = {oddsapiR: The SportsDataverse's R Package for The Odds API.},
+  url = {https://oddsapiR.sportsdataverse.org},
+  year = {2022}
+}
+```
+
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org).

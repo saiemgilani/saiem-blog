@@ -2,25 +2,133 @@
 title: 'cfb4th: Functions to Calculate Optimal Fourth Down Decisions for NCAA Football'
 date: '2021-09-22'
 tags: ['r', 'sportsdataverse', 'college-football', 'fourth-down', 'decision-model']
-excerpt: 'A set of functions to estimate outcomes of fourth down plays in NCAA football and obtain fourth down plays from https://www.espn.com/.'
+excerpt: 'An R package that estimates go-for-it, punt and field-goal win probabilities for college football fourth downs.'
 order: 11
 ---
 
-**cfb4th** is an R package. A set of functions to estimate outcomes of fourth down plays in NCAA football and obtain fourth down plays from https://www.espn.com/.
+cfb4th is an R package that estimates outcomes of fourth-down plays in college football: given the game situation, it returns the win probability of going for it, punting, or kicking a field goal, and which choice that makes correct. It is the package behind the A.I. Sports College Football 4th Down bot and model, heavily based on Ben Baldwin's nfl4th for the NFL. It sits on top of cfbfastR for its play data and is not on CRAN.
 
-Fourth-down decision estimates for college football in the spirit of nfl4th, built on cfbfastR's play data.
-
-## Install
+## Installation
 
 ```r
 pak::pak("sportsdataverse/cfb4th")
 ```
 
-Not on CRAN — install from GitHub with pak (or remotes).
+Not on CRAN — install from GitHub with pak (or remotes). It depends on cfbfastR, so anything that pulls play-by-play through it (`load_4th_pbp()`, `get_4th_plays()`) is subject to cfbfastR's own `CFBD_API_KEY` requirement for the `cfbd_*()` calls it makes underneath. See the cfbfastR note for how to set that key. `add_4th_probs()` and `make_table_data()`, by contrast, work on a data frame you already have, hand-built or otherwise, and need no key or network access at all.
+
+## Getting started
+
+```r
+library(cfb4th)
+library(dplyr)
+
+data <- cfb4th::load_4th_pbp(2020) %>%
+  dplyr::filter(.data$week %in% 1:14)
+
+data %>%
+  dplyr::filter(!is.na(go_boost)) %>%
+  dplyr::select(pos_team, distance, yards_to_goal, go_boost,
+                first_down_prob, go_wp, fg_wp, punt_wp)
+```
+
+`load_4th_pbp()` loads a season of cfbfastR play-by-play and runs `add_4th_probs()` over every play, which can take up to a minute or two per season. The result adds the decision columns to the pbp frame: `go_boost` (the win-probability edge of going for it over the next-best choice), `first_down_prob`, `wp_fail`/`wp_succeed` and `go_wp` for going for it, `fg_make_prob` and `fg_wp` for the field goal, and `punt_wp` for punting.
+
+## What's in the box
+
+cfb4th exports 4 functions (plus the re-exported `%>%` pipe).
+
+- **`load_4th_pbp()`** — loads a season (or vector of seasons, 2014 onward) of cfbfastR play-by-play and betting lines, and runs `add_4th_probs()` over it.
+- **`add_4th_probs()`** — the core function. Takes any data frame with the required situation columns (game info, score, time, down/distance/field position) and attaches the go-for-it, field-goal and punt win-probability columns. Works on a full pbp frame or a single hand-built row.
+- **`make_table_data()`** — takes the output of `add_4th_probs()` for one play and reshapes it into a tidy table (one row per choice: go for it, field goal, punt) with the choice probability, success probability and resulting win probability. Only works one play at a time.
+- **`get_4th_plays()`** — pulls fourth-down plays for a specific game from ESPN's API, for games cfbfastR's release data doesn't cover yet (in-progress or very recent games). Takes the row from `cfbfastR::cfbd_game_info()`.
+
+## A worked example
+
+```r
+library(cfb4th)
+library(tibble)
+
+one_play <- tibble::tibble(
+  home = "Utah",
+  away = "BYU",
+  pos_team = "Utah",
+  def_pos_team = "BYU",
+  spread = -7,
+  over_under = 55,
+  half = 2,
+  period = 3,
+  TimeSecsRem = 900,
+  adj_TimeSecsRem = 900,
+  down = 4,
+  distance = 4,
+  yards_to_goal = 40,
+  pos_score_diff_start = 7,
+  pos_team_receives_2H_kickoff = 1,
+  pos_team_timeouts_rem_before = 3,
+  def_pos_team_timeouts_rem_before = 3
+)
+
+one_play %>%
+  cfb4th::add_4th_probs() %>%
+  cfb4th::make_table_data()
+```
+
+This builds a single fourth down situation by hand (Utah facing 4th-and-4 from the BYU 40, up 7, second half, 15 minutes on the clock) with no network call, scores it with `add_4th_probs()`, and reshapes it with `make_table_data()` into a three-row table (go for it / field goal / punt) with each choice's win probability. In the documented example this situation favors going for it, at roughly 86.5% win probability against about 85% for punting.
+
+## Getting a live game's fourth downs
+
+cfbfastR's release data lags live games, which is the reason the 4th-down bot exists as a separate path rather than just reading `cfbfastR::load_cfb_pbp()`. `get_4th_plays()` goes to ESPN directly instead:
+
+```r
+game <- cfbfastR::cfbd_game_info(year = 2019, team = "Utah", week = 4)
+plays <- cfb4th::get_4th_plays(game)
+
+plays %>%
+  cfb4th::add_4th_probs() %>%
+  dplyr::slice(1) %>%
+  cfb4th::make_table_data()
+```
+
+`cfbfastR::cfbd_game_info()` looks up the game itself, `get_4th_plays()` pulls its fourth-down plays from ESPN, `add_4th_probs()` scores every one of them, and `make_table_data()` formats a single play's decision table (it drops the play identifiers and sorts the choices by probability), so pick one row, here the first fourth down, before calling it.
+
+## Good to know
+
+- Not on CRAN; install from GitHub with pak or remotes.
+- `load_4th_pbp()` refuses seasons before 2014 — that is the floor of cfbfastR's classic pbp/EPA-WPA data it reads from.
+- The go-for-it model does not account for a turnover returned for a touchdown, does not model 2-point-conversion situations, and treats a touchdown as always worth 7 points.
+- The punt model does not account for the punter or returner individually, ignores penalties on returns, and ignores a blocked punt being returned for a touchdown.
+- The field-goal model does not account for who the kicker is or the weather (only relevant for outdoor games), or a blocked kick being returned for a touchdown.
+- `get_4th_plays()` exists specifically because cfbfastR's release data lags live games — it is the live-game path the 4th-down bot uses, going straight to ESPN instead of the CFBD-backed release repo.
+
+## Related
+
+- [cfbfastR](/notes/cfbfastr) — the play-by-play and EPA/WPA source cfb4th builds on
+- [cfbseedR](/notes/cfbseedr) — season simulation and CFP seeding
+- [cfbplotR](/notes/cfbplotr) — team logos and plotting helpers for ggplot2
+- [sportsdataverse-R](/notes/sportsdataverse-r) — the R meta-package
+- [sportsdataverse-py](/notes/sportsdataverse-py) — the Python mirror
+- nfl4th — the NFL package this one is based on
+
+## Data and automation
+
+This package has no loaders of its own; schedules and play-by-play come through cfbfastR, whose release source and producer workflows are listed in the [cfbfastR note](/notes/cfbfastr).
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/cfb4th/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/cfb4th/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/cfb4th/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/cfb4th/actions/workflows/pkgdown.yaml)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/cfbplotR-cfb4th-cfbseedR.pdf) (shared with cfbplotR, cfb4th and cfbseedR) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
 - [Documentation](https://cfb4th.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/cfb4th)
+
+```bibtex
+@misc{cfb4th,
+  author = {Jared Lee and Ben Baldwin and Saiem Gilani},
+  title = {cfb4th: The SportsDataverse},
+  url = {https://cfb4th.sportsdataverse.org/},
+  year = {2026}
+}
+```
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

@@ -6,16 +6,126 @@ excerpt: 'Sports data in Python, rebuilt on polars: ESPN across every league, th
 order: 1
 ---
 
-**sportsdataverse (Python)** is a Python package. The Python side of the house, rebuilt on polars: ESPN across every league, the NBA and WNBA stats APIs, NHL, MLB and Statcast, HockeyTech, stats.ncaa.org, and the same loaders and models the R packages ship.
+`sportsdataverse` is the Python package in the SportsDataverse family. It wraps ESPN's APIs across basketball, football, baseball, hockey, soccer and cricket, plus a set of native (non-ESPN) live APIs: stats.nba.com and stats.wnba.com, Baseball Savant / Statcast, the NHL's modern api-web and EDGE feeds, HockeyTech/LeagueStat for PWHL and twenty minor and junior leagues, NFL.com's Shield API, and stats.ncaa.org for college basketball and football. It is the Python sister to the R packages (cfbfastR, hoopR, wehoop, fastRhockey, baseballr) and the closest thing to a drop-in Python replacement for nflreadpy where the NFL surface is concerned. It targets Python 3.9 through 3.14 and returns polars DataFrames by default.
 
-Retrieve Sports data in Python
-
-## Install
+## Installation
 
 ```bash
 pip install sportsdataverse
-uv add sportsdataverse
 ```
+
+Extras bundle the optional dependencies for specific surfaces:
+
+```bash
+pip install "sportsdataverse[all]"      # everything below
+pip install "sportsdataverse[models]"   # NFL/CFB EPA and WP model code
+pip install "sportsdataverse[tests]"    # pytest, mypy, ruff
+```
+
+With uv:
+
+```bash
+uv add sportsdataverse
+uv add "sportsdataverse[all]"
+```
+
+Most of the package needs no credentials at all, ESPN's public endpoints and the release-hosted parquet loaders are open. Two corners are gated:
+
+- The Odds API wrappers in `sportsdataverse.odds` read a key from the `ODDS_API_KEY` environment variable, or you can pass `api_key=` directly on each call.
+- The PFF Developer API wrappers (`pff_api_*` in `sportsdataverse.nfl`) read `SDV_PY_PFF_API_KEY`, falling back to `PFF_API_KEY`.
+
+Set either with a shell export, or in Python before import:
+
+```python
+import os
+os.environ["ODDS_API_KEY"] = "..."
+```
+
+The stats.nba.com / stats.wnba.com wrappers need no key, but they do need the `curl_cffi` package (pulled in by the `[all]` extra) because those hosts TLS-fingerprint-block plain `requests` calls.
+
+## Getting started
+
+```python
+import sportsdataverse as sdv
+
+# ESPN wrappers follow espn_<league>_<endpoint>; polars by default
+schedule = sdv.nba.espn_nba_schedule(season=2024)
+raw = sdv.nba.espn_nba_schedule(season=2024, return_parsed=False)   # -> Dict
+pdf = sdv.nba.espn_nba_schedule(season=2024, return_as_pandas=True)  # -> pandas
+
+# NFL play-by-play from the nflverse release parquet
+pbp = sdv.nfl.load_nfl_pbp(seasons=[2024])
+```
+
+`espn_nba_schedule` returns one row per scheduled game with date, teams, venue and status columns. `load_nfl_pbp` returns one row per play with the full nflverse play-by-play column set, including nflverse's EPA and win-probability columns. Any wrapper that has a registered parser accepts `return_parsed=False` for the raw dict and `return_as_pandas=True` for a pandas frame instead of polars.
+
+## What's in the box
+
+- **ESPN cross-league wrappers** (named `espn_` plus the league plus the endpoint, e.g. `espn_nba_scoreboard`) — one core wrapped once per URL family (Site v2, Core v2, Web v3, CDN) and bound onto every league: `espn_nba_scoreboard`, `espn_cfb_schedule`, `espn_wnba_team_roster`, and so on across NBA, WNBA, NFL, MLB, NHL, MBB, WBB, CFB, soccer, cricket, and more. Endpoints that have a registered parser take `return_parsed=True` to come back as a tidy DataFrame instead of a raw dict.
+- **NFL loaders** (`sportsdataverse.nfl`) — `load_nfl_pbp`, `load_nfl_schedule`, `load_nfl_rosters`, `load_nfl_teams` and twenty more `load_nfl_*` functions reading nflverse release parquet, plus nflreadpy-style bare aliases (`load_pbp`, `load_schedules`) inside the `nfl` submodule itself.
+- **CFB play-by-play engine** (`sportsdataverse.cfb`) — `CFBPlayProcess(gameId=...)` pulls a game through `espn_cfb_pbp()` and `run_processing_pipeline()`, adding down/distance, play-type flags, expected points, win probability, and an advanced box score.
+- **NBA / WNBA stats API** (`sportsdataverse.nba.nba_stats`, `sportsdataverse.wnba.wnba_stats`) — wrappers like `nba_stats_leaguedashplayerstats` and `nba_stats_playercareerstats` for stats.nba.com and stats.wnba.com, parsed tidy by default.
+- **MLB Statcast / Baseball Savant** (`sportsdataverse.mlb`) — `mlb_statcast_search`, the `mlb_statcast_leaderboard_*` family, and `mlb_statcast_player` cover Baseball Savant's leaderboards, player pages, and the pitch-level search endpoint.
+- **NHL** (`sportsdataverse.nhl`) — `nhl_web_pbp` plus `parse_nhl_web_pbp` for the modern api-web game feed, and a parallel EDGE player-tracking surface.
+- **HockeyTech families** (`sportsdataverse.pwhl`, plus `sportsdataverse.hockey` per league) — PWHL is the flagship top-level module; twenty minor and junior leagues (AHL, ECHL, OHL, WHL, QMJHL, USHL, and others) share the same registry-driven family of schedule/pbp/roster/stats callables.
+- **stats.ncaa.org families** — `ncaa_mbb_*` / `ncaa_wbb_*` cover NCAA basketball schedules, rosters, box scores and play-by-play; `cfb_ncaa_pbp` covers college football.
+- **Release utilities** (`sportsdataverse.release`) — a Python port of the `sportsdataversedata` R package's GitHub-release asset publish/download helpers, including a pure-Python RDS writer.
+
+## Loading full seasons
+
+The `load_nfl_*` functions in `sportsdataverse.nfl` read pre-built parquet from the nflverse-data release bucket rather than hitting ESPN live, so a full season comes back in one call. `load_nfl_pbp` goes back to 1999. Loaders are wrapped with an in-process cache; set the cache mode with the `SDV_PY_NFL_CACHE` environment variable (`memory`, `filesystem`, or `off`) or at runtime with `sportsdataverse.nfl.update_config(cache_mode="filesystem")`, and clear it with `sportsdataverse.nfl.clear_cache()`.
+
+## A worked example
+
+```python
+import sportsdataverse as sdv
+import polars as pl
+
+pbp = sdv.nfl.load_nfl_pbp(seasons=[2023, 2024])
+
+pass_epa_by_team = (
+    pbp
+    .filter(pl.col("play_type") == "pass")
+    .group_by(["posteam", "season"])
+    .agg(pl.col("epa").mean().alias("mean_pass_epa"))
+    .sort("mean_pass_epa", descending=True)
+)
+print(pass_epa_by_team.head())
+```
+
+`load_nfl_pbp` returns one row per play across both seasons with the full nflverse column set. Filtering to pass plays, grouping by team and season, and averaging EPA gives a small table ranking offenses by early-down-and-late-down pass efficiency, still keyed by `posteam` and `season` so it is easy to join back onto schedule or roster data.
+
+## Good to know
+
+- stats.nba.com and stats.wnba.com hang rather than error on datacenter or cloud IPs, the TLS fingerprint block compounds with IP reputation. Run those calls from a residential connection.
+- `AssetFetchError` and `NoDataError` mean different things: `NoDataError` is a successful fetch that came back empty (a real 404), `AssetFetchError` is a fetch that failed (rate limit, 403, exhausted retries). A failed fetch is never silently recorded as an empty season.
+- The `@cached_loader` decorator on NFL loaders keys its cache on function name and arguments, not on the underlying URL, so if you are developing against a loader whose source changed, call `clear_cache()` or set `cache_mode="off"` to avoid stale results.
+
+## Related
+
+- [sportsdataverse (Node.js)](/notes/sportsdataverse-js) — the JavaScript sister package
+- [sportsdataverse (R)](/notes/sportsdataverse-r) — the R package family this one mirrors
+- [hoopR](/notes/intro-to-hoopR) — men's basketball, R
+- Data releases live in the `sportsdataverse-data` and `nflverse-data` GitHub release repos that the loaders read from
+
+## Data and automation
+
+The `load_nfl_*()` loaders read the [nflverse-data](https://github.com/nflverse/nflverse-data/releases) releases; every other loader reads GitHub release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases). The assets are built by scheduled workflows in the per-league producer repos, most of which run this package to do it. One live badge per producer:
+
+- [cfbfastR-cfb-data](https://github.com/sportsdataverse/cfbfastR-cfb-data) — college football. [![model pipeline](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_model_pipeline.yml/badge.svg)](https://github.com/sportsdataverse/cfbfastR-cfb-data/actions/workflows/cfb_model_pipeline.yml)
+- [hoopR-mbb-data](https://github.com/sportsdataverse/hoopR-mbb-data) — men's college basketball. [![model datasets](https://github.com/sportsdataverse/hoopR-mbb-data/actions/workflows/mbb_models_cron.yml/badge.svg)](https://github.com/sportsdataverse/hoopR-mbb-data/actions/workflows/mbb_models_cron.yml)
+- [hoopR-nba-stats-data](https://github.com/sportsdataverse/hoopR-nba-stats-data) — NBA. [![model datasets](https://github.com/sportsdataverse/hoopR-nba-stats-data/actions/workflows/nba_models.yml/badge.svg)](https://github.com/sportsdataverse/hoopR-nba-stats-data/actions/workflows/nba_models.yml)
+- [wehoop-wbb-data](https://github.com/sportsdataverse/wehoop-wbb-data) — women's college basketball. [![model datasets](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/wbb_models_cron.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/wbb_models_cron.yml)
+- [wehoop-wnba-stats-data](https://github.com/sportsdataverse/wehoop-wnba-stats-data) — WNBA. [![model datasets](https://github.com/sportsdataverse/wehoop-wnba-stats-data/actions/workflows/wnba_models.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wnba-stats-data/actions/workflows/wnba_models.yml)
+- [fastRhockey-nhl-data](https://github.com/sportsdataverse/fastRhockey-nhl-data) — NHL. [![xG model pipeline](https://github.com/sportsdataverse/fastRhockey-nhl-data/actions/workflows/nhl_model_pipeline.yml/badge.svg)](https://github.com/sportsdataverse/fastRhockey-nhl-data/actions/workflows/nhl_model_pipeline.yml)
+- [fastRhockey-pwhl-data](https://github.com/sportsdataverse/fastRhockey-pwhl-data) — PWHL. [![xG](https://github.com/sportsdataverse/fastRhockey-pwhl-data/actions/workflows/pwhl_xg_cron.yml/badge.svg)](https://github.com/sportsdataverse/fastRhockey-pwhl-data/actions/workflows/pwhl_xg_cron.yml)
+- [baseballr-data](https://github.com/sportsdataverse/baseballr-data) — MLB and NCAA baseball. [![MLB model datasets](https://github.com/sportsdataverse/baseballr-data/actions/workflows/mlb_models_cron.yml/badge.svg)](https://github.com/sportsdataverse/baseballr-data/actions/workflows/mlb_models_cron.yml)
+- [ncaa-mbb-hoops-data](https://github.com/sportsdataverse/ncaa-mbb-hoops-data) — NCAA men's RAPM. [![RAPM models](https://github.com/sportsdataverse/ncaa-mbb-hoops-data/actions/workflows/ncaa_mbb_models.yml/badge.svg)](https://github.com/sportsdataverse/ncaa-mbb-hoops-data/actions/workflows/ncaa_mbb_models.yml)
+- [ncaa-wbb-hoops-data](https://github.com/sportsdataverse/ncaa-wbb-hoops-data) — NCAA women's RAPM. [![RAPM models](https://github.com/sportsdataverse/ncaa-wbb-hoops-data/actions/workflows/ncaa_wbb_models.yml/badge.svg)](https://github.com/sportsdataverse/ncaa-wbb-hoops-data/actions/workflows/ncaa_wbb_models.yml)
+
+- Package checks: [![tests](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/tests.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/tests.yml) [![quality](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/quality.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/quality.yml) [![codegen drift](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/codegen.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/codegen.yml) [![live tests](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/live-tests-cron.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/live-tests-cron.yml) [![validation harness](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/validation-cron.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/validation-cron.yml) [![docs](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/docs-deploy.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/docs-deploy.yml) [![PyPI publish](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/python-publish.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-py/actions/workflows/python-publish.yml) [![PyPI](https://img.shields.io/pypi/v/sportsdataverse)](https://pypi.org/project/sportsdataverse/)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/sportsdataverse-py.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
@@ -23,4 +133,13 @@ uv add sportsdataverse
 - [Source on GitHub](https://github.com/sportsdataverse/sportsdataverse-py)
 - [PyPI](https://pypi.org/project/sportsdataverse/)
 
-My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
+```bibtex
+@misc{gilani_sdvpy_2021,
+  author = {Gilani, Saiem},
+  title = {sportsdataverse-py: The SportsDataverse's Python Package for Sports Data.},
+  url = {https://py.sportsdataverse.org},
+  year = {2021}
+}
+```
+
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) ecosystem.

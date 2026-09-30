@@ -2,25 +2,125 @@
 title: 'recruitR: A College Sports Recruiting Package'
 date: '2020-06-20'
 tags: ['r', 'sportsdataverse', 'college-football', 'recruiting', '247sports']
-excerpt: 'As a college sports recruiting package, recruitR provides users with the access to 247 Composite rankings and recruit information from the CollegeFootballData API.'
+excerpt: 'Player and team recruiting rankings for college football from the CollegeFootballData API and the 247Sports Composite.'
 order: 13
 ---
 
-**recruitR** is an R package. As a college sports recruiting package, recruitR provides users with the access to 247 Composite rankings and recruit information from the CollegeFootballData API.
+recruitR is the first SportsDataverse package I wrote, back in 2020. It pulls college football recruiting data from two sources: the [CollegeFootballData API](https://collegefootballdata.com) for structured recruiting rankings, transfer portal entries, rosters, venues and team talent composites, and 247Sports directly for the raw ranking pages and individual recruitment pages behind the 247 Composite. Every function returns a tidy data frame. It's a smaller, more focused sibling to cfbfastR -- where cfbfastR covers games, recruitR covers the pipeline of players feeding into them.
 
-The first SportsDataverse package I wrote, in 2020: recruiting rankings and team classes from the 247 Composite via the CollegeFootballData API.
+## Installation
 
-## Install
+recruitR is not on CRAN. Install the development version from GitHub with pak (or remotes):
 
 ```r
 pak::pak("sportsdataverse/recruitR")
 ```
 
-Not on CRAN — install from GitHub with pak (or remotes).
+The `cfbd_*` functions need a free CollegeFootballData API key, stored as the `CFBD_API_KEY` environment variable. Register at [collegefootballdata.com/key](https://collegefootballdata.com/key), then save the key for consistent use by opening `usethis::edit_r_environ()` and adding a line reading `CFBD_API_KEY = XXXX-YOUR-API-KEY-HERE-XXXXX` (no quotes), then restarting R. For a single session, `Sys.setenv(CFBD_API_KEY = "XXXX-YOUR-API-KEY-HERE-XXXXX")` works too. `cfbd_key()` returns the stored key (or `NA`), and `has_cfbd_key()` returns `TRUE`/`FALSE`. The `tfs_*` functions hit 247Sports' own JSON endpoints directly and need no key.
+
+## Getting started
+
+```r
+library(recruitR)
+
+# Top offensive tackle recruits from Florida in the 2020 class
+fl_ots <- cfbd_recruiting_player(
+  year = 2020,
+  recruit_type = "HighSchool",
+  state = "FL",
+  position = "OT"
+)
+
+# That class's team-level recruiting ranks
+team_ranks <- cfbd_recruiting_team(year = 2020)
+```
+
+`cfbd_recruiting_player()` returns one row per recruit -- `name`, `school`, `committed_to`, `position`, `height`, `weight`, `stars`, `rating` (the 247 composite rating), and hometown `city`/`state_province`/`country`. `cfbd_recruiting_team()` returns one row per team with its class `rank` and `points` for the given `year`.
+
+## How recruitR talks to the API
+
+The `cfbd_*` functions build a GET request against `api.collegefootballdata.com`, attach a Bearer token built from your key via `httr::add_headers()`, and run it through `httr::RETRY()` for resilience against transient failures. Responses come back as JSON, get flattened with `jsonlite::fromJSON(flatten = TRUE)`, and have their names cleaned to snake_case with `janitor::clean_names()`. `cfbd_recruiting_player()` also validates its own arguments before making the call: `year` must be a 4-digit number, `state` a 2-letter abbreviation, `recruit_type` one of `"HighSchool"`/`"PrepSchool"`/`"JUCO"`, and `position` one of the recognized offense/defense/special-teams codes -- an invalid value stops with `cli::cli_abort()` rather than sending a doomed request.
+
+## What's in the box
+
+- **CollegeFootballData recruiting functions** -- `cfbd_recruiting_player()` (individual recruits, filterable by `year`, `team`, `recruit_type`, `state`, `position`), `cfbd_recruiting_position()` (position-group aggregates by `start_year`/`end_year`, `team` or `conference`), `cfbd_recruiting_team()` (team class ranks by `year`), `cfbd_recruiting_transfer_portal()` (portal entries by offseason `year`).
+- **CollegeFootballData reference functions** -- `cfbd_team_roster()` (full roster by `year` and optional `team`), `cfbd_team_talent()` (composite roster talent points by `year`), `cfbd_venues()` (every tracked venue with capacity, surface, location and dome/timezone info, no arguments).
+- **247Sports functions** -- `tfs_recruiting_rankings()` scrapes the raw 247 ranking pages for a `year` and `recruit_type`, paging through the `pages` argument; `tfs_recruitment()` pulls a single recruit's recruitment page by `recruitment_id` and returns it flattened to one wide row.
+- **Geography helpers** -- `college_states()` and `bordering_states()` take a recruiting data frame and add a state column derived from `committed_to`, used for the state-adjacency style analysis in the vignettes.
+- **Key management** -- `cfbd_key()`, `has_cfbd_key()`.
+
+A quick look at the transfer portal and venues, which need no filters beyond the year:
+
+```r
+portal_2023 <- cfbd_recruiting_transfer_portal(year = 2023)
+venues <- cfbd_venues()
+```
+
+`cfbd_recruiting_transfer_portal()` returns one row per transfer with `first_name`, `last_name`, `position`, `origin`, `destination`, `transfer_date`, `rating` and `stars`. `cfbd_venues()` takes no arguments and returns every tracked venue with `capacity`, `grass`, `city`, `state`, `elevation`, `dome` and `timezone`.
+
+The 247Sports functions pull from the site's own JSON endpoints instead of CollegeFootballData:
+
+```r
+rankings_page_1 <- tfs_recruiting_rankings(year = 2022, recruit_type = "HighSchool", pages = 1)
+one_recruit <- tfs_recruitment(recruitment_id = 130361)
+```
+
+`tfs_recruiting_rankings()` pages through 247's ranking JSON (300 recruits per page) and stops after the requested `pages`. `tfs_recruitment()` fetches a single recruit's recruitment page and returns it as one wide row rather than a tidy multi-row frame, since the source page has no repeating structure to unnest.
+
+## A worked example
+
+This is the offensive-tackle example from the package vignette: which top-1000 tackles in the 2020 class came from Florida, Georgia or Alabama.
+
+```r
+library(recruitR)
+library(dplyr)
+library(ggplot2)
+
+fl_ots <- cfbd_recruiting_player(2020, recruit_type = "HighSchool", state = "FL", position = "OT")
+ga_ots <- cfbd_recruiting_player(2020, recruit_type = "HighSchool", state = "GA", position = "OT")
+al_ots <- cfbd_recruiting_player(2020, recruit_type = "HighSchool", state = "AL", position = "OT")
+
+se_ots <- bind_rows(fl_ots, ga_ots, al_ots) %>%
+  filter(ranking < 1000) %>%
+  arrange(ranking)
+
+se_ots %>%
+  select(ranking, name, school, committed_to, position, height, weight, stars, rating, city, state_province)
+
+se_ots_grp <- se_ots %>%
+  group_by(state_province, stars) %>%
+  summarize(players = n()) %>%
+  ungroup()
+
+ggplot(se_ots_grp, aes(x = state_province, y = players, fill = factor(stars))) +
+  geom_bar(stat = "identity", colour = "black")
+```
+
+Each `cfbd_recruiting_player()` call returns one row per matching recruit. Binding the three state pulls, filtering to top-1000 rankings and grouping by state and star rating gives a small summary table that's ready to plot as a stacked bar chart of recruit counts by state and star level. This is the `OTs1k` vignette. The package's third vignette, `RBsSECACC5yr`, runs the same pattern at the position-group level: `cfbd_recruiting_position(start_year = 2015, end_year = 2020, conference = "SEC")` and the same call with `conference = "ACC"`, filtered to `position_group == "Running Back"` and sorted by `avg_stars`, to compare how the two conferences recruited running backs over five cycles.
+
+## Good to know
+
+- The CollegeFootballData recruiting endpoints only go back to 2000, and `cfbd_recruiting_player()` enforces a 4-digit `year`.
+- `recruit_type` accepts `"HighSchool"` (the default), `"JUCO"` or `"PrepSchool"`; `position` is checked against a fixed set of offense/defense/special-teams group codes, so an invalid value errors immediately rather than silently returning nothing.
+- The `tfs_*` functions scrape 247Sports' own JSON pages rather than an official API, so they're more fragile to site changes than the `cfbd_*` functions -- `tfs_recruitment()` in particular returns a single-row, wide data frame built by unlisting the raw payload, since a recruitment page has no repeating row structure.
+- `cfbd_team_roster()` requires `year`; `team` is optional and returns every team's roster for that year when omitted.
+- `cfbd_recruiting_position()` aggregates by position group over a `start_year`/`end_year` range, optionally filtered to a `team` or a `conference` abbreviation (`ACC`, `B12`, `B1G`, `SEC`, `PAC` for the Power Five; `CUSA`, `MAC`, `MWC`, `Ind`, `SBC`, `AAC` for Group of Five and independents).
+- The package is still pre-1.0 (version 0.0.3) and has never been submitted to CRAN, so `pak::pak()` against the GitHub repo is the only install path.
+- `cfbd_recruiting_player()` encodes an unusual case in its `team` argument for San Jose State's accented name so the URL-encoded query string matches what the CFBD API expects.
+
+## Related
+
+Part of the college football corner of the SportsDataverse alongside [cfbfastR](/notes/cfbfastr) (play-by-play and box scores), [cfbseedR](/notes/cfbseedr) (playoff seeding) and [cfb4th](/notes/cfb4th) (fourth-down decisions). If you're pulling betting context alongside recruiting rankings, see [oddsapiR](/notes/oddsapir).
+
+## Data and automation
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/recruitR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/recruitR/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/recruitR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/recruitR/actions/workflows/pkgdown.yaml)
+- Cheat sheets for the rest of the family are at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets); this package does not have one.
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
-- [Documentation](https://recruitr.sportsdataverse.org/)
-- [Source on GitHub](https://github.com/sportsdataverse/recruitR)
+- [Documentation](https://recruitR.sportsdataverse.org/)
+- [Source](https://github.com/sportsdataverse/recruitR)
 
-My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org).
