@@ -18,14 +18,18 @@ const dir = fixture({
   "garbled-date.mdx": "---\ntitle: Garbled\ndate: 'not a date'\n---\nx",
   "no-frontmatter.mdx": "Just prose, no frontmatter at all.",
   "README.md": "not a note",
+  "second.mdx": "---\ntitle: Second\ndate: 2019-01-01\norder: 2\n---\nx",
+  "first.mdx": "---\ntitle: First\ndate: 2018-01-01\norder: 1\n---\nx",
 });
 
 test("slugs are filenames (case preserved) — the live URL contract", () => {
   assert.equal(readNote("intro-to-hoopR", dir)?.slug, "intro-to-hoopR");
 });
 
-test("sorted newest first; undated/garbled sort last, by slug", () => {
-  assert.deepEqual(listNotes(dir).map((n) => n.slug), ["newer", "intro-to-hoopR", "garbled-date", "no-frontmatter", "undated"]);
+test("hand-ordered notes lead (ascending order), then newest first; undated/garbled sort last, by slug", () => {
+  assert.deepEqual(listNotes(dir).map((n) => n.slug), ["first", "second", "newer", "intro-to-hoopR", "garbled-date", "no-frontmatter", "undated"]);
+  assert.equal(readNote("first", dir)?.order, 1);
+  assert.equal(readNote("newer", dir)?.order, null);
 });
 
 test("missing/garbled frontmatter never throws and falls back sanely", () => {

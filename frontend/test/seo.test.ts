@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { buildFeedXml, buildRobots, buildSitemap, STATIC_ROUTES } from "../lib/seo.ts";
 import { LAB } from "../content/lab/registry.ts";
 
-const notes = [{ slug: "intro-to-hoopR", title: "{hoopR} & friends", date: "2022-05-08", excerpt: "hoops <data>", readingMinutes: 3 }];
+const notes = [{ slug: "intro-to-hoopR", title: "{hoopR} & friends", date: "2022-05-08", excerpt: "hoops <data>", readingMinutes: 3, order: null }];
 
 test("sitemap: static routes + notes, all on the canonical host", () => {
   const urls = buildSitemap(notes).map((e) => e.url);

@@ -1,0 +1,28 @@
+---
+title: 'cfbseedR: Simulate and Evaluate College Football Seasons'
+date: '2026-07-03'
+tags: ['r', 'sportsdataverse', 'college-football', 'simulation', 'playoff']
+excerpt: 'Simulate college football seasons and compute standings, conference ranks, conference champions, and College Football Playoff (CFP) seeds.'
+order: 5
+---
+
+**cfbseedR** is an R package. Simulate college football seasons and compute standings, conference ranks, conference champions, and College Football Playoff (CFP) seeds. Implements the official season-scoped championship-game tiebreaker procedure of each Football Bowl Subdivision (FBS) conference and the CFP's season-keyed automatic-qualifier policies, including the 2026 formats. Seasons are simulated week by week with a pluggable results generator, and external tiebreaker inputs such as committee rankings or analytics composites can be supplied. Adapts the approach of the 'nflseedR' package by Sebastian Carl and Lee Sharpe to college football semantics.
+
+The newest of the bunch: season simulation and playoff seeding for college football, adapting nflseedR's approach to conferences, independents, championship games and the 12-team bracket.
+
+## Install
+
+```r
+install.packages("cfbseedR")
+pak::pak("sportsdataverse/cfbseedR")
+```
+
+On CRAN (v0.2.0); the second line installs the development version.
+
+## Links
+
+- [Documentation](https://cfbseedR.sportsdataverse.org/)
+- [Source on GitHub](https://github.com/sportsdataverse/cfbseedR)
+- [CRAN](https://CRAN.R-project.org/package=cfbseedR)
+
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

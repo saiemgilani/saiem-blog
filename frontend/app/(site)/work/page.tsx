@@ -4,18 +4,21 @@ import { getEcosystemStats, getSdvPackages, type SdvPackage } from "@lib/sdvOrg"
 import { pageMetadata } from "@lib/metadata";
 import { apiEnv } from "@lib/api/client";
 import { getProjects } from "@lib/projects";
+import { contributionRank, isContribution } from "@content/work/contributions";
 
 export const metadata: Metadata = { title: "Work", ...pageMetadata("/work") };
 export const revalidate = 3600;
 
 export default async function Work() {
-  const [{ packages, live }, stats, projects] = await Promise.all([getSdvPackages(fetch, fallback as SdvPackage[]), getEcosystemStats(), getProjects(apiEnv())]);
+  const [{ packages: all, live }, stats, projects] = await Promise.all([getSdvPackages(fetch, fallback as SdvPackage[]), getEcosystemStats(), getProjects(apiEnv())]);
+  // The org API lists every SportsDataverse package, community ones included; this page is about mine.
+  const packages = all.filter(isContribution).sort((a, b) => contributionRank(a) - contributionRank(b));
   return (
     <section className="py-12">
       <h1 className="font-display text-4xl">Work</h1>
-      <p className="mt-3 max-w-[60ch] text-muted">Open-source sports data packages I created and maintain as part of the SportsDataverse.</p>
+      <p className="mt-3 max-w-[60ch] text-muted">Open-source sports data packages I created or help maintain, all part of the SportsDataverse — an ecosystem I started so public sports data would be easier to get at in R, Python and JavaScript.</p>
       {stats && (
-        <dl className="mt-6 flex flex-wrap gap-6 font-mono text-sm">
+        <dl className="mt-6 flex flex-wrap gap-6 font-mono text-sm" aria-label="SportsDataverse ecosystem"><div><dt className="text-muted">ecosystem</dt><dd>SportsDataverse</dd></div>
           <div><dt className="text-muted">repos</dt><dd>{stats.repos}</dd></div>
           <div><dt className="text-muted">stars</dt><dd>{stats.githubStars.toLocaleString()}</dd></div>
           <div><dt className="text-muted">forks</dt><dd>{stats.forks.toLocaleString()}</dd></div>
@@ -35,7 +38,8 @@ export default async function Work() {
           </ul>
         </>
       )}
-      <h2 className="mt-10 font-display text-2xl">SportsDataverse packages</h2>
+      <h2 className="mt-10 font-display text-2xl">Packages</h2>
+      <p className="mt-2 max-w-[60ch] text-sm text-muted">The ones with my name in the metadata — author and maintainer unless noted. The wider ecosystem lives at <a className="text-brand" href="https://sportsdataverse.org">sportsdataverse.org</a>.</p>
       <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {packages.map((p) => (
           <li key={p.title} className="border border-rule bg-card p-4">
