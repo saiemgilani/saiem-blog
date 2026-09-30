@@ -2,14 +2,14 @@
 title: 'Blazing the Nets, rebuilt on d3 v7'
 date: '2026-09-30'
 tags: ['d3', 'nextjs', 'nba']
-excerpt: 'A 2021 shot-chart site that carried 1.7 GB of JSON in git, rebuilt to read release parquet files at request time, and what the reviews caught on the way.'
+excerpt: 'A 2021 shot-chart site that carried 1.6 GB of JSON in git, rebuilt to read release parquet files at request time, and what the reviews caught on the way.'
 ---
 
 In 2021 I built [Blazing the Nets](https://github.com/saiemgilani/blazing-the-nets), a shooting dashboard for the Brooklyn Nets. On 2026-09-30 I rebuilt it. This is what the old one was, what changed, and the mistakes the review rounds found before anyone saw them.
 
 ## The 2021 site
 
-It was a Create React App project on React 17 with Material-UI 4, styled-components, Firebase Hosting and d3 v6. The data was 1.7 GB of JSON scraped from stats.nba.com, committed under `public/data/`, for the 2015-16 to 2020-21 seasons. Each player and team page composed a hex shot chart on a court, a shooting signature (FG% against distance, with a gradient showing the difference from the league), two distance bar charts and two left/right charts. The repository's last push was 2021-04-24.
+It was a Create React App project on React 17 with Material-UI 4, styled-components, Firebase Hosting and d3 v6. The data was 1.6 GB of JSON scraped from stats.nba.com, committed under `public/data/`, for the 2015-16 to 2020-21 seasons. Each player and team page composed a hex shot chart on a court, a shooting signature (FG% against distance, with a gradient showing the difference from the league), two distance bar charts and two left/right charts. The repository's last push was 2021-04-24.
 
 ## What changed
 
@@ -19,7 +19,7 @@ The charts are plain d3 v7. React owns state and layout; d3 owns scales, hexbins
 
 ## The coordinate frame
 
-The shot locations are the legacy stats.nba.com frame: tenths of a foot, hoop at the origin, y toward half court. The baseline is at y = -52.5, and the corner three meets the arc at 89.48 tenths. During review I had written "about 92" for that junction. That was the older convention, where the baseline is at -47.5; the reviewer checked it against the real files and the frame above is the right one. The court module is the only place that turns those numbers into pixels, and it is tested against known points. The same review round also found that shot distance needed rounding.
+The shot locations are the legacy stats.nba.com frame: tenths of a foot, hoop at the origin, y toward half court. The baseline is at y = -52.5, and the corner three meets the arc at 89.48 tenths. In the plan I had written "about 92" for that junction. That was the older convention, where the baseline is at -47.5; the reviewer checked it against the real files and the frame above is the right one. The court module is the only place that turns those numbers into pixels, and it is tested against known points. The same round also found that the file's shot distance is rounded feet, not floored, so the one-foot distance bins are centred on their value.
 
 ## Two bugs the reviews caught
 
