@@ -1,0 +1,63 @@
+---
+title: 'The badge that lies'
+date: '2026-09-30'
+tags: ['github-actions', 'sportsdataverse', 'automation']
+excerpt: 'GitHub''s workflow badge picks a run by event type, so it can read failing when the latest run passed, and that is how most SportsDataverse pipelines run.'
+---
+
+GitHub serves a status badge for every Actions workflow, a `badge.svg` you can drop into a README. I used to treat those badges as the health of the SportsDataverse data pipelines. On 2026-09-30 one of them told me a pipeline was failing when it wasn't, and working out why changed how every status badge in the ecosystem is built.
+
+## What the badge said
+
+The workflow was [`daily_wbb.yml`](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/daily_wbb.yml) in sportsdataverse/wehoop-wbb-data, the producer that rebuilds the women's college basketball release files. Its bare badge read *failing*. The same badge with an event filter told a different story each time:
+
+- `?event=repository_dispatch` read *passing*.
+- `?event=schedule` read *passing*.
+- `?event=push` read *no status*.
+- No filter at all read *failing*.
+
+The workflow's real latest run was on 2026-09-09. A `repository_dispatch` event started it, and it succeeded. Nothing was broken.
+
+GitHub's badge doesn't show a workflow's latest run. It chooses a run by event type, and without a filter it doesn't choose the one you would guess. A cron-only workflow in the same repo, `wbb_models_cron.yml`, was worse: it showed *no status* under every filter I tried.
+
+I believed the red badge. I had it down as a real failure before I checked `gh run list` and saw the run had passed. That is the part that bothers me. A badge exists so you don't have to go and look, and this one sent me to look only after it had already convinced me of something false.
+
+## Why SportsDataverse walks right into it
+
+Most SportsDataverse producers are not started by a push. They run on `repository_dispatch`, sent by a raw-capture repo when it has new games, or on `schedule`. Those are exactly the cases the badge gets wrong.
+
+A push-triggered check on a package repo mostly reads fine. A producer's badge is the one people look at to decide whether the data is current, and it was the least trustworthy badge on the page.
+
+## What replaced it
+
+The badges now come from a snapshot, not from GitHub's badge service. A nightly generator in sportsdataverse/.github writes `status/ecosystem.json` and `status/summary.json`. For every workflow it records the latest completed run on the default branch, whatever event started it.
+
+From that snapshot it writes shields.io endpoint badge files, one folder per repo under `status/badges/`. A producer's folder holds `updated.json`, `through.json` and `status.json`, and every workflow gets its own `wf-` file, such as `wf-daily_wbb.json`. A README embeds one by pointing shields.io at the file's raw URL, encoded:
+
+```text
+https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsportsdataverse%2F.github%2Fmain%2Fstatus%2Fbadges%2Fwehoop-wbb-data%2Fwf-daily_wbb.json
+```
+
+That badge now reads `Update WBB Data · passing · 2026-09-09`: the workflow's name, how its latest run ended, and the day it ran. Each producer also gets three badges of its own: `data updated`, `through` followed by the latest season it covers, and `pipeline`.
+
+## The rules that keep it honest
+
+Recording the right run fixed the workflow badges. The producer's `pipeline` badge needed rules as well, because "the last run failed" and "the data is broken" are different statements.
+
+- **Failing** only when an update workflow's latest run failed and finished after the newest play-by-play data landed. An old failure with data landing since is not an outage.
+- **Stale** only in season, and only once the data is older than that producer's own threshold. Each sport keeps its own calendar, so there is no single number.
+- **Idle** out of season, and idle is never red. Nothing is supposed to run in the off-season, so red there would be the same false alarm in a different place.
+- Freshness and the `through` season follow the play-by-play release tags, not schedule files or model outputs.
+
+That last rule earns its place. baseballr's MLB play-by-play last landed on 2026-09-10 while its model files kept landing daily. Its badge reads *stale*, and that is the truth. A badge keyed on the newest file of any kind would have read fresh and hidden it.
+
+GitHub's runs API needed the same suspicion as the badge. Once it served a stale run list: 375 runs ending on 08-24, and later 513 runs ending on 09-30. So the generator never lets a workflow's latest run move backwards in time without first checking that the run it already recorded still exists.
+
+## Where to see it
+
+- The [SportsDataverse status board](https://sportsdataverse.org/status) shows each producer's pipeline state, release freshness and every workflow's latest run, rebuilt nightly.
+- The [sportsdataverse-data README](https://github.com/sportsdataverse/sportsdataverse-data) carries the badges for every producer in one place.
+- Every SportsDataverse package README carries the badges for the producers its loaders read. So do the package notes here, such as [wehoop](/notes/wehoop) and [hoopR](/notes/intro-to-hoopR).
+- The home page of this site prints a one-line count of producers by state from the same snapshot.
+
+What I took from it: a status badge should say which run it reports and when that run happened. If it can't, it is a guess with a colour on it.

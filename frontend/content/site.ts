@@ -2,7 +2,7 @@ export const site = {
   name: "Saiem Gilani",
   tagline: "Sports · data · software",
   description: "Creator of the SportsDataverse. Prototypes, experiments, and what I learned building them.",
-  now: "rebuilding this site",
+  now: "rebuilding Blazing the Nets on d3 v7",
   joinUrl: "https://sportsdataverse.org/join",
   nav: [
     { href: "/lab", label: "lab" },

@@ -26,10 +26,19 @@ test("slugs are filenames (case preserved) — the live URL contract", () => {
   assert.equal(readNote("intro-to-hoopR", dir)?.slug, "intro-to-hoopR");
 });
 
-test("hand-ordered notes lead (ascending order), then newest first; undated/garbled sort last, by slug", () => {
-  assert.deepEqual(listNotes(dir).map((n) => n.slug), ["first", "second", "newer", "intro-to-hoopR", "garbled-date", "no-frontmatter", "undated"]);
+test("writing (no order) leads newest first, undated/garbled last by slug; ordered notes follow ascending", () => {
+  assert.deepEqual(listNotes(dir).map((n) => n.slug), ["newer", "intro-to-hoopR", "garbled-date", "no-frontmatter", "undated", "first", "second"]);
   assert.equal(readNote("first", dir)?.order, 1);
   assert.equal(readNote("newer", dir)?.order, null);
+});
+
+test("an unordered note leads even when it is older than the ordered ones; order beats date among them", () => {
+  const mixed = fixture({
+    "writing.mdx": "---\ntitle: Writing\ndate: 2020-06-01\n---\nx",
+    "pkg-a.mdx": "---\ntitle: A\ndate: 2021-01-01\norder: 1\n---\nx",
+    "pkg-b.mdx": "---\ntitle: B\ndate: 2023-01-01\norder: 2\n---\nx",
+  });
+  assert.deepEqual(listNotes(mixed).map((n) => n.slug), ["writing", "pkg-a", "pkg-b"]);
 });
 
 test("missing/garbled frontmatter never throws and falls back sanely", () => {

@@ -6,6 +6,7 @@ import { LAB } from "@content/lab/registry";
 import { StampedSeal } from "@components/brand/Seal";
 import { EntryCard } from "@components/lab/EntryCard";
 import { pageMetadata } from "@lib/metadata";
+import { StatusStrip } from "@components/StatusStrip";
 
 export const metadata: Metadata = pageMetadata("/");
 
@@ -20,6 +21,7 @@ export default function Home() {
           </h1>
           <p className="mt-5 max-w-[46ch] text-lg text-muted">{site.description}</p>
           <p className="mt-4 font-mono text-xs text-brand">NOW → {site.now}</p>
+          <StatusStrip />
         </div>
         {/* Grid item keeps the seal's intrinsic (200px) width; centered on mobile,
             back to its natural start-of-column placement once the seal sits beside the text. */}

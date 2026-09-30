@@ -5,16 +5,23 @@ import { pageMetadata } from "@lib/metadata";
 import { apiEnv } from "@lib/api/client";
 import { getProjects } from "@lib/projects";
 import { contributionRank, isContribution } from "@content/work/contributions";
+import { getEcosystemStatus, STATUS_BOARD_URL } from "@lib/ecosystemStatus";
 
 export const metadata: Metadata = { title: "Work", ...pageMetadata("/work") };
 export const revalidate = 3600;
 
 export default async function Work() {
-  const [{ packages: all, live }, stats, projects] = await Promise.all([getSdvPackages(fetch, fallback as SdvPackage[]), getEcosystemStats(), getProjects(apiEnv())]);
+  const [{ packages: all, live }, stats, projects, status] = await Promise.all([getSdvPackages(fetch, fallback as SdvPackage[]), getEcosystemStats(), getProjects(apiEnv()), getEcosystemStatus()]);
   // The org API lists every SportsDataverse package, community ones included; this page is about mine.
   const packages = all.filter(isContribution).sort((a, b) => contributionRank(a) - contributionRank(b));
   return (
     <section className="py-12">
+      {status && (
+        <p className="mb-3 font-mono text-xs text-muted">
+          SportsDataverse data as of <time dateTime={status.generatedAt}>{status.generatedAt.slice(0, 10)}</time> ·{" "}
+          <a href={STATUS_BOARD_URL} className="text-brand underline underline-offset-4 hover:text-ink">status board</a>
+        </p>
+      )}
       <h1 className="font-display text-4xl">Work</h1>
       <p className="mt-3 max-w-[60ch] text-muted">Open-source sports data packages I created or help maintain, all part of the SportsDataverse — an ecosystem I started so public sports data would be easier to get at in R, Python and JavaScript.</p>
       {stats && (

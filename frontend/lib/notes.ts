@@ -30,7 +30,8 @@ export function readNote(slug: string, dir: string = notesDir()): Note | null {
     date: isoDay(data.date),
     excerpt: typeof data.excerpt === "string" ? data.excerpt : "",
     readingMinutes: Math.max(1, Math.round(words / WORDS_PER_MINUTE)),
-    // Optional hand-set position: ordered notes lead the list (ascending), the rest follow newest-first.
+    // Optional hand-set position for the package notes. Writing (no order) leads the list newest-first;
+    // ordered notes follow, ascending by order (see listNotes).
     order: typeof data.order === "number" && Number.isFinite(data.order) ? data.order : null,
     source: content,
   };
@@ -44,5 +45,13 @@ export function listNotes(dir: string = notesDir()): NoteMeta[] {
     .filter((n): n is Note => n !== null)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring drops `source` from the rest
     .map(({ source: _source, ...meta }) => meta)
-    .sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || (b.date ?? "").localeCompare(a.date ?? "") || a.slug.localeCompare(b.slug));
+    // Writing (no `order`) first, then the ordered package notes by `order`; ties within either group
+    // go newest first (undated last), then by slug.
+    .sort(
+      (a, b) =>
+        Number(a.order !== null) - Number(b.order !== null) ||
+        (a.order ?? 0) - (b.order ?? 0) ||
+        (b.date ?? "").localeCompare(a.date ?? "") ||
+        a.slug.localeCompare(b.slug),
+    );
 }

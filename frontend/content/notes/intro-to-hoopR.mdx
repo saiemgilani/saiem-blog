@@ -2,171 +2,160 @@
 title: "{hoopR} for Men's Basketball"
 date: '2022-05-08'
 tags: ['r', 'nba', 'mens-college-basketball', 'ncaa', 'hoopr', 'sportsdataverse']
-excerpt: 'Retrieves NBA and mens college basketball data from ESPN, kenpom.com, and the NCAA website.'
+excerpt: 'An R package for NBA and men''s college basketball: ESPN, the NBA Stats API, KenPom, CollegeBasketballData and more, plus full-season loaders.'
 order: 2
 ---
 
-# hoopR <a href='https://hoopR.sportsdataverse.org/'><img src="https://raw.githubusercontent.com/sportsdataverse/hoopR/main/logo.png" align="right"  width="20%" min-width="100px"/></a>
-
-[![CRAN
-status](https://img.shields.io/badge/dynamic/json?style=for-the-badge&color=success&label=CRAN%20version&prefix=v&query=%24.Version&url=https%3A%2F%2Fcrandb.r-pkg.org%2FhoopR)](https://CRAN.R-project.org/package=hoopR)
-[![CRAN
-downloads](https://img.shields.io/badge/dynamic/json?style=for-the-badge&color=success&label=Downloads&query=%24%5B0%5D.downloads&url=https%3A%2F%2Fcranlogs.r-pkg.org%2Fdownloads%2Ftotal%2F2021-10-26%3Alast-day%2FhoopR)](https://CRAN.R-project.org/package=hoopR)
-[![Version-Number](https://img.shields.io/github/r-package/v/sportsdataverse/hoopR?label=hoopR&logo=R&style=for-the-badge)](https://github.com/sportsdataverse/hoopR)
-[![R-CMD-check](https://img.shields.io/github/actions/workflow/status/sportsdataverse/hoopR/R-CMD-check.yaml?branch=main&label=R-CMD-Check&logo=R&logoColor=white&style=for-the-badge)](https://github.com/sportsdataverse/hoopR/actions/workflows/R-CMD-check.yaml)
-[![Lifecycle:maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg?style=for-the-badge&logo=github)](https://github.com/sportsdataverse/hoopR/)
-[![Twitter
-Follow](https://img.shields.io/twitter/follow/saiemgilani?color=blue&label=%40saiemgilani&logo=twitter&style=for-the-badge)](https://twitter.com/saiemgilani)
-[![Twitter
-Follow](https://img.shields.io/twitter/follow/SportsDataverse?color=blue&label=%40SportsDataverse&logo=twitter&style=for-the-badge)](https://twitter.com/SportsDataverse)
-[![Contributors](https://img.shields.io/github/contributors/sportsdataverse/hoopR?style=for-the-badge)](https://github.com/sportsdataverse/hoopR/graphs/contributors)
-
-[**`hoopR`**](https://hoopR.sportsdataverse.org/) is an R package for
-working with men’s basketball data.
-
-The package has functions to access **live play by play and box score**
-data from ESPN with shot locations when available. As of version 1.3.0,
-[**`hoopR`**](https://hoopR.sportsdataverse.org/) is also a full NBA
-Stats API wrapper with 127 functions added in this release.
-
-It is additionally a scraping and aggregating interface for Ken
-Pomeroy’s men’s college basketball statistics website,
-[kenpom.com](https://kenpom.com/). It provides users with an active
-subscription the capability to scrape the website tables and analyze the
-data for themselves.
+hoopR is an R package for men's basketball data: the NBA, the G League and Division I men's college basketball. It wraps ESPN's NBA and men's college basketball endpoints, the official NBA Stats API, the CollegeBasketballData API, Ken Pomeroy's kenpom.com (for subscribers), Bart Torvik, Fox Sports, NCAA.com, Basketball-Reference and a handful of smaller sources. It also loads pre-built, multi-season files published as GitHub release assets on sportsdataverse-data, so most research never has to scrape game by game. I wrote it for people who want tidy play-by-play and box scores in R without building their own scrapers. It is the men's-game sibling of wehoop, and it's part of the SportsDataverse.
 
 ## Installation
-
-You can install the CRAN version of
-[**`hoopR`**](https://CRAN.R-project.org/package=hoopR) with:
 
 ```r
 install.packages("hoopR")
 ```
 
-You can install the released version of
-[**`hoopR`**](https://github.com/sportsdataverse/hoopR/) from
-[GitHub](https://github.com/sportsdataverse/hoopR) with:
+hoopR is on CRAN. The development version (currently 3.1.0.9000) carries fixes and endpoints that haven't reached a CRAN release yet:
 
 ```r
-# You can install using the pacman package using the following code:
-if (!requireNamespace('pacman', quietly = TRUE)){
-  install.packages('pacman')
-}
-pacman::p_load_current_gh("sportsdataverse/hoopR", dependencies = TRUE, update = TRUE)
+if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")
+pak::pak("sportsdataverse/hoopR")
 ```
 
-## Quick Start
+Most of hoopR is free and unauthenticated. Two families need credentials, and both read them from environment variables:
 
-### **NBA full play-by-play seasons (2002-2022) \~ 1-2 minutes**
+- The `cbbd_*()` functions wrap the CollegeBasketballData API, which needs a free key from collegebasketballdata.com/key. hoopR reads it from `CBBD_API_KEY`.
+- The `kp_*()` functions scrape kenpom.com, which needs an active subscription. hoopR logs in with the e-mail and password stored in `KP_USER` and `KP_PW`.
+
+Put them in your `.Renviron` so they persist across sessions. `usethis::edit_r_environ()` opens the file; add one line per variable, save, and restart R:
 
 ```r
-tictoc::tic()
-progressr::with_progress({
-  nba_pbp <- hoopR::load_nba_pbp()
-})
-tictoc::toc()
+CBBD_API_KEY=YOUR-API-KEY-HERE
+KP_USER=YOUR-EMAIL@DOMAIN.COM
+KP_PW=YOUR-PASSWORD-HERE
 ```
 
-    ## 16.95 sec elapsed
+For a single session, `Sys.setenv(CBBD_API_KEY = "YOUR-API-KEY-HERE")` works too. `has_cbbd_key()` and `has_kp_user_and_pw()` tell you whether hoopR can see them.
 
-    ## 612191 rows of NBA play-by-play data from 1312 games.
-
-### **Men’s college basketball full play-by-play seasons (2006-2022) \~ 2-3 minutes**
+## Getting started
 
 ```r
-tictoc::tic()
-progressr::with_progress({
-  mbb_pbp <-  hoopR::load_mbb_pbp()
-})
-tictoc::toc()
+library(hoopR)
+
+nba_pbp <- load_nba_pbp(seasons = most_recent_nba_season())
+mbb_team_box <- load_mbb_team_box(seasons = 2024)
+scores <- espn_nba_scoreboard(season = 20230423)
+game_pbp <- espn_nba_pbp(game_id = 401283399)
 ```
 
-    ## 44.78 sec elapsed
+`load_nba_pbp()` returns one row per play for the season: game and play ids, period and clock, the score, the play text and type, the athletes involved, and shot coordinates when ESPN has them. `load_mbb_team_box()` returns one row per team per game. `espn_nba_scoreboard()` hits ESPN live and returns the games on one date, passed as a single YYYYMMDD number, which is the usual way to find a `game_id` for the per-game ESPN wrappers such as `espn_nba_pbp()`.
 
-    ## 1859824 rows of men's college basketball play-by-play data from 5828 games.
+The NBA Stats API side works a little differently:
 
-## **Documentation**
-
-For more information on the package and function reference, please see
-the [**`hoopR`** documentation
-website](https://hoopR.sportsdataverse.org).
-
-## **Breaking Changes**
-
-[**Full News on
-Releases**](https://hoopR.sportsdataverse.org/news/index.html)
-
-## Follow the [SportsDataverse](https://twitter.com/SportsDataverse) on Twitter and star this repo
-
-[![Twitter
-Follow](https://img.shields.io/twitter/follow/SportsDataverse?color=blue&label=%40SportsDataverse&logo=twitter&style=for-the-badge)](https://twitter.com/SportsDataverse)
-
-[![GitHub
-stars](https://img.shields.io/github/stars/sportsdataverse/hoopR.svg?color=eee&logo=github&style=for-the-badge&label=Star%20hoopR&maxAge=2592000)](https://github.com/sportsdataverse/hoopR/stargazers/)
-
-## **Our Authors**
-
-- [Saiem Gilani](https://twitter.com/saiemgilani)
-  <a href="https://twitter.com/saiemgilani" target="blank">
-    <img
-      src="https://img.shields.io/twitter/follow/saiemgilani?color=blue&label=%40saiemgilani&logo=twitter&style=for-the-badge"
-      alt="@saiemgilani"
-    />
-  </a>
-  <a href="https://github.com/saiemgilani" target="blank">
-    <img
-      src="https://img.shields.io/github/followers/saiemgilani?color=eee&logo=Github&style=for-the-badge"
-      alt="@saiemgilani"
-    />
-  </a>
-
-## **Our Contributors (they’re awesome)**
-
-- [Jason Lee](https://twitter.com/theFirmAISports)
-
-  <a href="https://twitter.com/theFirmAISports" target="blank">
-    <img
-      src="https://img.shields.io/twitter/follow/theFirmAISports?color=blue&label=%40theFirmAISports&logo=twitter&style=for-the-badge"
-      alt="@theFirmAISports"
-    />
-  </a>
-  <a href="https://github.com/papagorgio23" target="blank">
-    <img
-      src="https://img.shields.io/github/followers/papagorgio23?color=eee&logo=Github&style=for-the-badge"
-      alt="@papagorgio23"
-    />
-  </a>
-
-- [Billy Fryer](https://twitter.com/_b4billy_)
-  <a href="https://twitter.com/_b4billy_" target="blank">
-    <img
-      src="https://img.shields.io/twitter/follow/_b4billy_?color=blue&label=%40_b4billy_&logo=twitter&style=for-the-badge"
-      alt="@_b4billy_"
-    />
-  </a>
-  <a href="https://github.com/billyfryer" target="blank">
-    <img
-      src="https://img.shields.io/github/followers/billyfryer?color=eee&logo=Github&style=for-the-badge"
-      alt="@billyfryer"
-    />
-  </a>
-
-## **Citations**
-
-To cite the [**`hoopR`**](https://hoopR.sportsdataverse.org) R package
-in publications, use:
-
-BibTex Citation
-
-```latex
-@misc{gilani_2021_hoopR,
-  author = {Gilani, Saiem},
-  title = {hoopR: The SportsDataverse's R Package for Men's Basketball Data.},
-  url = {https://hoopR.sportsdataverse.org},
-  year = {2021}
-}
+```r
+dash <- nba_leaguedashplayerstats(league_id = "00", season = year_to_season(2024))
+players <- dash$LeagueDashPlayerStats
 ```
+
+Every `nba_*()` wrapper returns the endpoint's result sets as a named list of tibbles, one per set, with the API's own upper-case column names. `year_to_season()` turns a starting year into the `"2024-25"` string the API expects.
+
+## What's in the box
+
+The reference index groups more than 600 exported functions into these families.
+
+- Release loaders (`load_nba_pbp`, `load_mbb_pbp`, `load_nba_stats_pbp`, `load_ncaa_mbb_pbp`) — full seasons from the sportsdataverse-data releases. See Loading full seasons below.
+- Cross-source crosswalks (`nba_team_crosswalk`, `nba_player_crosswalk`, `mbb_team_crosswalk`, `mbb_schedule_crosswalk`) — live builders that link ESPN, NBA Stats, KenPom, Torvik and Fox identities on `espn_team_id`, each with a cached loader twin such as `load_mbb_team_crosswalk()`.
+- ESPN men's college basketball (`espn_mbb_scoreboard`, `espn_mbb_game_all`, `espn_mbb_pbp`, `espn_mbb_rankings`) — per-game play-by-play and box scores, plus teams, rankings, standings and athlete pages.
+- ESPN NBA (`espn_nba_game_all`, `espn_nba_team_roster`, `espn_nba_player_career_stats`, `espn_nba_game_probabilities`) — the same per-game coverage plus team and athlete detail and win probability, and draft, free-agency and transaction endpoints (`espn_nba_season_draft`, `espn_nba_freeagents`, `espn_nba_transactions`).
+- Fox Sports (`fox_nba_pbp`, `fox_nba_boxscore`, `fox_mbb_odds`, `fox_mbb_standings`) — read-only wrappers over Fox's Bifrost feed for both leagues: play-by-play, box scores, odds, rosters, team stats, game logs, standings and leaders.
+- NBA Stats API (`nba_leaguedashplayerstats`, `nba_playbyplayv3`, `nba_boxscoretraditionalv3`, `nba_shotchartdetail`) — the official stats.nba.com endpoints, plus the public CDN feeds (`nba_schedule`, `nba_live_pbp`, `nba_todays_scoreboard`).
+- Basketball analytics utilities (`nba_true_shooting_pct`, `nba_effective_fg_pct`, `nba_four_factors`, `nba_add_advanced_metrics`) — vectorized efficiency, rating and four-factor calculators, plus per-minute and per-possession scaling (`nba_per_minutes`, `nba_per_possessions`). They make no network calls and work on any box score.
+- NBA dictionaries and media (`nba_player_dict`, `nba_team_dict`, `nba_player_headshot_url`, `nba_team_logo_url`) — id lookups and CDN headshot and logo URLs.
+- NBA result-set helpers (`nba_bind_sets`, `nba_join_sets`, `nba_nest_sets`) and combined datasets (`nba_tidy_boxscore`, `nba_tidy_player_profile`, `nba_tidy_franchise_history`) — reduce the named list an `nba_*()` call returns to a single tibble.
+- NBA G League (`nbagl_schedule`, `nbagl_pbp`, `nbagl_players`, `nbagl_standings`) — the G League's stats and live feeds.
+- NCAA (`ncaa_mbb_teams`, `ncaa_mbb_NET_rankings`) — team reference and NET rankings from NCAA.com.
+- KenPom (`kp_pomeroy_ratings`, `kp_efficiency`, `kp_fourfactors`, `kp_team_schedule`) — kenpom.com tables for subscribers.
+- CollegeBasketballData (`cbbd_games`, `cbbd_plays_game`, `cbbd_ratings_adjusted`, `cbbd_stats_team_season`) — the CBD API, with the key helpers `cbbd_key()`, `has_cbbd_key()` and `check_cbbd_key()`.
+- Bart Torvik (`torvik_ratings`, `torvik_team_factors`, `torvik_player_stats`, `torvik_game_stats`) — T-Rank ratings, team factors, and player and game stats from barttorvik.com.
+- Injury reports (`rotowire_injuries`, `bref_injuries`) — current NBA injury lists from RotoWire and Basketball-Reference.
+- Officiating (`nba_l2m`, `nba_l2m_games`, `nba_referee_assignments`) — Last Two Minute reports and referee crew assignments from official.nba.com.
+- Basketball-Reference (`bref_players_stats`, `bref_teams_stats`, `bref_standings`, `bref_draft`) — scraped reference-site tables.
+- Salary and mock-draft sources (`spotrac_team_cap`, `hoopshype_salaries`, `nbadraft_mock_draft`) — cap sheets, salaries and mock drafts.
+- RealGM (`realgm_players`, `realgm_transactions`, `realgm_salary_cap`, `realgm_draft`) — basketball.realgm.com, which sits behind a Cloudflare browser challenge, so these need the optional chromote package and Google Chrome.
+- Helpers and bundled data (`most_recent_nba_season`, `most_recent_mbb_season`, `year_to_season`, `login`) — season helpers and the KenPom login, plus the bundled `teams_links` table of KenPom team and conference links.
+
+Six vignettes go further than this note: a getting-started walkthrough, an NBA cookbook and a men's college basketball cookbook with worked recipes, an `espn-endpoints` map of which ESPN host backs which function, and one each for the KenPom and CollegeBasketballData families.
+
+## Loading full seasons
+
+The `load_*()` functions read pre-built files from the GitHub releases on sportsdataverse-data, one file per season, instead of scraping live. That is why a whole season of play-by-play comes back in one call. The files are built and refreshed by producer repos: hoopR-nba-data and hoopR-mbb-data for the ESPN files, hoopR-nba-stats-data for the NBA Stats API files, and ncaa-mbb-hoops-data for the stats.ncaa.org files. The loaders never read the producer repos; they read the releases.
+
+- NBA from ESPN (`load_nba_pbp`, `load_nba_team_box`, `load_nba_player_box`, `load_nba_schedule`, `load_nba_shots`, plus rosters, standings, draft, officials, and player and team stats) — play-by-play from the 2002 season.
+- Men's college basketball from ESPN (`load_mbb_pbp`, `load_mbb_team_box`, `load_mbb_player_box`, `load_mbb_schedule`, `load_mbb_shots`, and the same companions) — play-by-play from the 2006 season.
+- NBA Stats API (`load_nba_stats_pbp`, `load_nba_stats_shots`, `load_nba_stats_player_game_logs`, `load_nba_stats_lineups`, `load_nba_stats_possessions`, `load_nba_stats_leaguedash` and twelve more) — back to the 1996-97 season for most datasets.
+- NCAA engine output (`load_ncaa_mbb_pbp`, `load_ncaa_mbb_lineups`, `load_ncaa_mbb_possessions`, `load_ncaa_mbb_rapm`) — stats.ncaa.org play-by-play parsed by the sportsdataverse-py engine, with lineups, stints, possessions and RAPM, from the 2010 season (shots from 2019, RAPM from 2011).
+- Model datasets (`load_nba_player_impact`, `load_mbb_player_value`, `load_mbb_ratings`) and conference and division membership as it was each season (`load_mbb_groups`, `load_mbb_team_group_seasons`, `load_nba_groups`, `load_nba_team_group_seasons`).
+
+Every loader takes `seasons` (one season, a vector, or `TRUE` for everything published) and optional `dbConnection` and `tablename` arguments that write straight into a database instead of returning a tibble. `update_nba_db()` and `update_mbb_db()` use that plumbing to build or refresh a local SQLite play-by-play table (a file called `hoopR_db` by default), adding only the completed games it is missing. Pass `force_rebuild = TRUE` to rebuild the table from scratch, or a vector of seasons such as `force_rebuild = c(2024, 2025)` to replace only those. That second form matters mid-season, because ESPN's data provider edits recent games. `update_nba_stats_db()` builds the same kind of database from the NBA Stats API releases.
+
+## A worked example
+
+```r
+library(hoopR)
+library(dplyr)
+
+player_box <- load_nba_player_box(seasons = 2025)
+
+shooting <- player_box %>%
+  filter(season_type == 2, did_not_play == FALSE) %>%
+  group_by(athlete_id, athlete_display_name) %>%
+  summarise(
+    games = n(),
+    pts = sum(points, na.rm = TRUE),
+    fga = sum(field_goals_attempted, na.rm = TRUE),
+    fta = sum(free_throws_attempted, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  filter(fga >= 500) %>%
+  mutate(ts_pct = nba_true_shooting_pct(pts, fga, fta)) %>%
+  arrange(desc(ts_pct))
+
+head(shooting, 10)
+```
+
+This loads every player box score from the 2024-25 NBA season, keeps regular-season games (`season_type == 2`) the player actually played, and totals points, field-goal attempts and free-throw attempts per player. `nba_true_shooting_pct()` turns those totals into true shooting percentage. The result is one row per player with at least 500 field-goal attempts, sorted from the most efficient scorer down. Grouping on `athlete_id` rather than on team keeps a traded player's season in one row.
+
+## Good to know
+
+- The `load_nba_*()` and `load_mbb_*()` loaders name a season by the year it ends: 2025 is 2024-25. The `load_nba_stats_*()` loaders take the year it starts and translate internally, which is why `most_recent_nba_stats_season()` is one less than `most_recent_nba_season()`. The `nba_*()` API wrappers want a `"2024-25"` string, which `year_to_season()` builds.
+- stats.nba.com blocks many datacenter and cloud IP ranges, so an `nba_*()` call that works on a laptop can fail on a server. `options(hoopR.proxy = ...)` routes every hoopR request through a proxy. The `nba_*()` wrappers also take a per-call `proxy` argument, and hoopR honors the standard `http_proxy` and `https_proxy` environment variables.
+- The NBA CDN wrappers (`nba_live_pbp()`, `nba_live_boxscore()`, `nba_todays_scoreboard()`, `nba_schedule()` and the two G League live feeds) send a Chrome-style header set, because without it the CDNs refuse the request. That header set is verified on Windows R; Linux and macOS libcurl builds are unverified.
+- `nba_data_pbp()` reads data.nba.com, which has play-by-play for 2016-17 through 2024-25 only. A later game returns an empty result with a message.
+- The KenPom functions call `login()` for you, using `KP_USER` and `KP_PW`, and stop with an error if either is missing. Access depends on your own KenPom subscription; hoopR doesn't provide one.
+- Bart Torvik's files start in 2008. `torvik_ratings()` used to return an empty tibble for 2008 through 2021 because a header-fixing warning was treated as fatal; the development version fixes that.
+- `mbb_team_crosswalk()` reads every source as of the requested season and raises an error when any source fails, instead of returning a quiet all-NA column. Its `fox_section` is `NA` where Fox lists a team under the conference it joins the following season.
+- The conference and division loaders read parquet rather than the CSV copies, so `team_id` stays character there.
+- The officiating scrapers raise classed conditions (`hoopR_no_data`, `hoopR_fetch_error`) instead of returning an empty table, so a blocked fetch is never mistaken for a quiet night.
+- NBA Stats API columns come back upper-case, the way the API ships them. The ESPN wrappers and the loaders return snake_case columns.
+
+## Related
+
+The women's-game sibling is [wehoop](/notes/wehoop), which follows the same ESPN and `load_*()` conventions for the WNBA and women's college basketball. Other SportsDataverse R packages: [cfbfastR](/notes/cfbfastr), [baseballr](/notes/baseballr), [fastRhockey](/notes/fastrhockey), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr) and the [sportsdataverse](/notes/sportsdataverse-r) meta-package. The Python sibling covering the same sources, and home of the stats.ncaa.org engine behind the `load_ncaa_mbb_*()` releases, is [sportsdataverse-py](/notes/sportsdataverse-py). The release plumbing the loaders read from is described in [sportsdataversedata](/notes/sportsdataversedata).
+
+## Links
+
+- [Documentation](https://hoopR.sportsdataverse.org/)
+- [Source on GitHub](https://github.com/sportsdataverse/hoopR)
+- [CRAN](https://CRAN.R-project.org/package=hoopR)
+- [sportsdataverse-data releases](https://github.com/sportsdataverse/sportsdataverse-data/releases) — the release assets the loaders read
+
+To cite hoopR in a publication, `citation("hoopR")` gives:
+
+```text
+Saiem Gilani. hoopR: Access Men’s Basketball Play by Play Data.
+Retrieved from https://doi.org/10.32614/CRAN.package.hoopR
+```
+
+Jason Lee, Billy Fryer, Ross Drucker and Vladislav Shufinskiy have all contributed code to hoopR, and I'm grateful to each of them.
 
 ## Data and automation
 
@@ -181,3 +170,5 @@ The `load_*()` functions read GitHub release assets on [sportsdataverse-data](ht
 - Package checks: [![hoopR R CMD check](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsportsdataverse%2F.github%2Fmain%2Fstatus%2Fbadges%2FhoopR%2Fwf-R-CMD-check.json)](https://github.com/sportsdataverse/hoopR/actions/workflows/R-CMD-check.yaml) [![hoopR pkgdown site](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsportsdataverse%2F.github%2Fmain%2Fstatus%2Fbadges%2FhoopR%2Fwf-pkgdown.json)](https://github.com/sportsdataverse/hoopR/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/hoopR)](https://CRAN.R-project.org/package=hoopR)
 - [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/hoopR.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
 - [SportsDataverse status](https://sportsdataverse.org/status) — release freshness for every dataset, each producer's pipeline state and every workflow's latest run, rebuilt nightly ([raw snapshot](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md)).
+
+My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.
