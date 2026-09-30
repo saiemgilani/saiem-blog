@@ -4,10 +4,13 @@ export default async function labShotChart(page, base) {
   const drawn = page.getByText(/shots · ran in your browser/);
   await drawn.waitFor({ timeout: 60_000 });
   await page.getByRole("combobox", { name: "Team" }).selectOption("LAL");
-  await page.getByText(/LAL|shots · ran in your browser/).first().waitFor({ timeout: 30_000 });
+  await page.locator('svg[aria-label*="LAL"]').waitFor({ timeout: 30_000 });
+  await page.getByText(/shots · ran in your browser/).waitFor({ timeout: 30_000 });
   await page.waitForTimeout(1500);
   await page.getByRole("combobox", { name: "Player" }).selectOption({ index: 1 });
-  await page.waitForTimeout(2500);
+  await page.locator('svg[aria-label*="player"]').waitFor({ timeout: 30_000 });
+  await page.getByText(/shots · ran in your browser/).waitFor({ timeout: 30_000 });
+  await page.waitForTimeout(1500);
   await page.mouse.wheel(0, 500);
   await page.waitForTimeout(1500);
 }
