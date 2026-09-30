@@ -6,6 +6,7 @@ import { formatEntryNumber } from "@lib/lab/registry-schema";
 import { EntryShell } from "@components/lab/EntryShell";
 import { MdxRenderer } from "@components/mdx/MdxRenderer";
 import { ParquetPeek } from "@components/lab/widgets/ParquetPeek";
+import { ShotChart } from "@components/lab/widgets/ShotChart";
 import { MarginNote } from "@components/lab/MarginNote";
 import { pageMetadata } from "@lib/metadata";
 
@@ -34,7 +35,7 @@ export default async function LabWriteup({ params }: { params: Promise<{ slug: s
   if (!entry || !doc) notFound();
   return (
     <EntryShell entry={entry}>
-      <MdxRenderer source={doc.source} components={{ ParquetPeek, MarginNote }} />
+      <MdxRenderer source={doc.source} components={{ ParquetPeek, ShotChart, MarginNote }} />
     </EntryShell>
   );
 }

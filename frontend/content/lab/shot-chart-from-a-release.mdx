@@ -1,0 +1,17 @@
+Every shot in the 2025-26 NBA season is one row in a single parquet file, about 4 MB, on a SportsDataverse release. The chart below is drawn from that file in your browser. DuckDB reads only the columns and row groups it needs through the same byte-range relay as № 001, and d3 draws the hexagons. No server touches the data.
+
+The file is `nba_stats_shots/shots_2026.parquet` (233,632 shots). It is built by `hoopR-nba-stats-data` from stats.nba.com and published to the `sportsdataverse-data` release, refreshed nightly. The chart starts on the Brooklyn Nets, which keeps the first paint small; pick any of the 30 teams, or a player with 50 or more attempts.
+
+<ShotChart />
+
+## The legacy frame
+
+The location columns are `x_legacy` and `y_legacy`. "Legacy" is the old stats.nba.com shot-chart frame: tenths of a foot, with the hoop at the origin and y growing toward half court. So the rim is at (0, 0), the baseline sits 5.25 ft behind it (y = -52.5), and the half-court line is at y = 417.5. The corner three runs along x = ±22 ft and meets the 23.75 ft arc at y ≈ 8.95 ft (89.48 tenths). Left is x < 0, as the NBA labels it. The chart flips y for the screen and does nothing else to the numbers.
+
+## What the colour means
+
+A hexagon with three shots in it is noise. So each hexagon's field-goal percentage is shrunk toward the selection's overall percentage before it is coloured: `(makes + 25·p) / (attempts + 25)`, where `p` is the overall rate, as if every hexagon started with 25 attempts at the average. A 1-for-1 corner hexagon reads as average. A hexagon with 60 attempts mostly speaks for itself. Red means above the selection's average, blue below, and hexagon size follows attempts. The tooltip shows the raw makes and attempts, unshrunk.
+
+<MarginNote>Shots past half court are left out of the chart, not of the file.</MarginNote>
+
+The full Nets site built on the same files is Blazing the Nets — https://github.com/saiemgilani/blazing-the-nets (rebuilt on Next 16 and d3 v7; the domain blazingthenets.com moves over once DNS is switched).
