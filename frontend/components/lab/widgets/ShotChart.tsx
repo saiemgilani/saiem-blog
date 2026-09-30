@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { select } from "d3-selection";
 import { hexbin } from "d3-hexbin";
 import { scaleSequential } from "d3-scale";
 import { interpolateRdBu } from "d3-scale-chromatic";
 import { quantile } from "d3-array";
 import { labDataUrl } from "@lib/lab/dataUrl";
-import { courtPaths, shrunkPct, toSvg } from "@lib/lab/shotChart";
+import { binRows, courtPaths, shrunkPct, toSvg } from "@lib/lab/shotChart";
 
 const SRC = { repo: "sportsdataverse/sportsdataverse-data", tag: "nba_stats_shots", asset: "shots_2026.parquet" };
 const TIMEOUT_MS = 30_000;
@@ -45,6 +45,9 @@ export function ShotChart() {
   const reqKey = `${team}|${player}`;
   const [loaded, setLoaded] = useState<{ key: string; shots: Shot[] | null; error: string | null }>({ key: "", shots: null, error: null });
   const [tip, setTip] = useState<Tip | null>(null);
+  const [reading, setReading] = useState("");
+  const [pickerError, setPickerError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const players = playersFor.team === team ? playersFor.list : [];
@@ -55,17 +58,17 @@ export function ShotChart() {
   useEffect(() => {
     query("SELECT DISTINCT team_tricode FROM {{src}} ORDER BY 1", 100)
       .then((r) => setTeams(r.rows.map((x) => x[0] ?? "").filter(Boolean)))
-      .catch(() => undefined); // the team list is a convenience; the chart reports real errors
-  }, []);
+      .catch(() => setPickerError(true));
+  }, [retryKey]);
 
   useEffect(() => {
     let live = true;
     const t = team.replace(/[^A-Z]/g, "");
     query(`SELECT person_id, any_value(player_name), count(*) n FROM {{src}} WHERE team_tricode = '${t}' GROUP BY 1 HAVING count(*) >= 50 ORDER BY n DESC`, 100)
-      .then((r) => { if (live) setPlayersFor({ team, list: r.rows.map((x) => ({ id: x[0] ?? "", name: x[1] ?? "", n: Number(x[2]) })) }); })
-      .catch(() => undefined);
+      .then((r) => { if (live) { setPlayersFor({ team, list: r.rows.map((x) => ({ id: x[0] ?? "", name: x[1] ?? "", n: Number(x[2]) })) }); setPickerError(false); } })
+      .catch(() => { if (live) setPickerError(true); });
     return () => { live = false; };
-  }, [team]);
+  }, [team, retryKey]);
 
   useEffect(() => {
     let live = true;
@@ -79,13 +82,20 @@ export function ShotChart() {
     return () => { live = false; };
   }, [reqKey]);
 
-  useEffect(() => {
-    const svg = select(svgRef.current);
-    svg.selectAll("*").remove();
-    if (!shots || !shots.length) return;
+  const binned = useMemo(() => {
+    if (!shots || !shots.length) return null;
     const prior = shots.reduce((a, s) => a + s.m, 0) / shots.length;
     const hb = hexbin<Shot>().radius(HEX_R).x((s) => toSvg(s.x, s.y)[0]).y((s) => toSvg(s.x, s.y)[1]);
     const bins = hb(shots);
+    const rows = binRows(bins.map((b) => ({ px: b.x, py: b.y, attempts: b.length, makes: b.reduce((a, s) => a + s.m, 0) })), prior, K);
+    return { prior, hb, bins, rows };
+  }, [shots]);
+
+  useEffect(() => {
+    const svg = select(svgRef.current);
+    svg.selectAll("*").remove();
+    if (!binned) return;
+    const { prior, hb, bins } = binned;
     // size saturates at the 90th-percentile bin so the rim hexagon does not shrink everything else
     const maxN = quantile(bins.map((b) => b.length).sort((a, b) => a - b), 0.9) ?? 1;
     const color = scaleSequential(interpolateRdBu).domain([prior + SPREAD, prior - SPREAD]).clamp(true);
@@ -99,16 +109,18 @@ export function ShotChart() {
       .on("mousemove", (ev: MouseEvent, b) => {
         const makes = b.reduce((a, s) => a + s.m, 0);
         const box = wrapRef.current?.getBoundingClientRect();
-        if (box) setTip({ left: ev.clientX - box.left + 10, top: ev.clientY - box.top + 10, text: `${b.length} att · ${makes} made · ${((100 * makes) / b.length).toFixed(1)}%` });
+        const text = `${b.length} att · ${makes} made · ${((100 * makes) / b.length).toFixed(1)}%`;
+        setReading(text);
+        if (box) setTip({ left: ev.clientX - box.left + 10, top: ev.clientY - box.top + 10, text });
       })
       .on("mouseleave", () => setTip(null));
     const court = svg.append("g").attr("fill", "none").attr("stroke", "var(--muted)").attr("stroke-width", 1.2).attr("pointer-events", "none");
     for (const d of courtPaths()) court.append("path").attr("d", d);
     const [rx, ry] = toSvg(0, 0);
     court.append("circle").attr("cx", rx).attr("cy", ry).attr("r", 7.5);
-  }, [shots]);
+  }, [binned]);
 
-  const prior = shots && shots.length ? shots.reduce((a, s) => a + s.m, 0) / shots.length : null;
+  const prior = binned ? binned.prior : null;
   const sel = "border border-rule bg-page px-2 py-1 font-mono text-xs text-ink";
   return (
     <div className="not-prose my-6 border border-rule bg-card">
@@ -124,6 +136,7 @@ export function ShotChart() {
             {players.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.n})</option>)}
           </select>
         </label>
+        {pickerError && <span role="alert" className="text-brand">could not load the team/player list <button type="button" className="underline" onClick={() => { setPickerError(false); setRetryKey((k) => k + 1); }}>retry</button></span>}
         <span className="ml-auto min-w-0 truncate" title={`${SRC.tag}/${SRC.asset}`}>{SRC.tag}/{SRC.asset}</span>
       </div>
       <div ref={wrapRef} className="relative p-3">
@@ -139,6 +152,21 @@ export function ShotChart() {
         ))}
         <span>hex size = attempts{prior !== null && ` · average ${(prior * 100).toFixed(1)}% · ${shots?.length} shots`} · ran in your browser</span>
       </div>
+      <p aria-live="polite" className="border-t border-rule px-3 py-1.5 font-mono text-[11px] text-ink">{reading || "hover a hexagon for its attempts, makes and FG%"}</p>
+      {binned && (
+        <details className="border-t border-rule px-3 py-2 font-mono text-[11px] text-muted">
+          <summary className="cursor-pointer">Bin table</summary>
+          <div className="mt-2 max-h-72 overflow-auto">
+            <table className="w-full">
+              <caption className="pb-1 text-left">Hexagons with 5 or more attempts: {binned.rows.length} of {binned.bins.length} shown, most attempts first. x and y are feet from the hoop.</caption>
+              <thead><tr>{["x (ft)", "y (ft)", "attempts", "makes", "FG%", "shrunk FG%"].map((h) => <th key={h} scope="col" className="sticky top-0 bg-card px-2 py-1 text-left">{h}</th>)}</tr></thead>
+              <tbody>{binned.rows.map((r, i) => (
+                <tr key={i} className="border-t border-rule"><td className="px-2 py-0.5">{r.xFt}</td><td className="px-2 py-0.5">{r.yFt}</td><td className="px-2 py-0.5">{r.attempts}</td><td className="px-2 py-0.5">{r.makes}</td><td className="px-2 py-0.5">{(r.pct * 100).toFixed(1)}</td><td className="px-2 py-0.5">{(r.shrunk * 100).toFixed(1)}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </details>
+      )}
     </div>
   );
 }

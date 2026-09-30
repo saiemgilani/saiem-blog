@@ -53,3 +53,20 @@ export function courtPaths(): string[] {
     poly([[-cx, b], [-cx, THREE_BREAK_Y]]) + arcPath(0, 0, r, Math.PI - ang, ang, 64).replace("M", "L") + poly([[cx, b]]).replace("M", "L"),
   ];
 }
+
+export type BinRow = { xFt: number; yFt: number; attempts: number; makes: number; pct: number; shrunk: number };
+
+/** One row per hexagon with at least `minAttempts` shots, most attempts first. `px`/`py` are SVG units (see toSvg). */
+export function binRows(bins: { px: number; py: number; attempts: number; makes: number }[], prior: number, k = 25, minAttempts = 5): BinRow[] {
+  return bins
+    .filter((b) => b.attempts >= minAttempts)
+    .map((b) => ({
+      xFt: +((b.px - COURT.halfWidth) / 10).toFixed(1),
+      yFt: +((COURT.halfCourtY - b.py) / 10).toFixed(1),
+      attempts: b.attempts,
+      makes: b.makes,
+      pct: b.makes / b.attempts,
+      shrunk: shrunkPct(b.makes, b.attempts, prior, k),
+    }))
+    .sort((a, b) => b.attempts - a.attempts);
+}
