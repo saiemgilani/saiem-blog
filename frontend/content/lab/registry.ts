@@ -41,6 +41,19 @@ const entries: LabEntry[] = [
     started: "2026-09-27",
     tags: ["llm", "ai-gateway"],
   },
+  {
+    n: 4,
+    slug: "shot-chart-from-a-release",
+    title: "A shot chart from a release file",
+    summary: "A hexbin shot chart drawn in your browser from one NBA season's parquet file on a release: the browser pulls the 4 MB file once and queries it there with DuckDB-wasm.",
+    status: "prototype",
+    kind: "writeup",
+    runtime: ["browser"],
+    sources: [{ kind: "release", repo: "sportsdataverse/sportsdataverse-data", tag: "nba_stats_shots", asset: "shots_2026.parquet" }],
+    limits: "reads ~4 MB per season · one season for now",
+    started: "2026-09-30",
+    tags: ["duckdb", "parquet", "nba", "d3"],
+  },
 ];
 
 export const LAB: LabEntry[] = LabRegistrySchema.parse(entries);

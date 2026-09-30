@@ -1,11 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { QueryResult } from "@lib/lab/duckdb";
-
-export function labDataUrl(origin: string, s: { repo: string; tag: string; asset: string }): string {
-  const q = new URLSearchParams({ repo: s.repo, tag: s.tag, asset: s.asset });
-  return `${origin}/api/lab/data?${q.toString()}`;
-}
+import { labDataUrl } from "@lib/lab/dataUrl";
 
 const ENGINE_TIMEOUT_MS = 30_000;
 const TIMEOUT_MESSAGE = "The query engine didn't load in 30s. Check your connection and try again.";
