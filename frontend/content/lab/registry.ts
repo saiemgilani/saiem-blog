@@ -45,7 +45,7 @@ const entries: LabEntry[] = [
     n: 4,
     slug: "shot-chart-from-a-release",
     title: "A shot chart from a release file",
-    summary: "A hexbin shot chart drawn in your browser from one NBA season's parquet file on a release, read by byte range with DuckDB-wasm.",
+    summary: "A hexbin shot chart drawn in your browser from one NBA season's parquet file on a release: the browser pulls the 4 MB file once and queries it there with DuckDB-wasm.",
     status: "prototype",
     kind: "writeup",
     runtime: ["browser"],

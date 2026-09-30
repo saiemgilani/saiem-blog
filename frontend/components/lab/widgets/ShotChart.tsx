@@ -5,7 +5,7 @@ import { hexbin } from "d3-hexbin";
 import { scaleSequential } from "d3-scale";
 import { interpolateRdBu } from "d3-scale-chromatic";
 import { quantile } from "d3-array";
-import { labDataUrl } from "./ParquetPeek";
+import { labDataUrl } from "@lib/lab/dataUrl";
 import { courtPaths, shrunkPct, toSvg } from "@lib/lab/shotChart";
 
 const SRC = { repo: "sportsdataverse/sportsdataverse-data", tag: "nba_stats_shots", asset: "shots_2026.parquet" };
@@ -73,7 +73,7 @@ export function ShotChart() {
     const t = tm.replace(/[^A-Z]/g, "");
     const p = pl.replace(/[^0-9]/g, "");
     const who = p ? `AND person_id = ${p}` : "";
-    query(`SELECT x_legacy, y_legacy, (shot_result = 'Made')::INT FROM {{src}} WHERE team_tricode = '${t}' ${who} AND x_legacy IS NOT NULL AND y_legacy <= 417.5`)
+    query(`SELECT x_legacy, y_legacy, (shot_result = 'Made')::INT FROM {{src}} WHERE team_tricode = '${t}' ${who} AND x_legacy IS NOT NULL AND abs(x_legacy) <= 250 AND y_legacy BETWEEN -52.5 AND 417.5`)
       .then((r) => { if (live) setLoaded({ key: reqKey, shots: r.rows.map((x) => ({ x: Number(x[0]), y: Number(x[1]), m: Number(x[2]) })), error: null }); })
       .catch((e: unknown) => { if (live) setLoaded({ key: reqKey, shots: null, error: e instanceof Error ? e.message : String(e) }); });
     return () => { live = false; };
@@ -93,8 +93,9 @@ export function ShotChart() {
       .attr("transform", (b) => `translate(${b.x},${b.y})`)
       .attr("d", (b) => hb.hexagon(HEX_R * Math.min(1, Math.max(0.3, Math.sqrt(b.length / maxN)))))
       .attr("fill", (b) => color(shrunkPct(b.reduce((a, s) => a + s.m, 0), b.length, prior, K)))
-      .attr("stroke", "var(--page)")
-      .attr("stroke-width", 0.6)
+      .attr("stroke", "var(--muted)")
+      .attr("stroke-opacity", 0.6)
+      .attr("stroke-width", 0.75)
       .on("mousemove", (ev: MouseEvent, b) => {
         const makes = b.reduce((a, s) => a + s.m, 0);
         const box = wrapRef.current?.getBoundingClientRect();

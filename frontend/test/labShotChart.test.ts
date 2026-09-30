@@ -8,7 +8,11 @@ test("court geometry: rim at origin, baseline -52.5, corner/arc junction 89.48 t
   assert.ok(Math.abs(THREE_BREAK_Y / 10 - 8.95) < 0.005, "8.95 ft");
   assert.deepEqual(toSvg(0, 0), [250, 417.5]); // hoop
   assert.deepEqual(toSvg(-250, COURT.baselineY), [0, 470]); // left baseline corner, bottom of the box
-  assert.equal(courtPaths().length, 5);
+  const c = courtPaths();
+  assert.equal(c.length, 5);
+  assert.ok(c[1].startsWith("M170.0,470.0L170.0,280.0L330.0,280.0L330.0,470.0"), "paint 160 wide, 190 deep");
+  assert.ok(c[2].startsWith("M310.0,280.0"), "free-throw circle r 60 at y 137.5");
+  assert.ok(c[3].startsWith("M290.0,417.5"), "restricted area r 40");
 });
 
 test("shrinkage: 0 attempts gives the prior, many attempts gives the raw rate, k=25", () => {

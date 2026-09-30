@@ -6,7 +6,7 @@ import { formatEntryNumber } from "@lib/lab/registry-schema";
 import { EntryShell } from "@components/lab/EntryShell";
 import { MdxRenderer } from "@components/mdx/MdxRenderer";
 import { ParquetPeek } from "@components/lab/widgets/ParquetPeek";
-import { ShotChart } from "@components/lab/widgets/ShotChart";
+import { ShotChart } from "@components/lab/widgets/ShotChartLazy";
 import { MarginNote } from "@components/lab/MarginNote";
 import { pageMetadata } from "@lib/metadata";
 
