@@ -6,7 +6,7 @@ excerpt: 'An R package for WNBA and NCAA women''s basketball: ESPN, the WNBA Sta
 order: 3
 ---
 
-wehoop is an R package for women's basketball data: the WNBA and NCAA Division I women's college basketball. It wraps ESPN's women's college basketball and WNBA endpoints, the official WNBA Stats API, Fox Sports' Bifrost feed, NCAA.com, Basketball-Reference's WNBA pages, and (for subscribers) Her Hoop Stats. It also loads pre-built, multi-season files from the data release repo so you rarely need to hit a live endpoint game by game. It is the women's-game sibling of hoopR, and it's part of the SportsDataverse.
+wehoop is an R package for women's basketball data: the WNBA and NCAA Division I women's college basketball. It wraps ESPN's women's college basketball and WNBA endpoints, the official WNBA Stats API, Fox Sports' Bifrost feed, NCAA.com, Basketball-Reference's WNBA pages, and (for subscribers) Her Hoop Stats. It also loads pre-built, multi-season files published as GitHub release assets on sportsdataverse-data, so you rarely need to hit a live endpoint game by game. It is the women's-game sibling of hoopR, and it's part of the SportsDataverse.
 
 ## Installation
 
@@ -55,7 +55,7 @@ There are two cookbook vignettes (`wbb-cookbook`, `wnba-cookbook`) with worked r
 
 ## Loading full seasons
 
-The `load_*()` family reads pre-built parquet and RDS files from the data release repo instead of scraping live, which is why they return millions of rows in seconds. WNBA loaders (`load_wnba_pbp`, `load_wnba_team_box`, `load_wnba_player_box`, `load_wnba_schedule`, `load_wnba_rosters`, `load_wnba_player_stats`, `load_wnba_standings`, `load_wnba_draft`, `load_wnba_shots`, `load_wnba_game_rosters`, `load_wnba_officials`) cover the WNBA back to 2002; the women's college equivalents (`load_wbb_pbp`, `load_wbb_team_box`, `load_wbb_player_box`, `load_wbb_schedule`, `load_wbb_rosters`, `load_wbb_shots`, and so on) start at the 2004 season, which is as far back as ESPN's own women's college play-by-play goes. There's a second, separate loader family for the WNBA Stats API side (`load_wnba_stats_pbp`, `load_wnba_stats_player_game_logs`, `load_wnba_stats_lineups`, `load_wnba_stats_possessions`, ...), and a third for the NCAA women's play-by-play engine sdv-py builds (`load_ncaa_wbb_pbp`, `load_ncaa_wbb_lineups`, `load_ncaa_wbb_possessions`, `load_ncaa_wbb_rapm`). Conference and division membership by season comes from `load_wbb_groups()` / `load_wnba_groups()` and their companions `load_wbb_group_seasons()`, `load_wbb_group_aliases()` and `load_wbb_team_group_seasons()` (with `wnba` equivalents), and model-output datasets (player impact, player value, ratings) load via `load_wnba_player_impact()`, `load_wbb_player_value()` and `load_wbb_ratings()`.
+The `load_*()` family reads pre-built parquet and RDS files from the sportsdataverse-data GitHub releases instead of scraping live, which is why they return millions of rows in seconds. WNBA loaders (`load_wnba_pbp`, `load_wnba_team_box`, `load_wnba_player_box`, `load_wnba_schedule`, `load_wnba_rosters`, `load_wnba_player_stats`, `load_wnba_standings`, `load_wnba_draft`, `load_wnba_shots`, `load_wnba_game_rosters`, `load_wnba_officials`) cover the WNBA back to 2002; the women's college equivalents (`load_wbb_pbp`, `load_wbb_team_box`, `load_wbb_player_box`, `load_wbb_schedule`, `load_wbb_rosters`, `load_wbb_shots`, and so on) start at the 2004 season, which is as far back as ESPN's own women's college play-by-play goes. There's a second, separate loader family for the WNBA Stats API side (`load_wnba_stats_pbp`, `load_wnba_stats_player_game_logs`, `load_wnba_stats_lineups`, `load_wnba_stats_possessions`, ...), and a third for the NCAA women's play-by-play engine sdv-py builds (`load_ncaa_wbb_pbp`, `load_ncaa_wbb_lineups`, `load_ncaa_wbb_possessions`, `load_ncaa_wbb_rapm`). Conference and division membership by season comes from `load_wbb_groups()` / `load_wnba_groups()` and their companions `load_wbb_group_seasons()`, `load_wbb_group_aliases()` and `load_wbb_team_group_seasons()` (with `wnba` equivalents), and model-output datasets (player impact, player value, ratings) load via `load_wnba_player_impact()`, `load_wbb_player_value()` and `load_wbb_ratings()`.
 
 `update_wbb_db()` and `update_wnba_db()` build or refresh a local SQLite database from these releases, so a scheduled job can keep a season current without re-downloading everything: pass `force_rebuild = TRUE` to rebuild from scratch, or a vector of seasons to only replace those, which matters mid-season since ESPN edits its underlying data during the week.
 
@@ -70,7 +70,8 @@ wbb_pbp <- load_wbb_pbp(seasons = 2024)
 three_attempts <- wbb_pbp %>%
   filter(
     shooting_play == TRUE,
-    score_value == 3
+    score_value %in% c(0, 3),
+    grepl("3", type_text, ignore.case = TRUE)
   ) %>%
   count(season, team_id, name = "three_attempts") %>%
   arrange(desc(three_attempts))
@@ -78,7 +79,7 @@ three_attempts <- wbb_pbp %>%
 head(three_attempts, 10)
 ```
 
-`load_wbb_pbp()` pulls the whole 2024 season of women's college play-by-play, filtering to three-point attempts (`score_value == 3` and `shooting_play == TRUE`) and counting them by team, then sorting to see who shot the most threes that season.
+`load_wbb_pbp()` pulls the whole 2024 season of women's college play-by-play, filtering to three-point attempts (`shooting_play == TRUE`, a `score_value` of 0 or 3 so misses count too, and a play type mentioning a three) and counting them by team, then sorting to see who shot the most threes that season.
 
 From there, a natural follow-up is late-game situations. The same `wbb_pbp` frame carries `period_number`, `clock_minutes` and `clock_seconds`, so isolating clutch shots is a second filter on the same data:
 
@@ -108,13 +109,28 @@ That pulls every shot that fell with five seconds or less left in regulation, us
 
 ## Related
 
-The men's-game sibling is [hoopR](/notes/intro-to-hoopR), which shares the same ESPN/`load_*` conventions but points at the NBA and men's college basketball instead. Other SportsDataverse R packages: [cfbfastR](/notes/cfbfastr), [baseballr](/notes/baseballr), [fastRhockey](/notes/fastrhockey), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python sibling covering the same sources is [sportsdataverse-py](/notes/sportsdataverse-py). Play-by-play, box scores, schedules and the model-output datasets referenced above live in the [wehoop-data](https://github.com/sportsdataverse/wehoop-data) release repo.
+The men's-game sibling is [hoopR](/notes/intro-to-hoopR), which shares the same ESPN/`load_*` conventions but points at the NBA and men's college basketball instead. Other SportsDataverse R packages: [cfbfastR](/notes/cfbfastr), [baseballr](/notes/baseballr), [fastRhockey](/notes/fastrhockey), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python sibling covering the same sources is [sportsdataverse-py](/notes/sportsdataverse-py). Play-by-play, box scores, schedules and the model-output datasets referenced above are published as release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases) by the wehoop-wbb-data and wehoop-wnba-data producer repos (see Data and automation below).
+
+## Data and automation
+
+The `load_*()` functions read GitHub release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases). Those assets are built and refreshed by scheduled workflows in the producer repos below; the badges are live, so a red one means the most recent scheduled run failed.
+
+- [wehoop-wbb-data](https://github.com/sportsdataverse/wehoop-wbb-data) — women's college basketball play-by-play, box scores, schedules, rosters and model datasets. [![daily update](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/daily_wbb.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/daily_wbb.yml) [![weekly rosters](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/weekly_wbb.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/weekly_wbb.yml) [![model datasets](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/wbb_models_cron.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/wbb_models_cron.yml) [![R/Python parity](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/weekly_output_parity.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wbb-data/actions/workflows/weekly_output_parity.yml)
+- [wehoop-wnba-data](https://github.com/sportsdataverse/wehoop-wnba-data) — WNBA play-by-play, box scores, schedules, rosters and the draft. [![daily update](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/daily_wnba.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/daily_wnba.yml) [![weekly rosters](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/weekly_wnba.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/weekly_wnba.yml) [![annual draft](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/annual_wnba_draft.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/annual_wnba_draft.yml) [![R/Python parity](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/weekly_output_parity.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wnba-data/actions/workflows/weekly_output_parity.yml)
+- [wehoop-wnba-stats-data](https://github.com/sportsdataverse/wehoop-wnba-stats-data) — WNBA Stats API datasets and the WNBA model outputs. [![daily update](https://github.com/sportsdataverse/wehoop-wnba-stats-data/actions/workflows/daily_wnba_stats.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wnba-stats-data/actions/workflows/daily_wnba_stats.yml) [![model datasets](https://github.com/sportsdataverse/wehoop-wnba-stats-data/actions/workflows/wnba_models.yml/badge.svg)](https://github.com/sportsdataverse/wehoop-wnba-stats-data/actions/workflows/wnba_models.yml)
+- [ncaa-wbb-hoops-data](https://github.com/sportsdataverse/ncaa-wbb-hoops-data) — stats.ncaa.org women's basketball play-by-play, lineups and RAPM. [![RAPM models](https://github.com/sportsdataverse/ncaa-wbb-hoops-data/actions/workflows/ncaa_wbb_models.yml/badge.svg)](https://github.com/sportsdataverse/ncaa-wbb-hoops-data/actions/workflows/ncaa_wbb_models.yml)
+- Raw captures the producers rebuild from: [wehoop-wbb-raw](https://github.com/sportsdataverse/wehoop-wbb-raw), [wehoop-wnba-raw](https://github.com/sportsdataverse/wehoop-wnba-raw), [ncaa-wbb-hoops-raw](https://github.com/sportsdataverse/ncaa-wbb-hoops-raw).
+- [wehoop-data](https://github.com/sportsdataverse/wehoop-data) — archived; the 2002-2022 release history before the per-league split.
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/wehoop/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/wehoop/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/wehoop/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/wehoop/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/wehoop)](https://CRAN.R-project.org/package=wehoop)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/wehoop.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
 - [Documentation](https://wehoop.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/wehoop)
 - [CRAN](https://CRAN.R-project.org/package=wehoop)
-- [wehoop-data](https://github.com/sportsdataverse/wehoop-data) — play-by-play, box scores, schedules and model outputs
+- [sportsdataverse-data releases](https://github.com/sportsdataverse/sportsdataverse-data/releases) — the release assets the loaders read
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

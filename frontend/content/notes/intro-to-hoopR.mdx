@@ -167,3 +167,17 @@ BibTex Citation
   year = {2021}
 }
 ```
+
+## Data and automation
+
+The `load_*()` functions read GitHub release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases). Those assets are built and refreshed by scheduled workflows in the producer repos below; the badges are live, so a red one means the most recent scheduled run failed.
+
+- [hoopR-mbb-data](https://github.com/sportsdataverse/hoopR-mbb-data) — men's college basketball play-by-play, box scores, schedules and model datasets. [![daily update](https://github.com/sportsdataverse/hoopR-mbb-data/actions/workflows/daily_mbb.yml/badge.svg)](https://github.com/sportsdataverse/hoopR-mbb-data/actions/workflows/daily_mbb.yml) [![model datasets](https://github.com/sportsdataverse/hoopR-mbb-data/actions/workflows/mbb_models_cron.yml/badge.svg)](https://github.com/sportsdataverse/hoopR-mbb-data/actions/workflows/mbb_models_cron.yml)
+- [hoopR-nba-data](https://github.com/sportsdataverse/hoopR-nba-data) — NBA play-by-play, box scores and schedules from ESPN. [![daily update](https://github.com/sportsdataverse/hoopR-nba-data/actions/workflows/daily_nba.yml/badge.svg)](https://github.com/sportsdataverse/hoopR-nba-data/actions/workflows/daily_nba.yml)
+- [hoopR-nba-stats-data](https://github.com/sportsdataverse/hoopR-nba-stats-data) — NBA Stats API datasets and the NBA model outputs. [![model datasets](https://github.com/sportsdataverse/hoopR-nba-stats-data/actions/workflows/nba_models.yml/badge.svg)](https://github.com/sportsdataverse/hoopR-nba-stats-data/actions/workflows/nba_models.yml) [![annual draft](https://github.com/sportsdataverse/hoopR-nba-stats-data/actions/workflows/annual_nba_stats_draft.yml/badge.svg)](https://github.com/sportsdataverse/hoopR-nba-stats-data/actions/workflows/annual_nba_stats_draft.yml)
+- [ncaa-mbb-hoops-data](https://github.com/sportsdataverse/ncaa-mbb-hoops-data) — stats.ncaa.org men's basketball play-by-play, lineups and RAPM. [![RAPM models](https://github.com/sportsdataverse/ncaa-mbb-hoops-data/actions/workflows/ncaa_mbb_models.yml/badge.svg)](https://github.com/sportsdataverse/ncaa-mbb-hoops-data/actions/workflows/ncaa_mbb_models.yml)
+- Raw captures the producers rebuild from: [hoopR-mbb-raw](https://github.com/sportsdataverse/hoopR-mbb-raw), [hoopR-nba-raw](https://github.com/sportsdataverse/hoopR-nba-raw), [ncaa-mbb-hoops-raw](https://github.com/sportsdataverse/ncaa-mbb-hoops-raw).
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/hoopR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/hoopR/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/hoopR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/hoopR/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/hoopR)](https://CRAN.R-project.org/package=hoopR)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/hoopR.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.

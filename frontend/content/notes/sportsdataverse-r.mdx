@@ -10,7 +10,7 @@ sportsdataverse is the meta-package for the R side of the SportsDataverse, in th
 
 ## Installation
 
-sportsdataverse is not on CRAN; install it from GitHub with pak:
+sportsdataverse is not on CRAN. The package README still shows an `install.packages("sportsdataverse")` line, but that instruction is stale; install it from GitHub with pak:
 
 ```r
 pak::pak("sportsdataverse/sportsdataverse-R")
@@ -94,6 +94,12 @@ sportsdataverse_logo()
 sportsdataverse (R) is the umbrella over the whole R family: [cfbfastR](/notes/cfbfastr) (college football), [hoopR](/notes/intro-to-hoopR) (men's and NBA basketball), [wehoop](/notes/wehoop) (women's and WNBA basketball), [baseballr](/notes/baseballr) (MLB and college baseball), [fastRhockey](/notes/fastrhockey) (NHL and PWHL) and [oddsapiR](/notes/oddsapir) (sportsbook odds). It does not attach [cfbplotR](/notes/cfbplotr), [sdvplotR](/notes/sdvplotr), [cfb4th](/notes/cfb4th) or [recruitR](/notes/recruitr), which are separate installs. The data those packages load comes from [sportsdataversedata](/notes/sportsdataversedata), and the same catalog concept exists for other languages as [sportsdataverse-py](/notes/sportsdataverse-py) and [sportsdataverse.js](/notes/sportsdataverse-js).
 
 There is no equivalent single-install meta-package on the Python or Node.js side today; a Python or JS project attaches sportsdataverse-py or sportsdataverse.js directly, since each already covers its language's whole surface in one package rather than splitting by sport the way the R ecosystem grew.
+
+## Data and automation
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-R/actions/workflows/pkgdown.yaml)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/sportsdataverse-R.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 

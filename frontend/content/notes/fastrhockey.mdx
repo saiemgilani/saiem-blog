@@ -30,12 +30,12 @@ No API key is required for normal use — the NHL, PWHL and HockeyTech endpoints
 ```r
 library(fastRhockey)
 
-nhl_schedule(season = "20242025")
+nhl_schedule(season = 2025)
 pwhl_schedule(season = 2025)
 nhl_game_feed(game_id = 2024020001)
 ```
 
-`nhl_schedule()` and `pwhl_schedule()` each return one row per game with teams, date and status. `nhl_game_feed()` returns the full per-game feed: play-by-play events, on-ice context and both teams' boxscores for that one game.
+`nhl_schedule()` and `pwhl_schedule()` each return one row per game with teams, date and status. `nhl_schedule()` takes the season's end year (2025 for 2024-25). `nhl_game_feed()` returns a named list of three data frames for that one game: `pbp` (one row per event), `game_info` and `rosters`; the box score is a separate call, `nhl_game_boxscore()`.
 
 A few more calls worth knowing early:
 
@@ -64,7 +64,7 @@ pwhl_leaders(position = "skaters", season = 2025)
 
 ## Loading full seasons
 
-The `load_*()` families read pre-scraped parquet and RDS files from the data release repos rather than hitting the live APIs. For the NHL: `load_nhl_pbp()` (seasons back to 2011, the end year of the season — 2026 for 2025-26), plus `load_nhl_pbp_lite()`, `load_nhl_schedule()`, `load_nhl_rosters()`, `load_nhl_game_rosters()`, `load_nhl_team_box()`, `load_nhl_player_box()`, `load_nhl_skater_box()`, `load_nhl_goalie_box()`, `load_nhl_scoring()`, `load_nhl_penalties()`, `load_nhl_shifts()` and a handful more, all backed by the `fastRhockey-nhl-data` release repo. For the PWHL: `load_pwhl_pbp()` (seasons from 2024 on, its inaugural year), `load_pwhl_schedule()`, `load_pwhl_rosters()`, `load_pwhl_team_box()`, `load_pwhl_skater_box()`, `load_pwhl_goalie_box()`, `load_pwhl_scoring_summary()`, `load_pwhl_shifts()` and `load_pwhl_xg_pbp()` (xG-enriched play-by-play), backed by `fastRhockey-pwhl-data`. Conference and division membership by season for the NHL comes from `load_nhl_groups()` and its companions `load_nhl_group_seasons()`, `load_nhl_group_aliases()` and `load_nhl_team_group_seasons()`. A general `fastRhockey-data` repo hosts the older, shared release history. `update_nhl_db()` and `update_pwhl_db()` build or refresh a local SQLite database from these releases so a scheduled job can pick up new games without re-downloading a full season.
+The `load_*()` families read pre-scraped parquet and RDS files from the sportsdataverse-data GitHub releases rather than hitting the live APIs. For the NHL: `load_nhl_pbp()` (seasons back to 2011, the end year of the season — 2026 for 2025-26), plus `load_nhl_pbp_lite()`, `load_nhl_schedule()`, `load_nhl_rosters()`, `load_nhl_game_rosters()`, `load_nhl_team_box()`, `load_nhl_player_box()`, `load_nhl_skater_box()`, `load_nhl_goalie_box()`, `load_nhl_scoring()`, `load_nhl_penalties()`, `load_nhl_shifts()` and a handful more, all built by the `fastRhockey-nhl-data` producer repo. For the PWHL: `load_pwhl_pbp()` (seasons from 2024 on, its inaugural year), `load_pwhl_schedule()`, `load_pwhl_rosters()`, `load_pwhl_team_box()`, `load_pwhl_skater_box()`, `load_pwhl_goalie_box()`, `load_pwhl_scoring_summary()`, `load_pwhl_shifts()` and `load_pwhl_xg_pbp()` (xG-enriched play-by-play), built by the `fastRhockey-pwhl-data` producer repo. Conference and division membership by season for the NHL comes from `load_nhl_groups()` and its companions `load_nhl_group_seasons()`, `load_nhl_group_aliases()` and `load_nhl_team_group_seasons()`. The archived `fastRhockey-data` repo holds the older release history from before the per-league split. `update_nhl_db()` and `update_pwhl_db()` build or refresh a local SQLite database from these releases so a scheduled job can pick up new games without re-downloading a full season.
 
 ## A worked example
 
@@ -106,15 +106,26 @@ game_summary <- pwhl_game_summary(game_id = 27)
 
 ## Related
 
-Sibling SportsDataverse R packages: [wehoop](/notes/wehoop), [cfbfastR](/notes/cfbfastr), [baseballr](/notes/baseballr), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python equivalent covering the same NHL and PWHL sources is [sportsdataverse-py](/notes/sportsdataverse-py), which mirrors this package's naming where practical. Data lives across the [fastRhockey-data](https://github.com/sportsdataverse/fastRhockey-data), [fastRhockey-nhl-data](https://github.com/sportsdataverse/fastRhockey-nhl-data) and [fastRhockey-pwhl-data](https://github.com/sportsdataverse/fastRhockey-pwhl-data) release repos.
+Sibling SportsDataverse R packages: [wehoop](/notes/wehoop), [cfbfastR](/notes/cfbfastr), [baseballr](/notes/baseballr), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python equivalent covering the same NHL and PWHL sources is [sportsdataverse-py](/notes/sportsdataverse-py), which mirrors this package's naming where practical. Data is published as release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases) by the [fastRhockey-nhl-data](https://github.com/sportsdataverse/fastRhockey-nhl-data) and [fastRhockey-pwhl-data](https://github.com/sportsdataverse/fastRhockey-pwhl-data) producer repos.
+
+## Data and automation
+
+The `load_*()` functions read GitHub release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases). Those assets are built and refreshed by scheduled workflows in the producer repos below; the badges are live, so a red one means the most recent scheduled run failed.
+
+- [fastRhockey-nhl-data](https://github.com/sportsdataverse/fastRhockey-nhl-data) — NHL play-by-play, box scores, shifts and the xG model pipeline. [![xG model pipeline](https://github.com/sportsdataverse/fastRhockey-nhl-data/actions/workflows/nhl_model_pipeline.yml/badge.svg)](https://github.com/sportsdataverse/fastRhockey-nhl-data/actions/workflows/nhl_model_pipeline.yml)
+- [fastRhockey-pwhl-data](https://github.com/sportsdataverse/fastRhockey-pwhl-data) — PWHL play-by-play, box scores, shifts and xG. [![daily update](https://github.com/sportsdataverse/fastRhockey-pwhl-data/actions/workflows/daily_pwhl_python.yml/badge.svg)](https://github.com/sportsdataverse/fastRhockey-pwhl-data/actions/workflows/daily_pwhl_python.yml) [![xG](https://github.com/sportsdataverse/fastRhockey-pwhl-data/actions/workflows/pwhl_xg_cron.yml/badge.svg)](https://github.com/sportsdataverse/fastRhockey-pwhl-data/actions/workflows/pwhl_xg_cron.yml)
+- Raw captures the producers rebuild from: [fastRhockey-nhl-raw](https://github.com/sportsdataverse/fastRhockey-nhl-raw), [fastRhockey-pwhl-raw](https://github.com/sportsdataverse/fastRhockey-pwhl-raw).
+- [fastRhockey-data](https://github.com/sportsdataverse/fastRhockey-data) — archived; the pre-split release history before the per-league split.
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/fastRhockey/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/fastRhockey/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/fastRhockey/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/fastRhockey/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/fastRhockey)](https://CRAN.R-project.org/package=fastRhockey)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/fastRhockey.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
 - [Documentation](https://fastrhockey.sportsdataverse.org/)
 - [Source on GitHub](https://github.com/sportsdataverse/fastRhockey)
 - [CRAN](https://CRAN.R-project.org/package=fastRhockey)
-- [fastRhockey-data](https://github.com/sportsdataverse/fastRhockey-data) — shared release history
-- [fastRhockey-nhl-data](https://github.com/sportsdataverse/fastRhockey-nhl-data) — NHL play-by-play, boxscores and shifts
-- [fastRhockey-pwhl-data](https://github.com/sportsdataverse/fastRhockey-pwhl-data) — PWHL play-by-play, boxscores and xG
+- [sportsdataverse-data releases](https://github.com/sportsdataverse/sportsdataverse-data/releases) — the release assets the loaders read
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

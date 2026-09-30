@@ -2,11 +2,11 @@
 title: 'usfootballR: Access MLS and NWSL Play-by-Play Data'
 date: '2021-11-10'
 tags: ['r', 'sportsdataverse', 'soccer', 'mls', 'nwsl', 'espn']
-excerpt: 'MLS and NWSL play-by-play, box scores, standings and schedules, scraped from ESPN and mirrored in a companion data repo.'
+excerpt: 'MLS and NWSL play-by-play, box scores, standings and schedules scraped live from ESPN, with loader stubs for a companion data repo.'
 order: 14
 ---
 
-usfootballR is an R package for American soccer -- MLS and NWSL -- built as a scraping and aggregating interface over ESPN's site and CDN APIs. It has two layers: live `espn_*` functions that hit ESPN directly for play-by-play, team box scores, standings, schedules and team metadata, and `load_*` functions that read pre-scraped, cleaned seasons back from the companion usfootballR-data repository so you don't have to re-scrape a full season yourself. It's the SportsDataverse package for domestic soccer, next to the college and pro football, basketball and hockey packages.
+usfootballR is an R package for American soccer -- MLS and NWSL -- built as a scraping and aggregating interface over ESPN's site and CDN APIs. It has two layers: live `espn_*` functions that hit ESPN directly for play-by-play, team box scores, standings, schedules and team metadata, and `load_*` functions meant to read pre-scraped, cleaned seasons back from a companion usfootballR-data repository. That repository holds no data files as of this writing, so the live `espn_*` functions are the working surface. It's the SportsDataverse package for domestic soccer, next to the college and pro football, basketball and hockey packages.
 
 ## Installation
 
@@ -17,7 +17,7 @@ if (!requireNamespace('pak', quietly = TRUE)) install.packages('pak')
 pak::pak("sportsdataverse/usfootballR")
 ```
 
-No API key is required. Every function reads from ESPN's public site and CDN endpoints, or from the public usfootballR-data GitHub repository.
+No API key is required. Every function reads from ESPN's public site and CDN endpoints.
 
 Optional packages the loaders and database writers lean on: `progressr` for progress bars during multi-season loads, and `DBI`/`RSQLite`/`purrr` for `update_mls_db()` and `update_nwsl_db()`.
 
@@ -32,8 +32,8 @@ mls_teams <- espn_mls_teams()
 # A single game's play-by-play
 pbp <- espn_mls_pbp(game_id = 598135)
 
-# A full cleaned season from the data repo
-season_pbp <- load_mls_pbp(seasons = 2021)
+# Every game from a date onward (the season argument is a yyyymmdd start date)
+scoreboard <- espn_mls_scoreboard(season = "20220226")
 ```
 
 `espn_mls_teams()` returns one row per team with `team_id`, `team`, `mascot`, `display_name`, `abbreviation`, colors and logo URLs. `espn_mls_pbp()` returns one row per play for the given `game_id`, including the athletes involved. `load_mls_pbp()` reads one or more full seasons of already-cleaned play-by-play from the data repo and row-binds them into a single tibble.
@@ -59,9 +59,10 @@ It returns a named list with two elements, `Plays` and `Team`, rather than two s
 
 ## Loading full seasons
 
-The `load_mls_*()` and `load_nwsl_*()` functions read RDS files from the [usfootballR-data](https://github.com/saiemgilani/usfootballR-data) repository rather than re-scraping ESPN. Each takes a `seasons` argument (a vector of 4-digit years) and, per the package's own bounds checks, expects play-by-play and player-box seasons no earlier than 2002 and team-box seasons no earlier than 2003, up through the current season as computed by an internal "most recent season" helper. Passing `seasons = TRUE` loads every available season from the minimum year forward.
+The `load_mls_*()` and `load_nwsl_*()` functions are written to read RDS files from the [usfootballR-data](https://github.com/sportsdataverse/usfootballR-data) repository rather than re-scraping ESPN. That repository currently contains only a README and a license, so these functions return nothing until seasons are published there; scrape with the `espn_*()` functions and save your own files in the meantime. Each takes a `seasons` argument (a vector of 4-digit years) and, per the package's own bounds checks, expects play-by-play and player-box seasons no earlier than 2002 and team-box seasons no earlier than 2003, up through the current season as computed by an internal "most recent season" helper. Passing `seasons = TRUE` loads every available season from the minimum year forward.
 
 ```r
+# returns an empty table until seasons are published to usfootballR-data
 mls_pbp_2021_2023 <- load_mls_pbp(seasons = 2021:2023)
 ```
 
@@ -79,22 +80,22 @@ That call creates (or appends to) a SQLite file under `data/` with every MLS pla
 library(usfootballR)
 library(dplyr)
 
-# Full 2022 MLS season play-by-play from the data repo
-pbp_2022 <- load_mls_pbp(seasons = 2022)
+# One match: play-by-play and team box score in a single call
+game <- espn_mls_game_all(game_id = 598135)
+pbp <- game$Plays
 
-# Team lookup so plays carry readable team names
+# Plays per team in the match
+plays_by_team <- pbp %>%
+  count(team_id, sort = TRUE)
+
+# Team lookup for readable names (join on team_id once both columns share a type)
 teams <- espn_mls_teams() %>%
   select(team_id, team, abbreviation)
-
-# Plays per team across the season
-plays_by_team <- pbp_2022 %>%
-  count(team_id, sort = TRUE) %>%
-  left_join(teams, by = "team_id")
 
 plays_by_team
 ```
 
-`load_mls_pbp()` returns one row per play across every game in the requested season, already cleaned and column-bound. Joining against `espn_mls_teams()` attaches readable team names and abbreviations to the raw team ids, and counting rows per team gives a season-level play volume summary.
+`espn_mls_game_all()` returns a two-element list, `Plays` and `Team`, for one match. Counting plays per `team_id` gives each side's volume for that game, and `espn_mls_teams()` supplies the names and abbreviations to join on; check that `team_id` has the same type on both sides before joining. Repeat over the game ids from `espn_mls_scoreboard()` to build a season.
 
 ## Good to know
 
@@ -112,10 +113,16 @@ The soccer corner of the SportsDataverse. For other ESPN-scraped sports on the s
 
 usfootballR's `espn_*` functions and its `load_*`/data-repo split mirror the structure hoopR and fastRhockey use for their own sports: a live-scrape layer for the current game or season, and a loader layer for pulling a full run of history in one call without re-hitting ESPN season by season.
 
+## Data and automation
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/usfootballR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/usfootballR/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/usfootballR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/usfootballR/actions/workflows/pkgdown.yaml)
+- Cheat sheets for the rest of the family are at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets); this package does not have one.
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
+
 ## Links
 
 - [Documentation](https://usfootballR.sportsdataverse.org/)
 - [Source](https://github.com/sportsdataverse/usfootballR)
-- [Data repository](https://github.com/saiemgilani/usfootballR-data)
+- [usfootballR-data](https://github.com/sportsdataverse/usfootballR-data) — the companion data repository (empty as of this writing)
 
 My role: author and maintainer. Part of the [SportsDataverse](https://sportsdataverse.org).

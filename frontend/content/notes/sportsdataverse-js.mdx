@@ -38,7 +38,7 @@ const game = await sdv.nba.espnNbaSummary({ event_id: 401584793, parsed: true })
 const roster = await sdv.nfl.espnNflTeamRoster({ team_id: 12 });
 ```
 
-Every wrapper returns the raw ESPN payload by default. Pass `parsed: true` and it runs through a registered parser instead, coming back as a flat array of snake_cased row objects, the Node analog of sportsdataverse-py's `return_parsed=True`. The cross-league ESPN methods follow one naming rule, `espn` plus the league plus the endpoint in camelCase (`espnNbaScoreboard`), and each one also has a snake_case alias (`espn_nba_scoreboard`) for parity with the Python and R packages. Parameters accept snake_case or camelCase keys interchangeably, so a `team_id` key and a `teamId` key do the same thing.
+Every wrapper returns the raw ESPN payload by default. Pass `parsed: true` and it runs through a registered parser instead, coming back as a flat array of snake_cased row objects, the Node analog of sportsdataverse-py's `return_parsed=True`. The one exception is the summary endpoint: parsed, it returns an object of named sub-frames (`boxscore_player`, `plays`, `winprobability` and so on) unless you pass `section` to pick one, so the `game` value above is an object, not an array. The cross-league ESPN methods follow one naming rule, `espn` plus the league plus the endpoint in camelCase (`espnNbaScoreboard`), and each one also has a snake_case alias (`espn_nba_scoreboard`) for parity with the Python and R packages. Parameters accept snake_case or camelCase keys interchangeably, so a `team_id` key and a `teamId` key do the same thing.
 
 Switching sports from there is a one-token change, since every league gets the same method shapes:
 
@@ -105,6 +105,12 @@ Sibling packages across the ecosystem cover the same sources in R and Python:
 - No separate data-release repo backs this package, it is a live-API client throughout, it fetches on every call rather than reading pre-built parquet the way the R and Python `load_*` functions do
 
 The docs site groups the reference by sport with a dedicated Providers group for the cross-sport families, and the Guides section ships live, editable RunCell code cells next to the prose so you can try a call before copying it into your own project.
+
+## Data and automation
+
+- Package checks: [![CI](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/ci.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/ci.yml) [![npm publish](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-js/actions/workflows/npm-publish.yml) [![npm](https://img.shields.io/npm/v/sportsdataverse)](https://www.npmjs.com/package/sportsdataverse)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/sportsdataverse-js.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 

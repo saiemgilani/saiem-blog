@@ -63,7 +63,7 @@ assets <- gh_cli_release_assets(tag = "cfb_pbp", repo = "sportsdataverse/sportsd
 assets
 ```
 
-`gh_cli_available()` returns a logical, so it's a safe first call to guard a script that shells out to `gh`. `gh_cli_release_tags()` returns every release tag the repository has, and `gh_cli_release_assets()` returns the asset listing for one of them — the same information a `load_*()` function's URL-building logic reads to find the current file for a given season or dataset.
+`gh_cli_available()` returns `TRUE` when the `gh` CLI is on the path and stops with an error (through `cli::cli_abort()`) when it is not, so wrap it in `tryCatch()` if you want a fallback branch instead of a stop. `gh_cli_release_tags()` returns every release tag the repository has, and `gh_cli_release_assets()` returns the asset listing for one of them — the same information a `load_*()` function's URL-building logic reads to find the current file for a given season or dataset.
 
 ## Good to know
 
@@ -79,6 +79,14 @@ assets
 ## Related
 
 sportsdataversedata is the release store behind every SportsDataverse `load_*()` function in [cfbfastR](/notes/cfbfastr), [hoopR](/notes/intro-to-hoopR), [wehoop](/notes/wehoop), [baseballr](/notes/baseballr) and [fastRhockey](/notes/fastrhockey), and it is installed alongside those by [sportsdataverse (R)](/notes/sportsdataverse-r). The same release-store role exists in Python as `sportsdataverse.release`, part of [sportsdataverse-py](/notes/sportsdataverse-py).
+
+## Data and automation
+
+[sportsdataverse-data releases](https://github.com/sportsdataverse/sportsdataverse-data/releases) is where the assets land. The producer repos that publish through this package's helpers (or their Python port) are: [cfbfastR-data](https://github.com/sportsdataverse/cfbfastR-data), [cfbfastR-cfb-data](https://github.com/sportsdataverse/cfbfastR-cfb-data), [cfbfastR-cfb-raw](https://github.com/sportsdataverse/cfbfastR-cfb-raw), [ncaa-mfb-football-data](https://github.com/sportsdataverse/ncaa-mfb-football-data), [hoopR-mbb-data](https://github.com/sportsdataverse/hoopR-mbb-data), [hoopR-nba-data](https://github.com/sportsdataverse/hoopR-nba-data), [hoopR-nba-stats-data](https://github.com/sportsdataverse/hoopR-nba-stats-data), [ncaa-mbb-hoops-data](https://github.com/sportsdataverse/ncaa-mbb-hoops-data), [wehoop-wbb-data](https://github.com/sportsdataverse/wehoop-wbb-data), [wehoop-wnba-data](https://github.com/sportsdataverse/wehoop-wnba-data), [wehoop-wnba-stats-data](https://github.com/sportsdataverse/wehoop-wnba-stats-data), [ncaa-wbb-hoops-data](https://github.com/sportsdataverse/ncaa-wbb-hoops-data), [fastRhockey-nhl-data](https://github.com/sportsdataverse/fastRhockey-nhl-data), [fastRhockey-pwhl-data](https://github.com/sportsdataverse/fastRhockey-pwhl-data), [baseballr-data](https://github.com/sportsdataverse/baseballr-data). Each one's workflow status is on its Actions tab and in the nightly [ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md).
+
+- Package checks: [![CRAN status check](https://github.com/sportsdataverse/sportsdataverse-data/actions/workflows/cran-checks.yaml/badge.svg)](https://github.com/sportsdataverse/sportsdataverse-data/actions/workflows/cran-checks.yaml)
+- Cheat sheets for the rest of the family are at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets); this package does not have one.
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 

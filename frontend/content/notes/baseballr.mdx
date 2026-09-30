@@ -96,7 +96,7 @@ pitching <- bref_daily_pitcher("2015-04-05", "2015-04-30") %>%
 head(pitching, 10)
 ```
 
-That adds FIP and opponent wOBA columns to the same kind of Baseball-Reference daily pull, this time for pitchers, sorted by innings pitched. Swap either source for `statcast_search(start_date, end_date, playerid, player_type = "batter")` if you want pitch-level Statcast detail instead of the Baseball-Reference daily aggregate.
+That adds FIP and opponent wOBA columns to the same kind of Baseball-Reference daily pull, this time for pitchers, sorted by innings pitched. Statcast is a separate workflow rather than a drop-in source here: `statcast_search()` returns pitch-level rows, not the season-aggregate columns `woba_plus()` and `fip_plus()` expect, so aggregate to the player level first if you want to run the metric helpers on Statcast data.
 
 ## Good to know
 
@@ -111,13 +111,24 @@ That adds FIP and opponent wOBA columns to the same kind of Baseball-Reference d
 
 ## Related
 
-Other SportsDataverse R packages: [hoopR](/notes/intro-to-hoopR), [wehoop](/notes/wehoop), [cfbfastR](/notes/cfbfastr), [fastRhockey](/notes/fastrhockey), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python sibling for the same sources is [sportsdataverse-py](/notes/sportsdataverse-py). Pre-computed model datasets and NCAA baseball history live in the [baseballr-data](https://github.com/sportsdataverse/baseballr-data) release repo.
+Other SportsDataverse R packages: [hoopR](/notes/intro-to-hoopR), [wehoop](/notes/wehoop), [cfbfastR](/notes/cfbfastr), [fastRhockey](/notes/fastrhockey), [oddsapiR](/notes/oddsapir), [sdvplotR](/notes/sdvplotr). The Python sibling for the same sources is [sportsdataverse-py](/notes/sportsdataverse-py). Pre-computed model datasets and NCAA baseball history are published as release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases) by the [baseballr-data](https://github.com/sportsdataverse/baseballr-data) producer repo.
+
+## Data and automation
+
+The `load_*()` functions read GitHub release assets on [sportsdataverse-data](https://github.com/sportsdataverse/sportsdataverse-data/releases). Those assets are built and refreshed by scheduled workflows in the producer repos below; the badges are live, so a red one means the most recent scheduled run failed.
+
+- [baseballr-data](https://github.com/sportsdataverse/baseballr-data) — the MLB model datasets and NCAA baseball history. [![NCAA daily update](https://github.com/sportsdataverse/baseballr-data/actions/workflows/daily_ncaa_baseball.yml/badge.svg)](https://github.com/sportsdataverse/baseballr-data/actions/workflows/daily_ncaa_baseball.yml) [![MLB model datasets](https://github.com/sportsdataverse/baseballr-data/actions/workflows/mlb_models_cron.yml/badge.svg)](https://github.com/sportsdataverse/baseballr-data/actions/workflows/mlb_models_cron.yml)
+- Raw captures the producers rebuild from: [baseballr-mlb-raw](https://github.com/sportsdataverse/baseballr-mlb-raw).
+
+- Package checks: [![R CMD check](https://github.com/BillPetti/baseballr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/BillPetti/baseballr/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/BillPetti/baseballr/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/BillPetti/baseballr/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/baseballr)](https://CRAN.R-project.org/package=baseballr)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/baseballr.pdf) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
 - [Documentation](https://billpetti.github.io/baseballr/)
 - [Source on GitHub](https://github.com/BillPetti/baseballr)
 - [CRAN](https://CRAN.R-project.org/package=baseballr)
-- [baseballr-data](https://github.com/sportsdataverse/baseballr-data) — released MLB model outputs and college baseball data
+- [sportsdataverse-data releases](https://github.com/sportsdataverse/sportsdataverse-data/releases) — the release assets the `load_*()` functions read
 
 My role: maintainer; Bill Petti created it. Part of the [SportsDataverse](https://sportsdataverse.org) — open sports data tooling for R, Python and JavaScript.

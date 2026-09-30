@@ -85,10 +85,11 @@ plays <- cfb4th::get_4th_plays(game)
 
 plays %>%
   cfb4th::add_4th_probs() %>%
+  dplyr::slice(1) %>%
   cfb4th::make_table_data()
 ```
 
-`cfbfastR::cfbd_game_info()` looks up the game itself, `get_4th_plays()` pulls its fourth-down plays from ESPN, and the same `add_4th_probs()` / `make_table_data()` pair from the hand-built example above turns each one into a decision table.
+`cfbfastR::cfbd_game_info()` looks up the game itself, `get_4th_plays()` pulls its fourth-down plays from ESPN, `add_4th_probs()` scores every one of them, and `make_table_data()` formats a single play's decision table (it drops the play identifiers and sorts the choices by probability), so pick one row, here the first fourth down, before calling it.
 
 ## Good to know
 
@@ -107,6 +108,14 @@ plays %>%
 - [sportsdataverse-R](/notes/sportsdataverse-r) — the R meta-package
 - [sportsdataverse-py](/notes/sportsdataverse-py) — the Python mirror
 - nfl4th — the NFL package this one is based on
+
+## Data and automation
+
+This package has no loaders of its own; schedules and play-by-play come through cfbfastR, whose release source and producer workflows are listed in the [cfbfastR note](/notes/cfbfastr).
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/cfb4th/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/cfb4th/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/cfb4th/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/cfb4th/actions/workflows/pkgdown.yaml)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/cfbplotR-cfb4th-cfbseedR.pdf) (shared with cfbplotR, cfb4th and cfbseedR) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 

@@ -22,7 +22,7 @@ For the development version:
 pak::pak("sportsdataverse/cfbseedR")
 ```
 
-It needs no API key. Everything in the getting-started article runs offline against a bundled toy season; real schedule data comes from cfbfastR, which does need its own `CFBD_API_KEY` (see the cfbfastR note).
+It needs no API key. Everything in the getting-started article runs offline against a bundled toy season; real schedule data comes from cfbfastR: `cfbfastR::load_cfb_schedules()` reads release files with no key, while the `cfbd_*()` API functions need a `CFBD_API_KEY` (see the cfbfastR note).
 
 ## Getting started
 
@@ -68,7 +68,7 @@ seeded <- cfb_playoff_seeds(standings, rankings = rankings, playoff_seeds = 4)
 seeded[!is.na(seeded$seed), c("team", "conference", "conf_champ", "seed")]
 ```
 
-`cfb_simulations()` fills in the `NA` results week by week using `compute_results` (the ELO-based `cfbseedR_compute_results()` by default), then computes standings, champions and seeds for every simulated season. The returned `cfbseedR_simulation` list carries `overall` (one row per team with win totals and seeding probabilities across all simulations), plus per-simulation `standings`, the simulated `games`, `team_wins`, a per-matchup `game_summary`, and the `sim_params` used. `cfb_playoff_seeds()` on its own implements CFP straight seeding: the field is the best-ranked teams with the five highest-ranked conference champions guaranteed a spot, seeded strictly in ranking order; pass a `rankings` frame (`team`, `rank`) for a committee-style ordering, or omit it for the documented fallback (win percentage, then strength of victory, strength of schedule, point differential).
+`cfb_simulations()` fills in the `NA` results week by week using `compute_results` (the ELO-based `cfbseedR_compute_results()` by default), then computes standings, champions and seeds for every simulated season. The returned `cfbseedR_simulation` list carries `overall` (one row per team with win totals and seeding probabilities across all simulations), plus per-simulation `standings`, the simulated `games`, `team_wins`, a per-matchup `game_summary`, and the `sim_params` used. `cfb_playoff_seeds()` on its own implements CFP straight seeding: the field is the best-ranked teams plus the automatic qualifiers, seeded strictly in ranking order. Under the default `autobid = "2026"` policy the ACC, Big 12, Big Ten and SEC champions are in regardless of ranking, the highest-ranked Group of 6 team is in whether or not it won its conference, and Notre Dame is in when ranked inside the field; `autobid = "2025"` is the older rule of the five highest-ranked conference champions. Pass a `rankings` frame (`team`, `rank`) for a committee-style ordering, or omit it for the documented fallback (win percentage, then strength of victory, strength of schedule, point differential).
 
 ## Writing your own results generator
 
@@ -111,6 +111,14 @@ The tiebreaker cascade isn't one formula applied everywhere. cfbseedR registers 
 - [sportsdataverse-R](/notes/sportsdataverse-r) — the R meta-package
 - [sportsdataverse-py](/notes/sportsdataverse-py) — the Python mirror, whose `cfb_standings` shares this package's tiebreaker rulings
 - nflseedR — the NFL package this one adapts
+
+## Data and automation
+
+This package has no loaders of its own; schedules and play-by-play come through cfbfastR, whose release source and producer workflows are listed in the [cfbfastR note](/notes/cfbfastr).
+
+- Package checks: [![R CMD check](https://github.com/sportsdataverse/cfbseedR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sportsdataverse/cfbseedR/actions/workflows/R-CMD-check.yaml) [![pkgdown site](https://github.com/sportsdataverse/cfbseedR/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/sportsdataverse/cfbseedR/actions/workflows/pkgdown.yaml) [![CRAN](https://www.r-pkg.org/badges/version/cfbseedR)](https://CRAN.R-project.org/package=cfbseedR)
+- [Cheat sheet (PDF)](https://sportsdataverse.org/cheatsheets/cfbplotR-cfb4th-cfbseedR.pdf) (shared with cfbplotR, cfb4th and cfbseedR) — one page of the main functions; the whole set is at [sportsdataverse.org/cheatsheets](https://sportsdataverse.org/cheatsheets).
+- [Ecosystem status](https://github.com/sportsdataverse/.github/blob/main/status/ecosystem.md) — a nightly snapshot of every SportsDataverse repo: workflow conclusions, release-asset freshness, open PRs and issues.
 
 ## Links
 
