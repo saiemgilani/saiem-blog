@@ -15,6 +15,18 @@ import * as duckdb from "@duckdb/duckdb-wasm";
 
 let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
 
+/**
+ * duckdb-wasm defaults `forceFullHTTPReads` to TRUE (lib/src/io/web_filesystem.cc:
+ * `force_full_http_reads.value_or(true)`), so without this every read_parquet over the relay
+ * skips range requests and GETs the whole release file (4.3 MB for the shots season).
+ * The relay answers `HEAD` + `Range: bytes=0-` with 206 + Content-Length, which is the
+ * probe duckdb needs to switch to range reads; `allowFullHTTPReads` stays on as the
+ * fallback for a source that ever stops honouring ranges.
+ */
+export const DB_CONFIG: duckdb.DuckDBConfig = {
+  filesystem: { forceFullHTTPReads: false, allowFullHTTPReads: true },
+};
+
 async function initDb(): Promise<duckdb.AsyncDuckDB> {
   const bundles = duckdb.getJsDelivrBundles();
   const bundle = await duckdb.selectBundle(bundles);
@@ -29,6 +41,7 @@ async function initDb(): Promise<duckdb.AsyncDuckDB> {
   // timeout error tells visitors to retry, so a retry has to get a fresh engine.
   try {
     await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+    await db.open(DB_CONFIG);
   } catch (error) {
     worker.terminate();
     throw error;
