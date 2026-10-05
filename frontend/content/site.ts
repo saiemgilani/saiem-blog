@@ -14,7 +14,6 @@ export const site = {
     { label: "GitHub", href: "https://github.com/saiemgilani" },
     { label: "X", href: "https://x.com/saiemgilani" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/saiem-gilani/" },
-    { label: "Instagram", href: "https://www.instagram.com/saiemgilani" },
   ],
   support: [
     { label: "Patreon", href: "https://www.patreon.com/sportsdataverse" },
