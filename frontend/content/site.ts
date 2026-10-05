@@ -17,6 +17,7 @@ export const site = {
     { label: "Instagram", href: "https://www.instagram.com/saiemgilani" },
   ],
   support: [
+    { label: "Patreon", href: "https://www.patreon.com/sportsdataverse" },
     { label: "Ko-fi", href: "https://ko-fi.com/sportsdataverse" },
     { label: "PayPal", href: "https://www.paypal.me/SaiemGilani" },
   ],
