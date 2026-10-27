@@ -31,6 +31,10 @@ const TABLE: { q: string; slots: Slots; ignored?: string[] }[] = [
   { q: "Brunson clutch pull-ups, vibes only", slots: { player: who(1628973) }, ignored: ["clutch", "pull-ups", "vibes", "only"] },
   { q: "dunks and layups", slots: { kind: "dunk" }, ignored: ["layups"] },
   { q: "LeBron alley oops", slots: { kind: "alley-oop" }, ignored: ["lebron"] },
+  { q: "OKC Williams layups", slots: { player: who(1631114), kind: "layup" } },
+  { q: "Williams layups against OKC", slots: { player: who(1630314), kind: "layup" }, ignored: ["against", "okc"] },
+  { q: "threes in q1 or q4", slots: { shotValue: 3, period: { from: 1, to: 1 } }, ignored: ["q4"] },
+  { q: "dunks in August", slots: { kind: "dunk" }, ignored: ["august"] },
 ];
 
 test("phrase -> slots, and leftover words are reported as ignored", () => {
@@ -56,11 +60,19 @@ test("slots -> SQL: one fixed fragment per slot, nothing else", () => {
   assert.match(shotsSql, /abs\(x_legacy\) <= 250 AND y_legacy BETWEEN -52.5 AND 417.5$/);
 
   const dunks = buildSql({ result: "made", kind: "dunk", period: { from: 4, to: 4 } });
-  assert.ok(dunks.summarySql.includes("WHERE sub_type ILIKE '%dunk%' AND period = 4 AND shot_result = 'Made' GROUP BY"));
+  // made/missed never filters rows (FG% must count every attempt); it sizes the hexes and ranks the table
+  assert.ok(dunks.summarySql.includes("WHERE sub_type ILIKE '%dunk%' AND period = 4 AND abs(x_legacy) <= 250"));
+  assert.ok(dunks.summarySql.endsWith("HAVING fgm > 0 ORDER BY fgm DESC, fga DESC LIMIT 10"));
+  assert.ok(!dunks.shotsSql.split(" WHERE ")[1].includes("shot_result"));
+  assert.equal(dunks.only, 1);
+  assert.equal(buildSql({ result: "missed" }).only, 0);
+  assert.ok(buildSql({ result: "missed" }).summarySql.includes("HAVING fga - fgm > 0 ORDER BY fga - fgm DESC"));
   assert.equal(dunks.usesGames, false);
   assert.ok(buildSql({ period: { from: 5, to: 10 } }).shotsSql.includes("period BETWEEN 5 AND 10"));
   assert.ok(buildSql({ dateFrom: "2026-03-01", dateTo: "2026-03-31" }).shotsSql.includes("game_date >= '2026-03-01' AND game_date <= '2026-03-31'"));
-  assert.ok(!buildSql({}).summarySql.includes("WHERE"));
+  const none = buildSql({});
+  assert.equal(none.summarySql, "SELECT player_name, team_tricode, count(*) AS fga, count_if(shot_result = 'Made')::BIGINT AS fgm FROM {{shots}} WHERE abs(x_legacy) <= 250 AND y_legacy BETWEEN -52.5 AND 417.5 GROUP BY person_id, player_name, team_tricode HAVING fga > 0 ORDER BY fga DESC LIMIT 10");
+  assert.equal(none.only, undefined);
 });
 
 test("SQL template refuses anything the schema does not describe", () => {
@@ -70,6 +82,7 @@ test("SQL template refuses anything the schema does not describe", () => {
   bad({ player: { id: "1 OR 1=1", name: "x", team: "NYK" } });
   bad({ dateFrom: "2026-01-01' OR '1'='1" });
   bad({ period: { from: 4, to: 1 } });
+  bad({ dateFrom: "2026-02-31" });
   bad({ shot_distance: 30 });
 });
 
@@ -82,5 +95,14 @@ test("model JSON is validated key by key: unknown dropped, out-of-domain dropped
   assert.deepEqual(dropped.sort(), ['color (no such filter)', 'dateTo: tomorrow', 'kind: "teleport"']);
   assert.deepEqual(fromModel({ player: "LeBron" }, IDX), { slots: {}, dropped: ["player: LeBron"] });
   assert.deepEqual(fromModel("SELECT * FROM shots", IDX).slots, {});
-  assert.doesNotThrow(() => buildSql(fromModel({ period: 7, shotValue: 2 }, IDX).slots));
+  const ok = fromModel({ period: 7, shotValue: 2 }, IDX).slots;
+  assert.deepEqual(ok, { period: { from: 7, to: 7 }, shotValue: 2 });
+  assert.ok(buildSql(ok).shotsSql.includes("shot_value = 2 AND period = 7"));
+  assert.deepEqual(fromModel({ dateFrom: "2026-02-31" }, IDX), { slots: {}, dropped: ["dateFrom: 2026-02-31"] });
+  assert.deepEqual(fromModel({ constructor: "x", toString: 1, region: "rim" }, IDX), { slots: { region: "rim" }, dropped: ["constructor (no such filter)", "toString (no such filter)"] });
+});
+
+test("a malformed team code in the data is left out of the index instead of breaking a parse", () => {
+  const idx = playerIndex([...PLAYERS, { id: 9, name: "Williams", team: "N(K", n: 9999 }]);
+  assert.deepEqual(parse("Williams layups", idx).slots.player, who(1630314));
 });

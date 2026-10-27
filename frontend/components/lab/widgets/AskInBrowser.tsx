@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { MLCEngineInterface } from "@mlc-ai/web-llm";
 import { labDataUrl } from "@lib/lab/dataUrl";
-import { KINDS, REGIONS, SEASON, buildSql, fromModel, parse, playerIndex, type Parsed, type PlayerIndex, type SlotKey, type Slots } from "@lib/lab/ask/parse";
+import { KINDS, REGIONS, SEASON, buildSql, fromModel, parse, playerIndex, type PlayerIndex, type SlotKey, type Slots } from "@lib/lab/ask/parse";
 import { HexCourt, type Shot } from "./HexCourt";
 
 const SHOTS = { repo: "sportsdataverse/sportsdataverse-data", tag: "nba_stats_shots", asset: "shots_2026.parquet" };
@@ -15,7 +15,7 @@ const EXAMPLES = ["Brunson corner threes after the all-star break", "made dunks 
 const SYSTEM = `You map the leftover words of a question about 2025-26 NBA shots to JSON filters. Use only these keys: player (a surname), shotValue (2 or 3), region (${REGIONS.join(" | ")}), kind (${Object.keys(KINDS).join(" | ")}), period ({"from": 1-10, "to": 1-10}; 5 and up is overtime), dateFrom and dateTo (YYYY-MM-DD, between ${SEASON.first} and ${SEASON.last}), result (made | missed). Leave out anything you are not sure of. Reply with one JSON object and nothing else, {} if nothing applies.`;
 
 type Row = { name: string; team: string; fga: number; fgm: number };
-type Result = { key: string; shots: Shot[] | null; rows: Row[]; error: string | null; sql: string };
+type Result = { key: string; shots: Shot[] | null; rows: Row[]; error: string | null; sql: string; only?: 0 | 1 };
 type Committed = { q: string; model: Slots; dropped: string[] };
 type ModelState = { s: "off" | "confirm" | "no-webgpu" | "loading" | "ready" | "error"; note?: string };
 
@@ -60,11 +60,12 @@ function chips(s: Slots): (SlotKey | "dates")[] {
 }
 const keysOf = (k: SlotKey | "dates"): SlotKey[] => (k === "dates" ? ["dateFrom", "dateTo"] : [k]);
 
-async function askModel(engine: MLCEngineInterface, q: string, p: Parsed): Promise<unknown> {
+// The model is shown the leftover words and nothing else.
+async function askModel(engine: MLCEngineInterface, leftover: string[]): Promise<unknown> {
   const r = await engine.chat.completions.create({
     messages: [
       { role: "system", content: SYSTEM },
-      { role: "user", content: `Question: ${q}\nAlready understood: ${JSON.stringify(p.slots)}\nLeftover words: ${p.ignored.join(" ")}` },
+      { role: "user", content: leftover.join(" ") },
     ],
     temperature: 0,
     max_tokens: 120,
@@ -73,15 +74,26 @@ async function askModel(engine: MLCEngineInterface, q: string, p: Parsed): Promi
   return JSON.parse(r.choices[0]?.message.content ?? "");
 }
 
+/** URL form of the model's slots: the player goes by name so fromModel can re-validate it on load. */
+const modelParam = (m: Slots) => (Object.keys(m).length ? JSON.stringify({ ...m, player: m.player?.name }) : null);
+
 export function AskInBrowser() {
-  const [text, setText] = useState(() => new URLSearchParams(window.location.search).get("q") || EXAMPLES[0]);
+  const [shared] = useState(() => new URLSearchParams(window.location.search));
+  const [text, setText] = useState(() => shared.get("q") || EXAMPLES[0]);
+  const sharedModelUsed = useRef(false);
   const [index, setIndex] = useState<PlayerIndex | null>(null);
   const [indexError, setIndexError] = useState<string | null>(null);
   const [committed, setCommitted] = useState<Committed>(() => ({ q: text, model: {}, dropped: [] }));
   const [result, setResult] = useState<Result | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [indexTry, setIndexTry] = useState(0);
   const [thinking, setThinking] = useState(false);
   const [model, setModel] = useState<ModelState>({ s: "off" });
   const engine = useRef<MLCEngineInterface | null>(null);
+  const worker = useRef<Worker | null>(null);
+  const asked = useRef(0); // the latest submit; an older model reply is dropped
+
+  useEffect(() => () => worker.current?.terminate(), []);
 
   const live = useMemo(() => parse(text, index ?? []), [text, index]);
   const rules = useMemo(() => parse(committed.q, index ?? []), [committed.q, index]);
@@ -91,49 +103,72 @@ export function AskInBrowser() {
 
   useEffect(() => {
     query("SELECT person_id, any_value(player_name), mode(team_tricode), count(*) FROM {{shots}} GROUP BY 1", 2000)
-      .then((r) => setIndex(playerIndex(r.rows.map((x) => ({ id: Number(x[0]), name: x[1] ?? "", team: x[2] ?? "", n: Number(x[3]) })))))
+      .then((r) => {
+        const idx = playerIndex(r.rows.map((x) => ({ id: Number(x[0]), name: x[1] ?? "", team: x[2] ?? "", n: Number(x[3]) })));
+        setIndex(idx);
+        setIndexError(null);
+        // A shared link carries the model's slots; they go through the same validator as a live reply.
+        const m = shared.get("m");
+        if (m && !sharedModelUsed.current) {
+          sharedModelUsed.current = true;
+          try {
+            const ms = fromModel(JSON.parse(m), idx).slots;
+            setCommitted((c) => {
+              for (const k of Object.keys(parse(c.q, idx).slots) as SlotKey[]) delete ms[k]; // the rules win, as in submit
+              return { ...c, model: ms };
+            });
+          } catch { /* a garbled link keeps the rules' answer */ }
+        }
+      })
       .catch((e: unknown) => setIndexError(e instanceof Error ? e.message : String(e)));
-  }, []);
+  }, [indexTry, shared]);
 
   useEffect(() => {
     if (!index || !Object.keys(slots).length) return;
     let alive = true;
-    const { shotsSql, summarySql } = buildSql(slots);
+    const { shotsSql, summarySql, only } = buildSql(slots);
     Promise.all([query(shotsSql, 250_000), query(summarySql, 10)])
       .then(([s, t]) => {
         if (!alive) return;
         setResult({
           key: reqKey,
           sql: summarySql,
+          only,
           error: null,
           shots: s.rows.map((x) => ({ x: Number(x[0]), y: Number(x[1]), m: Number(x[2]) })),
           rows: t.rows.map((x) => ({ name: x[0] ?? "", team: x[1] ?? "", fga: Number(x[2]), fgm: Number(x[3]) })),
         });
       })
-      .catch((e: unknown) => { if (alive) setResult({ key: reqKey, sql: summarySql, error: e instanceof Error ? e.message : String(e), shots: null, rows: [] }); });
+      .catch((e: unknown) => { if (alive) setResult({ key: reqKey, sql: summarySql, only, error: e instanceof Error ? e.message : String(e), shots: null, rows: [] }); });
     return () => { alive = false; };
     // reqKey stands in for slots
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reqKey, index]);
+  }, [reqKey, index, retry]);
+
+  function commit(next: Committed) {
+    setCommitted(next);
+    const m = modelParam(next.model);
+    window.history.replaceState(null, "", `?q=${encodeURIComponent(next.q)}${m ? `&m=${encodeURIComponent(m)}` : ""}`);
+  }
 
   async function submit(q: string) {
+    const ticket = ++asked.current;
     setText(q);
-    window.history.replaceState(null, "", `?q=${encodeURIComponent(q)}`);
     const p = parse(q, index ?? []);
     let next: Committed = { q, model: {}, dropped: [] };
     if (engine.current && p.ignored.length) {
       setThinking(true);
       try {
-        const m = fromModel(await askModel(engine.current, q, p), index ?? []);
+        const m = fromModel(await askModel(engine.current, p.ignored), index ?? []);
         for (const k of Object.keys(p.slots) as SlotKey[]) delete m.slots[k]; // the rules win
         next = { q, model: m.slots, dropped: m.dropped };
       } catch {
         next.dropped = ["(the model's reply was not JSON)"];
       } finally {
-        setThinking(false);
+        if (ticket === asked.current) setThinking(false);
       }
     }
-    setCommitted(next);
+    if (ticket === asked.current) commit(next);
   }
 
   function removeChip(k: SlotKey | "dates") {
@@ -141,7 +176,7 @@ export function AskInBrowser() {
     if (!own.length) {
       const m = { ...committed.model };
       for (const x of keysOf(k)) delete m[x];
-      setCommitted({ ...committed, model: m });
+      commit({ ...committed, model: m });
       return;
     }
     // A chip the rules made came from the user's words: take those words out of the question.
@@ -158,12 +193,14 @@ export function AskInBrowser() {
     setModel({ s: "loading", note: "starting…" });
     try {
       const webllm = await import("@mlc-ai/web-llm");
-      const worker = new Worker(new URL("./askWorker.ts", import.meta.url), { type: "module" });
-      engine.current = await webllm.CreateWebWorkerMLCEngine(worker, MODEL, {
+      worker.current = new Worker(new URL("./askWorker.ts", import.meta.url), { type: "module" });
+      engine.current = await webllm.CreateWebWorkerMLCEngine(worker.current, MODEL, {
         initProgressCallback: (r) => setModel({ s: "loading", note: r.text }),
       });
       setModel({ s: "ready" });
     } catch (e) {
+      worker.current?.terminate();
+      worker.current = null;
       setModel({ s: "error", note: e instanceof Error ? e.message : String(e) });
     }
   }
@@ -203,20 +240,30 @@ export function AskInBrowser() {
         {settled && rules.ignored.length > 0 && <span className="text-muted">ignored: {rules.ignored.join(", ")}</span>}
         {committed.dropped.length > 0 && <span className="text-muted">model output dropped: {committed.dropped.join(", ")}</span>}
       </div>
-      {indexError && <p role="alert" className="px-3 py-2 font-mono text-xs text-brand">could not load the shots file: {indexError}</p>}
+      {indexError && (
+        <p role="alert" className="px-3 py-2 font-mono text-xs text-brand">
+          could not load the shots file: {indexError} <button type="button" className="underline" onClick={() => { setIndexError(null); setIndexTry((r) => r + 1); }}>retry</button>
+        </p>
+      )}
       {(pending || shown) && (
         <HexCourt
           shots={shown ? shown.shots : null}
           error={shown ? shown.error : null}
+          only={shown?.only}
           label={`Hexbin shot chart for: ${chips(slots).map((k) => chipLabel(k, slots)).join(", ")}`}
         />
+      )}
+      {shown?.error && (
+        <p className="border-t border-rule px-3 py-2 font-mono text-[11px] text-muted">
+          <button type="button" className="underline" onClick={() => { setResult(null); setRetry((r) => r + 1); }}>retry the query</button>
+        </p>
       )}
       {shown && !shown.error && (
         <div className="overflow-x-auto border-t border-rule px-3 py-2 font-mono text-[11px] text-muted">
           <table className="w-full">
             <caption className="pb-1 text-left">
-              {total && `${total.n} shots on the court, ${total.m} made (${total.n ? ((100 * total.m) / total.n).toFixed(1) : "0.0"}%). `}
-              Most attempts for this filter:
+              {total && `${total.n} attempts on the court, ${total.m} made (${total.n ? ((100 * total.m) / total.n).toFixed(1) : "0.0"}%). `}
+              {shown.only === undefined ? "Most attempts" : shown.only ? "Most makes" : "Most misses"} for this filter:
             </caption>
             <thead><tr>{["player", "team", "FGA", "FGM", "FG%"].map((h) => <th key={h} scope="col" className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
             <tbody>{shown.rows.map((r, i) => (

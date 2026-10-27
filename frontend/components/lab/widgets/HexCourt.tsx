@@ -14,8 +14,9 @@ const SPREAD = 0.15;
 export type Shot = { x: number; y: number; m: number };
 type Tip = { left: number; top: number; text: string };
 
-/** The № 004 hexbin court: shots in the legacy frame in, hexagons + legend + bin table out. `shots` null = loading. */
-export function HexCourt({ shots, error, label }: { shots: Shot[] | null; error: string | null; label: string }) {
+/** The № 004 hexbin court: shots in the legacy frame in, hexagons + legend + bin table out. `shots` null = loading.
+ * `only` (1 = makes, 0 = misses) sizes and keeps hexagons by those shots alone; colour stays FG% over every attempt. */
+export function HexCourt({ shots, error, label, only }: { shots: Shot[] | null; error: string | null; label: string; only?: 0 | 1 }) {
   const [tip, setTip] = useState<Tip | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [reading, setReading] = useState("");
@@ -35,13 +36,15 @@ export function HexCourt({ shots, error, label }: { shots: Shot[] | null; error:
     const svg = select(svgRef.current);
     svg.selectAll("*").remove();
     if (!binned) return;
-    const { prior, hb, bins } = binned;
+    const { prior, hb } = binned;
+    const size = (b: Shot[]) => (only === undefined ? b.length : b.filter((s) => s.m === only).length);
+    const bins = binned.bins.filter((b) => size(b) > 0);
     // size saturates at the 90th-percentile bin so the rim hexagon does not shrink everything else
-    const maxN = quantile(bins.map((b) => b.length).sort((a, b) => a - b), 0.9) ?? 1;
+    const maxN = quantile(bins.map(size).sort((a, b) => a - b), 0.9) ?? 1;
     const color = scaleSequential(interpolateRdBu).domain([prior + SPREAD, prior - SPREAD]).clamp(true);
     svg.append("g").selectAll("path").data(bins).join("path")
       .attr("transform", (b) => `translate(${b.x},${b.y})`)
-      .attr("d", (b) => hb.hexagon(HEX_R * Math.min(1, Math.max(0.3, Math.sqrt(b.length / maxN)))))
+      .attr("d", (b) => hb.hexagon(HEX_R * Math.min(1, Math.max(0.3, Math.sqrt(size(b) / maxN)))))
       .attr("fill", (b) => color(shrunkPct(b.reduce((a, s) => a + s.m, 0), b.length, prior, K)))
       .attr("stroke", "var(--muted)")
       .attr("stroke-opacity", 0.6)
@@ -58,7 +61,7 @@ export function HexCourt({ shots, error, label }: { shots: Shot[] | null; error:
     for (const d of courtPaths()) court.append("path").attr("d", d);
     const [rx, ry] = toSvg(0, 0);
     court.append("circle").attr("cx", rx).attr("cy", ry).attr("r", 7.5);
-  }, [binned]);
+  }, [binned, only]);
 
   const prior = binned ? binned.prior : null;
   const rowsShown = binned ? (showAll ? binned.rows : binned.rows.filter((r) => r.attempts >= 5)) : [];
@@ -75,7 +78,7 @@ export function HexCourt({ shots, error, label }: { shots: Shot[] | null; error:
         {[{ l: "below average", c: interpolateRdBu(1) }, { l: "average", c: interpolateRdBu(0.5) }, { l: "above average", c: interpolateRdBu(0) }].map((s) => (
           <span key={s.l} className="flex items-center gap-1"><i className="inline-block size-3 border border-rule" style={{ background: s.c }} />{s.l}</span>
         ))}
-        <span>hex size = attempts{prior !== null && ` · average ${(prior * 100).toFixed(1)}% · ${shots?.length} shots`} · ran in your browser</span>
+        <span>hex size = {only === undefined ? "attempts" : only ? "makes" : "misses"}{prior !== null && ` · average ${(prior * 100).toFixed(1)}% · ${shots?.length} shots`} · ran in your browser</span>
       </div>
       <p aria-live="polite" className="border-t border-rule px-3 py-1.5 font-mono text-[11px] text-ink">{reading || "hover a hexagon for its attempts, makes and FG%"}</p>
       {binned && (

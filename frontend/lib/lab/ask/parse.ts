@@ -29,7 +29,11 @@ export const SEASON = {
   playoffsFirst: "2026-04-18",
 } as const;
 
-const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+// A real calendar day: "2026-02-31" matches the pattern but DuckDB would reject it.
+const Day = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((d) => !Number.isNaN(Date.parse(`${d}T00:00:00Z`)) && new Date(`${d}T00:00:00Z`).toISOString().startsWith(d), "not a calendar day");
 const PeriodN = z.number().int().min(1).max(10);
 
 export const SlotsSchema = z
@@ -80,7 +84,9 @@ function put<K extends SlotKey>(s: Slots, k: K, v: NonNullable<Slots[K]>): K | n
 }
 const after = (s: Slots, d: string): SlotKey => ((s.dateFrom = s.dateFrom && s.dateFrom > d ? s.dateFrom : d), "dateFrom");
 const before = (s: Slots, d: string): SlotKey => ((s.dateTo = s.dateTo && s.dateTo < d ? s.dateTo : d), "dateTo");
-const periods = (s: Slots, from: number, to: number): SlotKey => {
+// One period range per question: "q3 or q4" joins, "q1 or q4" keeps Q1 and reports "q4" as ignored.
+const periods = (s: Slots, from: number, to: number): SlotKey | null => {
+  if (s.period && (from > s.period.to + 1 || to < s.period.from - 1)) return null;
   s.period = s.period ? { from: Math.min(s.period.from, from), to: Math.max(s.period.to, to) } : { from, to };
   return "period";
 };
@@ -96,7 +102,9 @@ const RULES: Rule[] = [
   {
     re: new RegExp(String.raw`\b(?:in[ -])?(${MONTHS.join("|")})\b`, "g"),
     apply: (s, m) => {
-      const [a, b] = monthRange(MONTHS.indexOf(m[1]));
+      const i = MONTHS.indexOf(m[1]);
+      if (i >= 6 && i <= 8) return null; // July-September: no games, so the month is reported as ignored
+      const [a, b] = monthRange(i);
       after(s, a);
       before(s, b);
       return "dateFrom";
@@ -138,6 +146,7 @@ const STOP = new Set(
 export function playerIndex(players: Player[]): PlayerIndex {
   const by = new Map<string, Player[]>();
   for (const p of players) {
+    if (!/^[A-Z]{3}$/.test(p.team)) continue; // a malformed team code from the file never reaches a slot
     const k = nameKey(p.name);
     if (k) by.set(k, [...(by.get(k) ?? []), p]);
   }
@@ -171,12 +180,14 @@ export function parse(text: string, index: PlayerIndex = []): Parsed {
     consume(m.index, m[0].length, "player");
     let pick = cands[0];
     if (cands.length > 1) {
-      // "Williams OKC": a team code next to an ambiguous surname picks that team's player.
-      const teams = cands.map((c) => c.team.toLowerCase()).join("|");
-      const t = new RegExp(String.raw`\b(${teams})\b`).exec(work);
-      if (t) {
-        pick = cands.find((c) => c.team.toLowerCase() === t[1])!;
-        consume(t.index, t[0].length, "player");
+      // "Williams OKC" / "OKC Williams": only a team code right next to an ambiguous surname picks that team's player.
+      const end = m.index + m[0].length;
+      const a = /^([\s,]*)([a-z]{3})\b/.exec(work.slice(end));
+      const b = /\b([a-z]{3})[\s,]*$/.exec(work.slice(0, m.index));
+      const hit = [a && { at: end + a[1].length, code: a[2] }, b && { at: b.index, code: b[1] }].find((t) => t && cands.some((c) => c.team.toLowerCase() === t.code));
+      if (hit) {
+        pick = cands.find((c) => c.team.toLowerCase() === hit.code)!;
+        consume(hit.at, 3, "player");
       }
     }
     slots.player = { id: pick.id, name: pick.name, team: pick.team };
@@ -211,9 +222,9 @@ export function fromModel(raw: unknown, index: PlayerIndex): { slots: Slots; dro
         slots.period = { from: a, to: b };
       } else dropped.push("period");
     } else if (k === "dateFrom" || k === "dateTo") {
-      if (Day.safeParse(v).success && !Number.isNaN(Date.parse(v as string))) slots[k] = clampDay(v as string);
+      if (Day.safeParse(v).success) slots[k] = clampDay(v as string);
       else dropped.push(`${k}: ${String(v)}`);
-    } else if (k in shape) {
+    } else if (Object.hasOwn(shape, k)) {
       const val = k === "shotValue" && typeof v === "string" ? Number(v) : v;
       const r = shape[k as SlotKey].safeParse(val);
       if (r.success) (slots as Record<string, unknown>)[k] = r.data;
@@ -235,15 +246,17 @@ const REGION_SQL: Record<(typeof REGIONS)[number], string> = {
   "right-corner": `x_legacy >= ${COURT.threeCornerX} AND y_legacy <= ${BRK}`,
   "above-break": `y_legacy > ${BRK} AND ${D2} >= ${COURT.threeRadius ** 2}`,
 };
-// Same window as № 004's chart: shots past half court stay in the table, not on the court.
+// Same window as № 004's chart, applied to the table too so both count the same shots.
 const ON_COURT = `abs(x_legacy) <= ${COURT.halfWidth} AND y_legacy BETWEEN ${COURT.baselineY} AND ${COURT.halfCourtY}`;
 
 /**
  * The SQL template. `{{shots}}` and `{{games}}` are replaced with read_parquet(...) by the
  * caller. Every value is schema-checked first: ids and periods are integers, region and kind
- * are enum keys looked up in constant tables, dates match YYYY-MM-DD. Nothing else gets in.
+ * are enum keys looked up in constant tables, dates are real YYYY-MM-DD days. Nothing else gets in.
+ * Made/missed never filters rows, so FG% always counts every attempt: it picks which shots size
+ * the hexagons (`only`) and how the table is ranked.
  */
-export function buildSql(input: Slots): { shotsSql: string; summarySql: string; usesGames: boolean } {
+export function buildSql(input: Slots): { shotsSql: string; summarySql: string; usesGames: boolean; only?: 0 | 1 } {
   const s = SlotsSchema.parse(input);
   const w: string[] = [];
   if (s.player) w.push(`person_id = ${s.player.id}`);
@@ -254,11 +267,12 @@ export function buildSql(input: Slots): { shotsSql: string; summarySql: string; 
   const days = [s.dateFrom && `game_date >= '${s.dateFrom}'`, s.dateTo && `game_date <= '${s.dateTo}'`].filter(Boolean);
   // ponytail: play-in and All-Star games have no game-log date, so any date filter drops them.
   if (days.length) w.push(`game_id IN (SELECT game_id FROM {{games}} WHERE ${days.join(" AND ")})`);
-  if (s.result) w.push(`shot_result = '${s.result === "made" ? "Made" : "Missed"}'`);
-  const where = w.length ? `WHERE ${w.join(" AND ")}` : "";
+  const where = [...w, ON_COURT].join(" AND ");
+  const rank = s.result === "made" ? "fgm" : s.result === "missed" ? "fga - fgm" : "fga";
   return {
-    shotsSql: `SELECT x_legacy, y_legacy, (shot_result = 'Made')::INT FROM {{shots}} WHERE ${[...w, ON_COURT].join(" AND ")}`,
-    summarySql: `SELECT player_name, team_tricode, count(*) AS fga, count_if(shot_result = 'Made')::BIGINT AS fgm FROM {{shots}} ${where} GROUP BY person_id, player_name, team_tricode ORDER BY fga DESC LIMIT 10`,
+    shotsSql: `SELECT x_legacy, y_legacy, (shot_result = 'Made')::INT FROM {{shots}} WHERE ${where}`,
+    summarySql: `SELECT player_name, team_tricode, count(*) AS fga, count_if(shot_result = 'Made')::BIGINT AS fgm FROM {{shots}} WHERE ${where} GROUP BY person_id, player_name, team_tricode HAVING ${rank} > 0 ORDER BY ${rank} DESC${rank === "fga" ? "" : ", fga DESC"} LIMIT 10`,
     usesGames: days.length > 0,
+    only: s.result === "made" ? 1 : s.result === "missed" ? 0 : undefined,
   };
 }
