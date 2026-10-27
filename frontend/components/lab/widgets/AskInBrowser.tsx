@@ -93,7 +93,11 @@ export function AskInBrowser() {
   const worker = useRef<Worker | null>(null);
   const asked = useRef(0); // the latest submit; an older model reply is dropped
 
-  useEffect(() => () => worker.current?.terminate(), []);
+  // Leaving the page frees the model's GPU memory, not just the thread.
+  useEffect(() => () => {
+    engine.current?.unload().catch(() => undefined);
+    worker.current?.terminate();
+  }, []);
 
   const live = useMemo(() => parse(text, index ?? []), [text, index]);
   const rules = useMemo(() => parse(committed.q, index ?? []), [committed.q, index]);
