@@ -1,0 +1,23 @@
+Type a question about the 2025-26 NBA season's shots. The words you type become filters, the filters fill a fixed SQL query, and DuckDB runs it in your browser over the same 4 MB shots file as № 004. The answer is a small table and the same hexagon court.
+
+<AskInBrowser />
+
+## What it understands
+
+A player's surname (the file stores surnames only, so "Williams" picks the Williams with the most shots unless you add a team code like "Williams OKC"). Two or three. A region: rim, paint, mid-range, corner, left or right corner, above the break. A shot kind: dunk, layup, hook, floater, jumper, step-back, fadeaway, alley-oop. A quarter, a half or overtime. Made or missed. A month, the regular season, the playoffs, or before or after the All-Star break.
+
+Each filter shows up as a chip. Removing a chip takes the words that made it out of your question and asks again, so the question in the box is always the whole state, and the page URL carries it. Words the rules don't use are listed as "ignored" rather than quietly dropped. Regions come from the shot's `x_legacy`/`y_legacy` position, not from a label in the file. The corner is |x| ≥ 22 ft below the 8.95 ft break, and above the break is 23.75 ft out. On this season's file those boundaries disagree with the official two-or-three label on 12 of 234,876 shots.
+
+<MarginNote>The shots file has no game date, so dates join an 80 KB game-log file on game_id. Play-in and All-Star games have no game-log date and drop out under any date filter.</MarginNote>
+
+## How this differs from № 003
+
+[№ 003](/lab/ask-the-lab) is a chat with a hosted model. Every answer is a call to a server, which is why it needs a sign-in, a daily meter and a token cap, and the model writes whatever prose it likes. Here nothing runs on a server except the relay that hands DuckDB the file's bytes. There's nothing to meter, so there's no sign-in.
+
+It also can't invent a column. The model never writes SQL. The rules parser runs first and fills typed slots: a player id, a period range, an ISO date, or a key from a short list of regions and shot kinds. The SQL is one template with a fixed fragment per slot. If you choose to load the optional model (Qwen2.5 0.5B, about 290 MB, downloaded once and run on your GPU through WebGPU), it sees only the words the rules left over and has to answer with JSON. That JSON is checked key by key against the same slot schema. An unknown key or an out-of-range value is dropped and listed, a period or date outside the season is clamped, and the rules win any conflict. The model can only fill a slot that already exists.
+
+Without WebGPU, or without the click, it stays rules-only, and that's a complete answer. The model only helps with phrasing the rules don't cover.
+
+## Credit
+
+The pattern of rules first, a small in-browser model for the leftovers, and every output checked against a curated filter list comes from [Gridiron Matrix](https://huggingface.co/spaces/rj7002/gridironmatrix), an NFL tracking-data explorer. This entry borrows the pattern and none of its data.
