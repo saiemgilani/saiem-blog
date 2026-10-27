@@ -48,9 +48,9 @@ export type LabEntry = z.infer<typeof LabEntrySchema>;
 export type LabStatus = LabEntry["status"];
 export type LabRuntime = LabEntry["runtime"][number];
 
-/** Live runs of python/llm entries require sign-in (P5). */
+/** Live runs of python/llm entries require sign-in (P5). An llm that runs in the browser costs the server nothing, so it is not gated. */
 export function isGated(e: LabEntry): boolean {
-  return e.runtime.some((r) => r === "python" || r === "llm");
+  return e.runtime.includes("python") || (e.runtime.includes("llm") && !e.runtime.includes("browser"));
 }
 
 export function formatEntryNumber(n: number): string {

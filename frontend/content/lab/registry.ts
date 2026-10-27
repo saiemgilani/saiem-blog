@@ -54,6 +54,22 @@ const entries: LabEntry[] = [
     started: "2026-09-30",
     tags: ["duckdb", "parquet", "nba", "d3"],
   },
+  {
+    n: 5,
+    slug: "ask-in-your-browser",
+    title: "Ask, in your browser",
+    summary: "Ask about NBA shots in plain words. Rules turn the question into filters you can see and remove, the filters fill a fixed SQL template, and DuckDB answers in your browser. An optional small model, also in your browser, reads only the words the rules skip.",
+    status: "prototype",
+    kind: "app",
+    runtime: ["browser", "llm"],
+    sources: [
+      { kind: "release", repo: "sportsdataverse/sportsdataverse-data", tag: "nba_stats_shots", asset: "shots_2026.parquet" },
+      { kind: "release", repo: "sportsdataverse/sportsdataverse-data", tag: "nba_stats_player_game_logs", asset: "player_game_logs_2026.parquet" },
+    ],
+    limits: "reads ~4 MB of shots + 80 KB of game dates · the optional model is a ~290 MB one-time download, WebGPU only",
+    started: "2026-10-27",
+    tags: ["duckdb", "parquet", "nba", "llm", "webgpu"],
+  },
 ];
 
 export const LAB: LabEntry[] = LabRegistrySchema.parse(entries);

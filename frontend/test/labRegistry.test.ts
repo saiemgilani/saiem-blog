@@ -38,7 +38,8 @@ test("release sources cannot smuggle paths", () => {
 
 test("gating and numbering", () => {
   assert.equal(isGated(base), false);
-  assert.equal(isGated({ ...base, runtime: ["browser", "llm"] }), true);
+  assert.equal(isGated({ ...base, runtime: ["llm"] }), true);
+  assert.equal(isGated({ ...base, runtime: ["browser", "llm"] }), false); // № 005: the model runs on the visitor's GPU
   assert.equal(isGated({ ...base, runtime: ["python"] }), true);
   assert.equal(formatEntryNumber(1), "№ 001");
   assert.equal(formatEntryNumber(14), "№ 014");
