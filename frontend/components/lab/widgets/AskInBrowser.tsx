@@ -176,12 +176,19 @@ export function AskInBrowser() {
     if (!own.length) {
       const m = { ...committed.model };
       for (const x of keysOf(k)) delete m[x];
+      ++asked.current; // a model reply still in flight must not undo this removal
+      setThinking(false);
       commit({ ...committed, model: m });
       return;
     }
     // A chip the rules made came from the user's words: take those words out of the question.
     let q = committed.q;
-    for (const x of own) for (const span of rules.spans[x] ?? []) q = q.replace(span, " ");
+    // Whole words only, so removing "rim" leaves "Grimes" alone.
+    for (const x of own) {
+      for (const span of rules.spans[x] ?? []) {
+        q = q.replace(new RegExp(String.raw`(?<![\p{L}\p{N}-])${span.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\p{L}\p{N}-])`, "u"), " ");
+      }
+    }
     submit(q.replace(/\s+/g, " ").replace(/\s+([,.])/g, "$1").trim());
   }
 
